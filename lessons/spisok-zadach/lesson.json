@@ -1,0 +1,680 @@
+{
+  "schemaVersion": 1,
+  "id": "spisok-zadach",
+  "title": "Добавить задачи и переключить фильтр",
+  "description": "Второй, другой сайт — SPA TodoMVC. Поле ввода, список и вкладки-фильтры. Конвейер тот же, что и для вики-сценария, без привязки к ЕИС.",
+  "sourceSite": "https://demo.playwright.dev/todomvc/",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "screens": [
+    {
+      "id": "s1",
+      "title": "Пустой список",
+      "url": "https://demo.playwright.dev/todomvc/#/",
+      "html": "screens/s1.html",
+      "screenshot": "original/s1.png",
+      "hotspots": [
+        {
+          "id": "hd13e40d5",
+          "kind": "link",
+          "label": "real TodoMVC app.",
+          "selector": "div > a",
+          "box": {
+            "x": 738.8125,
+            "y": 13,
+            "width": 119.59375,
+            "height": 16
+          }
+        },
+        {
+          "id": "h3def0726",
+          "kind": "input",
+          "label": "What needs to be done?",
+          "selector": "input.new-todo",
+          "box": {
+            "x": 365,
+            "y": 174.59375,
+            "width": 550,
+            "height": 65.59375
+          },
+          "placeholder": "What needs to be done?"
+        },
+        {
+          "id": "h69580357",
+          "kind": "link",
+          "label": "Remo H. Jansen",
+          "selector": "footer > p:nth-of-type(2) > a",
+          "box": {
+            "x": 628.609375,
+            "y": 324.1875,
+            "width": 74.484375,
+            "height": 11
+          }
+        },
+        {
+          "id": "h6ff11ffa",
+          "kind": "link",
+          "label": "TodoMVC",
+          "selector": "footer > p:nth-of-type(3) > a",
+          "box": {
+            "x": 634.171875,
+            "y": 344.1875,
+            "width": 43.90625,
+            "height": 11
+          }
+        }
+      ],
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      }
+    },
+    {
+      "id": "s2",
+      "title": "Одна задача",
+      "url": "https://demo.playwright.dev/todomvc/#/",
+      "html": "screens/s2.html",
+      "screenshot": "original/s2.png",
+      "hotspots": [
+        {
+          "id": "hd13e40d5",
+          "kind": "link",
+          "label": "real TodoMVC app.",
+          "selector": "div > a",
+          "box": {
+            "x": 738.8125,
+            "y": 13,
+            "width": 119.59375,
+            "height": 16
+          }
+        },
+        {
+          "id": "h3def0726",
+          "kind": "input",
+          "label": "What needs to be done?",
+          "selector": "input.new-todo",
+          "box": {
+            "x": 365,
+            "y": 174.59375,
+            "width": 550,
+            "height": 65.59375
+          },
+          "placeholder": "What needs to be done?"
+        },
+        {
+          "id": "hdf9b9d43",
+          "kind": "clickable",
+          "label": "Toggle Todo",
+          "selector": "input.toggle",
+          "box": {
+            "x": 365,
+            "y": 250.578125,
+            "width": 40,
+            "height": 40
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "id": "h525b57ff",
+          "kind": "link",
+          "label": "All",
+          "selector": "a.selected",
+          "box": {
+            "x": 545.40625,
+            "y": 307.984375,
+            "width": 31.5625,
+            "height": 24
+          }
+        },
+        {
+          "id": "h5e136ee5",
+          "kind": "link",
+          "label": "Active",
+          "selector": "section > div > footer > ul > li:nth-of-type(2) > a",
+          "box": {
+            "x": 586.859375,
+            "y": 307.984375,
+            "width": 54.125,
+            "height": 24
+          }
+        },
+        {
+          "id": "h5a81b6f8",
+          "kind": "link",
+          "label": "Completed",
+          "selector": "section > div > footer > ul > li:nth-of-type(3) > a",
+          "box": {
+            "x": 650.875,
+            "y": 307.984375,
+            "width": 83.703125,
+            "height": 24
+          }
+        },
+        {
+          "id": "h69580357",
+          "kind": "link",
+          "label": "Remo H. Jansen",
+          "selector": "footer > p:nth-of-type(2) > a",
+          "box": {
+            "x": 628.609375,
+            "y": 424.984375,
+            "width": 74.484375,
+            "height": 11
+          }
+        },
+        {
+          "id": "h6ff11ffa",
+          "kind": "link",
+          "label": "TodoMVC",
+          "selector": "footer > p:nth-of-type(3) > a",
+          "box": {
+            "x": 634.171875,
+            "y": 444.984375,
+            "width": 43.90625,
+            "height": 11
+          }
+        }
+      ],
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      }
+    },
+    {
+      "id": "s3",
+      "title": "Две задачи",
+      "url": "https://demo.playwright.dev/todomvc/#/",
+      "html": "screens/s3.html",
+      "screenshot": "original/s3.png",
+      "hotspots": [
+        {
+          "id": "hd13e40d5",
+          "kind": "link",
+          "label": "real TodoMVC app.",
+          "selector": "div > a",
+          "box": {
+            "x": 738.8125,
+            "y": 13,
+            "width": 119.59375,
+            "height": 16
+          }
+        },
+        {
+          "id": "h3def0726",
+          "kind": "input",
+          "label": "What needs to be done?",
+          "selector": "input.new-todo",
+          "box": {
+            "x": 365,
+            "y": 174.59375,
+            "width": 550,
+            "height": 65.59375
+          },
+          "placeholder": "What needs to be done?"
+        },
+        {
+          "id": "hcdbcf51a",
+          "kind": "clickable",
+          "label": "Toggle Todo",
+          "selector": "section > div > section > ul > li:nth-of-type(1) > div > input",
+          "box": {
+            "x": 365,
+            "y": 250.578125,
+            "width": 40,
+            "height": 40
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "id": "h9b96c84d",
+          "kind": "clickable",
+          "label": "Toggle Todo",
+          "selector": "section > div > section > ul > li:nth-of-type(2) > div > input",
+          "box": {
+            "x": 365,
+            "y": 310.375,
+            "width": 40,
+            "height": 40
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "id": "h525b57ff",
+          "kind": "link",
+          "label": "All",
+          "selector": "a.selected",
+          "box": {
+            "x": 545.40625,
+            "y": 367.78125,
+            "width": 31.5625,
+            "height": 24
+          }
+        },
+        {
+          "id": "h5e136ee5",
+          "kind": "link",
+          "label": "Active",
+          "selector": "section > div > footer > ul > li:nth-of-type(2) > a",
+          "box": {
+            "x": 586.859375,
+            "y": 367.78125,
+            "width": 54.125,
+            "height": 24
+          }
+        },
+        {
+          "id": "h5a81b6f8",
+          "kind": "link",
+          "label": "Completed",
+          "selector": "section > div > footer > ul > li:nth-of-type(3) > a",
+          "box": {
+            "x": 650.875,
+            "y": 367.78125,
+            "width": 83.703125,
+            "height": 24
+          }
+        },
+        {
+          "id": "h69580357",
+          "kind": "link",
+          "label": "Remo H. Jansen",
+          "selector": "footer > p:nth-of-type(2) > a",
+          "box": {
+            "x": 628.609375,
+            "y": 484.78125,
+            "width": 74.484375,
+            "height": 11
+          }
+        },
+        {
+          "id": "h6ff11ffa",
+          "kind": "link",
+          "label": "TodoMVC",
+          "selector": "footer > p:nth-of-type(3) > a",
+          "box": {
+            "x": 634.171875,
+            "y": 504.78125,
+            "width": 43.90625,
+            "height": 11
+          }
+        }
+      ],
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      }
+    },
+    {
+      "id": "s4",
+      "title": "Первая задача выполнена",
+      "url": "https://demo.playwright.dev/todomvc/#/",
+      "html": "screens/s4.html",
+      "screenshot": "original/s4.png",
+      "hotspots": [
+        {
+          "id": "hd13e40d5",
+          "kind": "link",
+          "label": "real TodoMVC app.",
+          "selector": "div > a",
+          "box": {
+            "x": 738.8125,
+            "y": 13,
+            "width": 119.59375,
+            "height": 16
+          }
+        },
+        {
+          "id": "h3def0726",
+          "kind": "input",
+          "label": "What needs to be done?",
+          "selector": "input.new-todo",
+          "box": {
+            "x": 365,
+            "y": 174.59375,
+            "width": 550,
+            "height": 65.59375
+          },
+          "placeholder": "What needs to be done?"
+        },
+        {
+          "id": "hcdbcf51a",
+          "kind": "clickable",
+          "label": "Toggle Todo",
+          "selector": "section > div > section > ul > li:nth-of-type(1) > div > input",
+          "box": {
+            "x": 365,
+            "y": 250.578125,
+            "width": 40,
+            "height": 40
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "id": "h14a3ff66",
+          "kind": "button",
+          "label": "Delete",
+          "selector": "section > div > section > ul > li:nth-of-type(1) > div > button",
+          "box": {
+            "x": 865,
+            "y": 248.984375,
+            "width": 40,
+            "height": 40
+          }
+        },
+        {
+          "id": "h9b96c84d",
+          "kind": "clickable",
+          "label": "Toggle Todo",
+          "selector": "section > div > section > ul > li:nth-of-type(2) > div > input",
+          "box": {
+            "x": 365,
+            "y": 310.375,
+            "width": 40,
+            "height": 40
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "id": "h525b57ff",
+          "kind": "link",
+          "label": "All",
+          "selector": "a.selected",
+          "box": {
+            "x": 545.40625,
+            "y": 367.78125,
+            "width": 31.5625,
+            "height": 24
+          }
+        },
+        {
+          "id": "h5e136ee5",
+          "kind": "link",
+          "label": "Active",
+          "selector": "section > div > footer > ul > li:nth-of-type(2) > a",
+          "box": {
+            "x": 586.859375,
+            "y": 367.78125,
+            "width": 54.125,
+            "height": 24
+          }
+        },
+        {
+          "id": "h5a81b6f8",
+          "kind": "link",
+          "label": "Completed",
+          "selector": "section > div > footer > ul > li:nth-of-type(3) > a",
+          "box": {
+            "x": 650.875,
+            "y": 367.78125,
+            "width": 83.703125,
+            "height": 24
+          }
+        },
+        {
+          "id": "h26fcb432",
+          "kind": "button",
+          "label": "Clear completed",
+          "selector": "button.clear-completed",
+          "box": {
+            "x": 798.0625,
+            "y": 370.78125,
+            "width": 101.9375,
+            "height": 20
+          }
+        },
+        {
+          "id": "h69580357",
+          "kind": "link",
+          "label": "Remo H. Jansen",
+          "selector": "footer > p:nth-of-type(2) > a",
+          "box": {
+            "x": 628.609375,
+            "y": 484.78125,
+            "width": 74.484375,
+            "height": 11
+          }
+        },
+        {
+          "id": "h6ff11ffa",
+          "kind": "link",
+          "label": "TodoMVC",
+          "selector": "footer > p:nth-of-type(3) > a",
+          "box": {
+            "x": 634.171875,
+            "y": 504.78125,
+            "width": 43.90625,
+            "height": 11
+          }
+        }
+      ],
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      }
+    },
+    {
+      "id": "s5",
+      "title": "Фильтр «Completed»",
+      "url": "https://demo.playwright.dev/todomvc/#/completed",
+      "html": "screens/s5.html",
+      "screenshot": "original/s5.png",
+      "hotspots": [
+        {
+          "id": "hd13e40d5",
+          "kind": "link",
+          "label": "real TodoMVC app.",
+          "selector": "div > a",
+          "box": {
+            "x": 738.8125,
+            "y": 13,
+            "width": 119.59375,
+            "height": 16
+          }
+        },
+        {
+          "id": "h3def0726",
+          "kind": "input",
+          "label": "What needs to be done?",
+          "selector": "input.new-todo",
+          "box": {
+            "x": 365,
+            "y": 174.59375,
+            "width": 550,
+            "height": 65.59375
+          },
+          "placeholder": "What needs to be done?"
+        },
+        {
+          "id": "hdf9b9d43",
+          "kind": "clickable",
+          "label": "Toggle Todo",
+          "selector": "input.toggle",
+          "box": {
+            "x": 365,
+            "y": 250.578125,
+            "width": 40,
+            "height": 40
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "id": "hcfa0f3aa",
+          "kind": "link",
+          "label": "All",
+          "selector": "section > div > footer > ul > li:nth-of-type(1) > a",
+          "box": {
+            "x": 545.40625,
+            "y": 307.984375,
+            "width": 31.5625,
+            "height": 24
+          }
+        },
+        {
+          "id": "h5e136ee5",
+          "kind": "link",
+          "label": "Active",
+          "selector": "section > div > footer > ul > li:nth-of-type(2) > a",
+          "box": {
+            "x": 586.859375,
+            "y": 307.984375,
+            "width": 54.125,
+            "height": 24
+          }
+        },
+        {
+          "id": "h525b57ff",
+          "kind": "link",
+          "label": "Completed",
+          "selector": "a.selected",
+          "box": {
+            "x": 650.875,
+            "y": 307.984375,
+            "width": 83.703125,
+            "height": 24
+          }
+        },
+        {
+          "id": "h26fcb432",
+          "kind": "button",
+          "label": "Clear completed",
+          "selector": "button.clear-completed",
+          "box": {
+            "x": 798.0625,
+            "y": 310.984375,
+            "width": 101.9375,
+            "height": 20
+          }
+        },
+        {
+          "id": "h69580357",
+          "kind": "link",
+          "label": "Remo H. Jansen",
+          "selector": "footer > p:nth-of-type(2) > a",
+          "box": {
+            "x": 628.609375,
+            "y": 424.984375,
+            "width": 74.484375,
+            "height": 11
+          }
+        },
+        {
+          "id": "h6ff11ffa",
+          "kind": "link",
+          "label": "TodoMVC",
+          "selector": "footer > p:nth-of-type(3) > a",
+          "box": {
+            "x": 634.171875,
+            "y": 444.984375,
+            "width": 43.90625,
+            "height": 11
+          }
+        }
+      ],
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      }
+    }
+  ],
+  "steps": [
+    {
+      "id": "step-1",
+      "index": 0,
+      "screenId": "s1",
+      "action": "input",
+      "hotspotId": "h3def0726",
+      "expectedValue": "Купить молоко",
+      "confirm": "enter",
+      "nextScreenId": "s2",
+      "instruction": "На экране «Пустой список» введите «Купить молоко» в поле «What needs to be done?» и нажмите Enter. Откроется экран «Одна задача».",
+      "hint": "",
+      "errorText": ""
+    },
+    {
+      "id": "step-2",
+      "index": 1,
+      "screenId": "s2",
+      "action": "input",
+      "hotspotId": "h3def0726",
+      "expectedValue": "Написать отчёт",
+      "confirm": "enter",
+      "nextScreenId": "s3",
+      "instruction": "На экране «Одна задача» введите «Написать отчёт» в поле «What needs to be done?» и нажмите Enter. Откроется экран «Две задачи».",
+      "hint": "",
+      "errorText": ""
+    },
+    {
+      "id": "step-3",
+      "index": 2,
+      "screenId": "s3",
+      "action": "click",
+      "hotspotId": "hcdbcf51a",
+      "expectedValue": "",
+      "confirm": null,
+      "nextScreenId": "s4",
+      "instruction": "На экране «Две задачи» нажмите «Toggle Todo». Откроется экран «Первая задача выполнена».",
+      "hint": "",
+      "errorText": ""
+    },
+    {
+      "id": "step-4",
+      "index": 3,
+      "screenId": "s4",
+      "action": "click",
+      "hotspotId": "h5a81b6f8",
+      "expectedValue": "",
+      "confirm": null,
+      "nextScreenId": "s5",
+      "instruction": "На экране «Первая задача выполнена» нажмите «Completed». Откроется экран «Фильтр «Completed»».",
+      "hint": "",
+      "errorText": ""
+    }
+  ],
+  "meta": {
+    "generatedAt": "2026-10-30T11:48:18.643Z",
+    "generator": "ui-trainer-capture-poc",
+    "stepCount": 4,
+    "manuallyEditedSteps": 0,
+    "autoStepRatio": 1,
+    "fidelity": [
+      {
+        "screenId": "s1",
+        "chosen": "rrweb",
+        "rrwebSimilarity": 1,
+        "freezeSimilarity": 1,
+        "chosenSimilarity": 1
+      },
+      {
+        "screenId": "s2",
+        "chosen": "rrweb",
+        "rrwebSimilarity": 1,
+        "freezeSimilarity": 1,
+        "chosenSimilarity": 1
+      },
+      {
+        "screenId": "s3",
+        "chosen": "rrweb",
+        "rrwebSimilarity": 1,
+        "freezeSimilarity": 1,
+        "chosenSimilarity": 1
+      },
+      {
+        "screenId": "s4",
+        "chosen": "rrweb",
+        "rrwebSimilarity": 0.999974609375,
+        "freezeSimilarity": 0.999974609375,
+        "chosenSimilarity": 0.999974609375
+      },
+      {
+        "screenId": "s5",
+        "chosen": "rrweb",
+        "rrwebSimilarity": 1,
+        "freezeSimilarity": 1,
+        "chosenSimilarity": 1
+      }
+    ],
+    "warnings": []
+  }
+}

@@ -1,0 +1,3604 @@
+{
+  "schemaVersion": 1,
+  "id": "najti-statyu",
+  "title": "Найти статью и открыть вкладку",
+  "description": "Аналог сценария «Найти извещение и открыть карточку» на публичном сайте: главная, поиск по ключевой фразе, список результатов, карточка статьи, вкладка «Обсуждение». Портал zakupki.gov.ru из этой среды недоступен — TLS-рукопожатие обрывается.",
+  "sourceSite": "https://ru.wikipedia.org",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "screens": [
+    {
+      "id": "s1",
+      "title": "Главная",
+      "url": "https://ru.wikipedia.org/wiki/%D0%97%D0%B0%D0%B3%D0%BB%D0%B0%D0%B2%D0%BD%D0%B0%D1%8F_%D1%81%D1%82%D1%80%D0%B0%D0%BD%D0%B8%D1%86%D0%B0",
+      "html": "screens/s1.html",
+      "screenshot": "original/s1.png",
+      "hotspots": [
+        {
+          "id": "hb80d151f",
+          "kind": "clickable",
+          "label": "Главное меню",
+          "selector": "#vector-main-menu-dropdown-checkbox",
+          "box": {
+            "x": 38,
+            "y": 17,
+            "width": 32,
+            "height": 32
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "id": "h71e4de30",
+          "kind": "button",
+          "label": "Move Главное меню to sidebar",
+          "selector": "#vector-main-menu > div:nth-of-type(1) > button:nth-of-type(1)",
+          "box": {
+            "x": 53,
+            "y": 89.484375,
+            "width": 189.8125,
+            "height": 22
+          }
+        },
+        {
+          "id": "h831a1851",
+          "kind": "link",
+          "label": "Заглавная страница",
+          "selector": "#n-mainpage-description a",
+          "box": {
+            "x": 53,
+            "y": 124.484375,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hb15e4faf",
+          "kind": "link",
+          "label": "Содержание",
+          "selector": "#n-content a",
+          "box": {
+            "x": 53,
+            "y": 153.875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h15651926",
+          "kind": "link",
+          "label": "Избранные статьи",
+          "selector": "#n-featured a",
+          "box": {
+            "x": 53,
+            "y": 183.265625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hb4b01a4c",
+          "kind": "link",
+          "label": "Случайная статья",
+          "selector": "#n-randompage a",
+          "box": {
+            "x": 53,
+            "y": 212.65625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hd7d30572",
+          "kind": "link",
+          "label": "Текущие события",
+          "selector": "#n-currentevents a",
+          "box": {
+            "x": 53,
+            "y": 242.046875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "he3dca82b",
+          "kind": "link",
+          "label": "Сообщить об ошибке",
+          "selector": "#n-bug_in_article > a",
+          "box": {
+            "x": 53,
+            "y": 311.046875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h1f9ad25c",
+          "kind": "link",
+          "label": "Как править статьи",
+          "selector": "#n-introduction a",
+          "box": {
+            "x": 53,
+            "y": 340.4375,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hbde686be",
+          "kind": "link",
+          "label": "Сообщество",
+          "selector": "#n-portal a",
+          "box": {
+            "x": 53,
+            "y": 369.828125,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h3edf08e7",
+          "kind": "link",
+          "label": "Форум",
+          "selector": "#n-forum a",
+          "box": {
+            "x": 53,
+            "y": 399.21875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h61bf40eb",
+          "kind": "link",
+          "label": "Справка",
+          "selector": "#n-help a",
+          "box": {
+            "x": 53,
+            "y": 428.609375,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h2aac33e",
+          "kind": "link",
+          "label": "Свежие правки",
+          "selector": "#n-recentchanges a",
+          "box": {
+            "x": 53,
+            "y": 458,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h5e263ebe",
+          "kind": "link",
+          "label": "Новые страницы",
+          "selector": "#n-newpages a",
+          "box": {
+            "x": 53,
+            "y": 487.390625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h68f581d1",
+          "kind": "link",
+          "label": "Служебные страницы",
+          "selector": "#n-specialpages a",
+          "box": {
+            "x": 53,
+            "y": 516.78125,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hfd1f363c",
+          "kind": "button",
+          "label": "Установки языка",
+          "selector": "button.uls-settings-trigger",
+          "box": {
+            "x": 237,
+            "y": 558.78125,
+            "width": 16,
+            "height": 16
+          }
+        },
+        {
+          "id": "h4fb0c070",
+          "kind": "link",
+          "label": "Deutsch",
+          "selector": "#p-lang > div:nth-of-type(2) > ul > li:nth-of-type(70) > a",
+          "box": {
+            "x": 53,
+            "y": 585.78125,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hcfdee5d7",
+          "kind": "link",
+          "label": "English",
+          "selector": "#p-lang > div:nth-of-type(2) > ul > li:nth-of-type(82) > a",
+          "box": {
+            "x": 53,
+            "y": 615.171875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hb32a0241",
+          "kind": "link",
+          "label": "Español",
+          "selector": "#p-lang > div:nth-of-type(2) > ul > li:nth-of-type(84) > a",
+          "box": {
+            "x": 53,
+            "y": 644.5625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h435107d4",
+          "kind": "link",
+          "label": "Français",
+          "selector": "#p-lang > div:nth-of-type(2) > ul > li:nth-of-type(96) > a",
+          "box": {
+            "x": 53,
+            "y": 673.953125,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h97f5e2d4",
+          "kind": "link",
+          "label": "Italiano",
+          "selector": "#p-lang > div:nth-of-type(2) > ul > li:nth-of-type(142) > a",
+          "box": {
+            "x": 53,
+            "y": 703.34375,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "ha393fb9c",
+          "kind": "link",
+          "label": "한국어",
+          "selector": "#p-lang > div:nth-of-type(2) > ul > li:nth-of-type(164) > a",
+          "box": {
+            "x": 53,
+            "y": 732.734375,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h8d2893c8",
+          "kind": "link",
+          "label": "Tagalog",
+          "selector": "#p-lang > div:nth-of-type(2) > ul > li:nth-of-type(308) > a",
+          "box": {
+            "x": 53,
+            "y": 762.125,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hce218061",
+          "kind": "link",
+          "label": "Tiếng Việt",
+          "selector": "#p-lang > div:nth-of-type(2) > ul > li:nth-of-type(330) > a",
+          "box": {
+            "x": 53,
+            "y": 791.515625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hc39e3e72",
+          "kind": "link",
+          "label": "a",
+          "selector": "a.mw-logo",
+          "box": {
+            "x": 84,
+            "y": 8,
+            "width": 180,
+            "height": 50
+          }
+        },
+        {
+          "id": "h84b023ce",
+          "kind": "input",
+          "label": "Искать в Википедии",
+          "selector": "#searchInput",
+          "box": {
+            "x": 306,
+            "y": 17,
+            "width": 409.03125,
+            "height": 32
+          },
+          "inputType": "search",
+          "placeholder": "Искать в Википедии"
+        },
+        {
+          "id": "h3b422e0",
+          "kind": "button",
+          "label": "Найти",
+          "selector": "#searchform button",
+          "box": {
+            "x": 714.03125,
+            "y": 17,
+            "width": 65.96875,
+            "height": 32
+          }
+        },
+        {
+          "id": "hb72dfeed",
+          "kind": "link",
+          "label": "Пожертвовать",
+          "selector": "#pt-sitesupport-2 a",
+          "box": {
+            "x": 925.9375,
+            "y": 25,
+            "width": 92.265625,
+            "height": 16
+          }
+        },
+        {
+          "id": "h3e3e09d4",
+          "kind": "link",
+          "label": "Создать учётную запись",
+          "selector": "#pt-createaccount-2 a",
+          "box": {
+            "x": 1026.203125,
+            "y": 25,
+            "width": 158.609375,
+            "height": 16
+          }
+        },
+        {
+          "id": "h5f7d7a5e",
+          "kind": "link",
+          "label": "Войти",
+          "selector": "#pt-login-2 a",
+          "box": {
+            "x": 1192.8125,
+            "y": 25,
+            "width": 39.1875,
+            "height": 16
+          }
+        },
+        {
+          "id": "h436b1b6b",
+          "kind": "link",
+          "label": "Photograph a historic site, help Wikipedia, and win a prize. Participate in the world's largest photography competition this month! узнать б",
+          "selector": "#banner1",
+          "box": {
+            "x": 60,
+            "y": 106.046875,
+            "width": 1160,
+            "height": 91
+          }
+        },
+        {
+          "id": "hf7f1ea4e",
+          "kind": "tab",
+          "label": "Заглавная",
+          "selector": "#ca-nstab-main a",
+          "box": {
+            "x": 44,
+            "y": 237.046875,
+            "width": 67.546875,
+            "height": 32
+          }
+        },
+        {
+          "id": "h2eedfc50",
+          "kind": "tab",
+          "label": "Обсуждение",
+          "selector": "#ca-talk a",
+          "box": {
+            "x": 127.546875,
+            "y": 237.046875,
+            "width": 81.578125,
+            "height": 32
+          }
+        },
+        {
+          "id": "h6d35909f",
+          "kind": "tab",
+          "label": "Читать",
+          "selector": "#ca-view a",
+          "box": {
+            "x": 755.5625,
+            "y": 237.046875,
+            "width": 44.59375,
+            "height": 32
+          }
+        },
+        {
+          "id": "h853e944e",
+          "kind": "tab",
+          "label": "Просмотр кода",
+          "selector": "#ca-viewsource a",
+          "box": {
+            "x": 816.15625,
+            "y": 237.046875,
+            "width": 97.546875,
+            "height": 32
+          }
+        },
+        {
+          "id": "h4e467a38",
+          "kind": "tab",
+          "label": "История",
+          "selector": "#ca-history a",
+          "box": {
+            "x": 929.703125,
+            "y": 237.046875,
+            "width": 54.296875,
+            "height": 32
+          }
+        },
+        {
+          "id": "ha94d2d65",
+          "kind": "clickable",
+          "label": "Инструменты",
+          "selector": "#vector-page-tools-dropdown-checkbox",
+          "box": {
+            "x": 992,
+            "y": 237.046875,
+            "width": 32,
+            "height": 32
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "id": "hb7967842",
+          "kind": "button",
+          "label": "Move Инструменты to sidebar",
+          "selector": "#vector-page-tools > div:nth-of-type(1) > button:nth-of-type(1)",
+          "box": {
+            "x": 808,
+            "y": 309.53125,
+            "width": 189.8125,
+            "height": 22
+          }
+        },
+        {
+          "id": "hf1f03249",
+          "kind": "link",
+          "label": "Ссылки сюда",
+          "selector": "#t-whatlinkshere a",
+          "box": {
+            "x": 808,
+            "y": 379.53125,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hb86aaae9",
+          "kind": "link",
+          "label": "Связанные правки",
+          "selector": "#t-recentchangeslinked a",
+          "box": {
+            "x": 808,
+            "y": 408.921875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h9473aa41",
+          "kind": "link",
+          "label": "Постоянная ссылка",
+          "selector": "#t-permalink a",
+          "box": {
+            "x": 808,
+            "y": 438.3125,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "ha3e61e92",
+          "kind": "link",
+          "label": "Сведения о странице",
+          "selector": "#t-info a",
+          "box": {
+            "x": 808,
+            "y": 467.703125,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h16c4e223",
+          "kind": "link",
+          "label": "Получить сокращённый URL",
+          "selector": "#t-urlshortener a",
+          "box": {
+            "x": 808,
+            "y": 497.09375,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hf59ad10f",
+          "kind": "link",
+          "label": "Переключиться на устаревший парсер",
+          "selector": "#parsermigration-switch-to-legacy a",
+          "box": {
+            "x": 808,
+            "y": 526.484375,
+            "width": 200,
+            "height": 44
+          }
+        },
+        {
+          "id": "h97cd0927",
+          "kind": "link",
+          "label": "Править ссылки на другие языки",
+          "selector": "#wbc-editpage a",
+          "box": {
+            "x": 808,
+            "y": 571.875,
+            "width": 200,
+            "height": 44
+          }
+        },
+        {
+          "id": "hbd0644f7",
+          "kind": "link",
+          "label": "Развернуть всё",
+          "selector": "#t-collapsible-toggle-all a",
+          "box": {
+            "x": 808,
+            "y": 646.65625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h178070a0",
+          "kind": "link",
+          "label": "Скачать как PDF",
+          "selector": "#coll-download-as-rl a",
+          "box": {
+            "x": 808,
+            "y": 715.65625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h58ba6d3",
+          "kind": "link",
+          "label": "Версия для печати",
+          "selector": "#t-print a",
+          "box": {
+            "x": 808,
+            "y": 745.046875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h49efcc74",
+          "kind": "button",
+          "label": "Hide Внешний вид",
+          "selector": "#vector-appearance > div:nth-of-type(1) > button:nth-of-type(2)",
+          "box": {
+            "x": 1161.578125,
+            "y": 283.84375,
+            "width": 54.296875,
+            "height": 22
+          }
+        },
+        {
+          "id": "h8e5cb9f5",
+          "kind": "clickable",
+          "label": "Мелкий",
+          "selector": "#skin-client-pref-vector-feature-custom-font-size-value-0",
+          "box": {
+            "x": 1056,
+            "y": 361.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "h8d5cb862",
+          "kind": "clickable",
+          "label": "Стандартный",
+          "selector": "#skin-client-pref-vector-feature-custom-font-size-value-1",
+          "box": {
+            "x": 1056,
+            "y": 393.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "h8c5cb6cf",
+          "kind": "clickable",
+          "label": "Крупный",
+          "selector": "#skin-client-pref-vector-feature-custom-font-size-value-2",
+          "box": {
+            "x": 1056,
+            "y": 425.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "hfbb0d9b0",
+          "kind": "clickable",
+          "label": "Стандартно",
+          "selector": "#skin-client-pref-vector-feature-limited-width-value-1",
+          "box": {
+            "x": 1056,
+            "y": 504.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "hfcb0db43",
+          "kind": "clickable",
+          "label": "Широко",
+          "selector": "#skin-client-pref-vector-feature-limited-width-value-0",
+          "box": {
+            "x": 1056,
+            "y": 536.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "h3f88dac2",
+          "kind": "clickable",
+          "label": "Автоматические",
+          "selector": "#skin-client-pref-skin-theme-value-os",
+          "box": {
+            "x": 1056,
+            "y": 615.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "he5ee10d2",
+          "kind": "clickable",
+          "label": "Светлые",
+          "selector": "#skin-client-pref-skin-theme-value-day",
+          "box": {
+            "x": 1056,
+            "y": 647.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "h9928510e",
+          "kind": "clickable",
+          "label": "Тёмные",
+          "selector": "#skin-client-pref-skin-theme-value-night",
+          "box": {
+            "x": 1056,
+            "y": 679.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "h2492028f",
+          "kind": "link",
+          "label": "Википедию",
+          "selector": "#mwBg > div:nth-of-type(1) > h1 > a",
+          "box": {
+            "x": 323.453125,
+            "y": 322.046875,
+            "width": 143.421875,
+            "height": 32
+          }
+        },
+        {
+          "id": "hd16fbb",
+          "kind": "link",
+          "label": "свободную энциклопедию",
+          "selector": "#mwBg > div:nth-of-type(1) > p > a:nth-of-type(1)",
+          "box": {
+            "x": 69,
+            "y": 361.640625,
+            "width": 169.515625,
+            "height": 16
+          }
+        },
+        {
+          "id": "h60d8c2a0",
+          "kind": "link",
+          "label": "может редактировать каждый",
+          "selector": "#mwBg > div:nth-of-type(1) > p > a:nth-of-type(2)",
+          "box": {
+            "x": 303.125,
+            "y": 361.640625,
+            "width": 193.546875,
+            "height": 16
+          }
+        },
+        {
+          "id": "h1ff801c5",
+          "kind": "link",
+          "label": "2 125 631 статья",
+          "selector": "#mwBg > div:nth-of-type(2) > p > b > a",
+          "box": {
+            "x": 862.734375,
+            "y": 308.21875,
+            "width": 128.265625,
+            "height": 17
+          }
+        },
+        {
+          "id": "hcf704751",
+          "kind": "link",
+          "label": "русском языке",
+          "selector": "#mwBg > div:nth-of-type(2) > p > a",
+          "box": {
+            "x": 878.890625,
+            "y": 334.21875,
+            "width": 107.65625,
+            "height": 17
+          }
+        },
+        {
+          "id": "h2740a6ba",
+          "kind": "link",
+          "label": "Создать статью",
+          "selector": "#mwBg > div:nth-of-type(2) > ul > li:nth-of-type(1) > span > a",
+          "box": {
+            "x": 834.59375,
+            "y": 364.21875,
+            "width": 156.40625,
+            "height": 32
+          }
+        },
+        {
+          "id": "h21622a97",
+          "kind": "link",
+          "label": "Справка",
+          "selector": "#mwBg > div:nth-of-type(2) > ul > li:nth-of-type(2) > span > a",
+          "box": {
+            "x": 730.765625,
+            "y": 364.21875,
+            "width": 95.828125,
+            "height": 32
+          }
+        },
+        {
+          "id": "hc9d15218",
+          "kind": "link",
+          "label": "Порталы",
+          "selector": "#mwBg > div:nth-of-type(2) > ul > li:nth-of-type(3) > span > a",
+          "box": {
+            "x": 622.171875,
+            "y": 364.21875,
+            "width": 100.59375,
+            "height": 32
+          }
+        },
+        {
+          "id": "hfa517acf",
+          "kind": "link",
+          "label": "Контакт",
+          "selector": "#main-tfa > h2 > div:nth-of-type(2) > a",
+          "box": {
+            "x": 69,
+            "y": 484.390625,
+            "width": 82.921875,
+            "height": 26
+          }
+        },
+        {
+          "id": "h52ebc312",
+          "kind": "link",
+          "label": "Карл Саган, автор романа «Контакт», 1987 год",
+          "selector": "#main-tfa > div:nth-of-type(1) > figure > a",
+          "box": {
+            "x": 313,
+            "y": 570.46875,
+            "width": 180,
+            "height": 17
+          }
+        },
+        {
+          "id": "h19c0b65b",
+          "kind": "link",
+          "label": "Контакт",
+          "selector": "#main-tfa > div:nth-of-type(1) > p:nth-of-type(1) > b > a",
+          "box": {
+            "x": 77.90625,
+            "y": 523.390625,
+            "width": 61.78125,
+            "height": 17
+          }
+        },
+        {
+          "id": "hf08f2008",
+          "kind": "link",
+          "label": "англ.",
+          "selector": "#main-tfa > div:nth-of-type(1) > p:nth-of-type(1) > a:nth-of-type(1)",
+          "box": {
+            "x": 158.375,
+            "y": 523.390625,
+            "width": 37,
+            "height": 17
+          }
+        },
+        {
+          "id": "h70879ac3",
+          "kind": "link",
+          "label": "научно-фантастический",
+          "selector": "#main-tfa > div:nth-of-type(1) > p:nth-of-type(1) > a:nth-of-type(2)",
+          "box": {
+            "x": 69,
+            "y": 549.390625,
+            "width": 178.28125,
+            "height": 17
+          }
+        },
+        {
+          "id": "hd48a76c6",
+          "kind": "link",
+          "label": "роман",
+          "selector": "#main-tfa > div:nth-of-type(1) > p:nth-of-type(1) > a:nth-of-type(3)",
+          "box": {
+            "x": 251.734375,
+            "y": 549.390625,
+            "width": 46.53125,
+            "height": 17
+          }
+        },
+        {
+          "id": "h54967939",
+          "kind": "link",
+          "label": "Карла Сагана",
+          "selector": "#main-tfa > div:nth-of-type(1) > p:nth-of-type(1) > a:nth-of-type(4)",
+          "box": {
+            "x": 69,
+            "y": 601.390625,
+            "width": 214.640625,
+            "height": 43
+          }
+        },
+        {
+          "id": "h7898f07c",
+          "kind": "link",
+          "label": "Simon & Schuster",
+          "selector": "#main-tfa > div:nth-of-type(1) > p:nth-of-type(1) > a:nth-of-type(5)",
+          "box": {
+            "x": 69,
+            "y": 679.390625,
+            "width": 372.46875,
+            "height": 43
+          }
+        },
+        {
+          "id": "hf3ab8be2",
+          "kind": "link",
+          "label": "Картина «Чашка шоколада»",
+          "selector": "#main-dyk > div:nth-of-type(1) > figure:nth-of-type(1) > a",
+          "box": {
+            "x": 871,
+            "y": 589.625,
+            "width": 120,
+            "height": 17
+          }
+        },
+        {
+          "id": "h42195a0f",
+          "kind": "link",
+          "label": "Чашку шоколада",
+          "selector": "#main-dyk > div:nth-of-type(1) > ul:nth-of-type(1) > li:nth-of-type(1) > b > a",
+          "box": {
+            "x": 701.375,
+            "y": 523.390625,
+            "width": 133.234375,
+            "height": 17
+          }
+        },
+        {
+          "id": "hc150211c",
+          "kind": "link",
+          "label": "выставке",
+          "selector": "#main-dyk > div:nth-of-type(1) > ul:nth-of-type(1) > li:nth-of-type(1) > a:nth-of-type(1)",
+          "box": {
+            "x": 683.421875,
+            "y": 549.390625,
+            "width": 68.625,
+            "height": 17
+          }
+        },
+        {
+          "id": "h21486977",
+          "kind": "link",
+          "label": "автора",
+          "selector": "#main-dyk > div:nth-of-type(1) > ul:nth-of-type(1) > li:nth-of-type(1) > a:nth-of-type(2)",
+          "box": {
+            "x": 756.5,
+            "y": 549.390625,
+            "width": 50.890625,
+            "height": 17
+          }
+        },
+        {
+          "id": "h6e8f8a8",
+          "kind": "link",
+          "label": "короткометражных фильмов",
+          "selector": "#main-dyk > div:nth-of-type(1) > ul:nth-of-type(1) > li:nth-of-type(2) > b > a",
+          "box": {
+            "x": 592.59375,
+            "y": 654.984375,
+            "width": 232.03125,
+            "height": 17
+          }
+        },
+        {
+          "id": "h875ee69d",
+          "kind": "link",
+          "label": "Одна из первых",
+          "selector": "#main-dyk > div:nth-of-type(1) > ul:nth-of-type(1) > li:nth-of-type(3) > b > a",
+          "box": {
+            "x": 592.59375,
+            "y": 734.578125,
+            "width": 128.1875,
+            "height": 17
+          }
+        },
+        {
+          "id": "h1f06f679",
+          "kind": "link",
+          "label": "лепрозории",
+          "selector": "#main-dyk > div:nth-of-type(1) > ul:nth-of-type(1) > li:nth-of-type(3) > a",
+          "box": {
+            "x": 830.25,
+            "y": 760.578125,
+            "width": 87.34375,
+            "height": 17
+          }
+        },
+        {
+          "id": "hd3ee78be",
+          "kind": "link",
+          "label": "чемпионат",
+          "selector": "#main-dyk > div:nth-of-type(1) > ul:nth-of-type(1) > li:nth-of-type(4) > b > a",
+          "box": {
+            "x": 851.5,
+            "y": 788.171875,
+            "width": 85.484375,
+            "height": 17
+          }
+        }
+      ],
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      }
+    },
+    {
+      "id": "s2",
+      "title": "Результаты поиска",
+      "url": "https://ru.wikipedia.org/w/index.php?search=%D0%B8%D0%B7%D0%B2%D0%B5%D1%89%D0%B5%D0%BD%D0%B8%D0%B5+%D0%BE+%D0%B7%D0%B0%D0%BA%D1%83%D0%BF%D0%BA%D0%B5&title=%D0%A1%D0%BB%D1%83%D0%B6%D0%B5%D0%B1%D0%BD%D0%B0%D1%8F:%D0%9F%D0%BE%D0%B8%D1%81%D0%BA&ns0=1",
+      "html": "screens/s2.html",
+      "screenshot": "original/s2.png",
+      "hotspots": [
+        {
+          "id": "hb80d151f",
+          "kind": "clickable",
+          "label": "Главное меню",
+          "selector": "#vector-main-menu-dropdown-checkbox",
+          "box": {
+            "x": 38,
+            "y": 17,
+            "width": 32,
+            "height": 32
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "id": "h71e4de30",
+          "kind": "button",
+          "label": "Move Главное меню to sidebar",
+          "selector": "#vector-main-menu > div:nth-of-type(1) > button:nth-of-type(1)",
+          "box": {
+            "x": 53,
+            "y": 89.484375,
+            "width": 189.8125,
+            "height": 22
+          }
+        },
+        {
+          "id": "h831a1851",
+          "kind": "link",
+          "label": "Заглавная страница",
+          "selector": "#n-mainpage-description a",
+          "box": {
+            "x": 53,
+            "y": 124.484375,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hb15e4faf",
+          "kind": "link",
+          "label": "Содержание",
+          "selector": "#n-content a",
+          "box": {
+            "x": 53,
+            "y": 153.875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h15651926",
+          "kind": "link",
+          "label": "Избранные статьи",
+          "selector": "#n-featured a",
+          "box": {
+            "x": 53,
+            "y": 183.265625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hb4b01a4c",
+          "kind": "link",
+          "label": "Случайная статья",
+          "selector": "#n-randompage a",
+          "box": {
+            "x": 53,
+            "y": 212.65625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hd7d30572",
+          "kind": "link",
+          "label": "Текущие события",
+          "selector": "#n-currentevents a",
+          "box": {
+            "x": 53,
+            "y": 242.046875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h985c1bb5",
+          "kind": "link",
+          "label": "Сообщить об ошибке",
+          "selector": "#n-bug_in_article a",
+          "box": {
+            "x": 53,
+            "y": 311.046875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h1f9ad25c",
+          "kind": "link",
+          "label": "Как править статьи",
+          "selector": "#n-introduction a",
+          "box": {
+            "x": 53,
+            "y": 340.4375,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hbde686be",
+          "kind": "link",
+          "label": "Сообщество",
+          "selector": "#n-portal a",
+          "box": {
+            "x": 53,
+            "y": 369.828125,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h3edf08e7",
+          "kind": "link",
+          "label": "Форум",
+          "selector": "#n-forum a",
+          "box": {
+            "x": 53,
+            "y": 399.21875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h61bf40eb",
+          "kind": "link",
+          "label": "Справка",
+          "selector": "#n-help a",
+          "box": {
+            "x": 53,
+            "y": 428.609375,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h2aac33e",
+          "kind": "link",
+          "label": "Свежие правки",
+          "selector": "#n-recentchanges a",
+          "box": {
+            "x": 53,
+            "y": 458,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h5e263ebe",
+          "kind": "link",
+          "label": "Новые страницы",
+          "selector": "#n-newpages a",
+          "box": {
+            "x": 53,
+            "y": 487.390625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h68f581d1",
+          "kind": "link",
+          "label": "Служебные страницы",
+          "selector": "#n-specialpages a",
+          "box": {
+            "x": 53,
+            "y": 516.78125,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hfd1f363c",
+          "kind": "button",
+          "label": "Установки языка",
+          "selector": "button.uls-settings-trigger",
+          "box": {
+            "x": 237,
+            "y": 558.78125,
+            "width": 16,
+            "height": 16
+          }
+        },
+        {
+          "id": "hc39e3e72",
+          "kind": "link",
+          "label": "a",
+          "selector": "a.mw-logo",
+          "box": {
+            "x": 84,
+            "y": 8,
+            "width": 180,
+            "height": 50
+          }
+        },
+        {
+          "id": "h84b023ce",
+          "kind": "input",
+          "label": "Искать в Википедии",
+          "selector": "#searchInput",
+          "box": {
+            "x": 306,
+            "y": 17,
+            "width": 409.03125,
+            "height": 32
+          },
+          "inputType": "search",
+          "placeholder": "Искать в Википедии"
+        },
+        {
+          "id": "h3b422e0",
+          "kind": "button",
+          "label": "Найти",
+          "selector": "#searchform button",
+          "box": {
+            "x": 714.03125,
+            "y": 17,
+            "width": 65.96875,
+            "height": 32
+          }
+        },
+        {
+          "id": "hb72dfeed",
+          "kind": "link",
+          "label": "Пожертвовать",
+          "selector": "#pt-sitesupport-2 a",
+          "box": {
+            "x": 925.9375,
+            "y": 25,
+            "width": 92.265625,
+            "height": 16
+          }
+        },
+        {
+          "id": "h3e3e09d4",
+          "kind": "link",
+          "label": "Создать учётную запись",
+          "selector": "#pt-createaccount-2 a",
+          "box": {
+            "x": 1026.203125,
+            "y": 25,
+            "width": 158.609375,
+            "height": 16
+          }
+        },
+        {
+          "id": "h5f7d7a5e",
+          "kind": "link",
+          "label": "Войти",
+          "selector": "#pt-login-2 a",
+          "box": {
+            "x": 1192.8125,
+            "y": 25,
+            "width": 39.1875,
+            "height": 16
+          }
+        },
+        {
+          "id": "hb13f4490",
+          "kind": "link",
+          "label": "Ключевые слова",
+          "selector": "#keywords-button > a",
+          "box": {
+            "x": 704.53125,
+            "y": 93.84375,
+            "width": 170.953125,
+            "height": 32
+          }
+        },
+        {
+          "id": "hf24530fa",
+          "kind": "link",
+          "label": "Полная справка",
+          "selector": "a.mw-helplink",
+          "box": {
+            "x": 883.484375,
+            "y": 98.640625,
+            "width": 132.515625,
+            "height": 22.390625
+          }
+        },
+        {
+          "id": "ha94d2d65",
+          "kind": "clickable",
+          "label": "Инструменты",
+          "selector": "#vector-page-tools-dropdown-checkbox",
+          "box": {
+            "x": 992,
+            "y": 129.640625,
+            "width": 32,
+            "height": 32
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "id": "hb7967842",
+          "kind": "button",
+          "label": "Move Инструменты to sidebar",
+          "selector": "#vector-page-tools > div:nth-of-type(1) > button:nth-of-type(1)",
+          "box": {
+            "x": 808,
+            "y": 202.125,
+            "width": 189.8125,
+            "height": 22
+          }
+        },
+        {
+          "id": "h58ba6d3",
+          "kind": "link",
+          "label": "Версия для печати",
+          "selector": "#t-print a",
+          "box": {
+            "x": 808,
+            "y": 272.125,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h16c4e223",
+          "kind": "link",
+          "label": "Получить сокращённый URL",
+          "selector": "#t-urlshortener a",
+          "box": {
+            "x": 808,
+            "y": 301.515625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h49efcc74",
+          "kind": "button",
+          "label": "Hide Внешний вид",
+          "selector": "#vector-appearance > div:nth-of-type(1) > button:nth-of-type(2)",
+          "box": {
+            "x": 1161.578125,
+            "y": 136.84375,
+            "width": 54.296875,
+            "height": 22
+          }
+        },
+        {
+          "id": "h8e5cb9f5",
+          "kind": "clickable",
+          "label": "Мелкий",
+          "selector": "#skin-client-pref-vector-feature-custom-font-size-value-0",
+          "box": {
+            "x": 1056,
+            "y": 214.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "h8d5cb862",
+          "kind": "clickable",
+          "label": "Стандартный",
+          "selector": "#skin-client-pref-vector-feature-custom-font-size-value-1",
+          "box": {
+            "x": 1056,
+            "y": 246.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "h8c5cb6cf",
+          "kind": "clickable",
+          "label": "Крупный",
+          "selector": "#skin-client-pref-vector-feature-custom-font-size-value-2",
+          "box": {
+            "x": 1056,
+            "y": 278.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "hfbb0d9b0",
+          "kind": "clickable",
+          "label": "Стандартно",
+          "selector": "#skin-client-pref-vector-feature-limited-width-value-1",
+          "box": {
+            "x": 1056,
+            "y": 420.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "hfcb0db43",
+          "kind": "clickable",
+          "label": "Широко",
+          "selector": "#skin-client-pref-vector-feature-limited-width-value-0",
+          "box": {
+            "x": 1056,
+            "y": 452.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "h3f88dac2",
+          "kind": "clickable",
+          "label": "Автоматические",
+          "selector": "#skin-client-pref-skin-theme-value-os",
+          "box": {
+            "x": 1056,
+            "y": 531.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "he5ee10d2",
+          "kind": "clickable",
+          "label": "Светлые",
+          "selector": "#skin-client-pref-skin-theme-value-day",
+          "box": {
+            "x": 1056,
+            "y": 563.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "h9928510e",
+          "kind": "clickable",
+          "label": "Тёмные",
+          "selector": "#skin-client-pref-skin-theme-value-night",
+          "box": {
+            "x": 1056,
+            "y": 595.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "h31a869a5",
+          "kind": "input",
+          "label": "Искать в Википедии",
+          "selector": "#ooui-php-1",
+          "box": {
+            "x": 44,
+            "y": 178.640625,
+            "width": 633.03125,
+            "height": 32
+          },
+          "inputType": "search"
+        },
+        {
+          "id": "h68ab6f38",
+          "kind": "button",
+          "label": "Найти",
+          "selector": "button.oo-ui-inputWidget-input",
+          "box": {
+            "x": 676.03125,
+            "y": 178.640625,
+            "width": 67.96875,
+            "height": 32
+          },
+          "inputType": "submit"
+        },
+        {
+          "id": "h870dbfc4",
+          "kind": "link",
+          "label": "Расширенный поиск:",
+          "selector": "#search > div:nth-of-type(4) > div:nth-of-type(1) > span > a",
+          "box": {
+            "x": 44,
+            "y": 217,
+            "width": 700,
+            "height": 33.296875
+          }
+        },
+        {
+          "id": "hc978244d",
+          "kind": "link",
+          "label": "Поиск по:(Основное)",
+          "selector": "#search > div:nth-of-type(4) > div:nth-of-type(2) > span > a",
+          "box": {
+            "x": 44,
+            "y": 254.484375,
+            "width": 700,
+            "height": 34.296875
+          }
+        },
+        {
+          "id": "h6fbe551d",
+          "kind": "link",
+          "label": "Удалить",
+          "selector": "#search > div:nth-of-type(4) > div:nth-of-type(2) > span > a > span:nth-of-type(2) > div > ul > li > span:nth-of-type(2) > a",
+          "box": {
+            "x": 209.1875,
+            "y": 261.78125,
+            "width": 20,
+            "height": 20
+          }
+        },
+        {
+          "id": "h45524729",
+          "kind": "link",
+          "label": "извещение о закупках",
+          "selector": "#mw-search-DYM-suggestion",
+          "box": {
+            "x": 263.671875,
+            "y": 329.234375,
+            "width": 163.6875,
+            "height": 17
+          }
+        },
+        {
+          "id": "h909fc350",
+          "kind": "link",
+          "label": "Извещение о закупке",
+          "selector": "a.new",
+          "box": {
+            "x": 181.578125,
+            "y": 365.296875,
+            "width": 146.625,
+            "height": 16
+          }
+        },
+        {
+          "id": "h1046d1dc",
+          "kind": "link",
+          "label": "страницы, начинающиеся с этого названия",
+          "selector": "#mw-content-text > div:nth-of-type(4) > div:nth-of-type(1) > p > small > a:nth-of-type(1)",
+          "box": {
+            "x": 347.671875,
+            "y": 367.296875,
+            "width": 233.59375,
+            "height": 13
+          }
+        },
+        {
+          "id": "h703f1a37",
+          "kind": "link",
+          "label": "ссылающиеся на это название",
+          "selector": "#mw-content-text > div:nth-of-type(4) > div:nth-of-type(1) > p > small > a:nth-of-type(2)",
+          "box": {
+            "x": 44,
+            "y": 389.296875,
+            "width": 166.921875,
+            "height": 13
+          }
+        },
+        {
+          "id": "hc3000096",
+          "kind": "select",
+          "label": "20 элементов50 элементов100 элементов250 элементов500 элементов",
+          "selector": "#mw-content-text > div:nth-of-type(4) > div:nth-of-type(3) > div > div:nth-of-type(1) > form > select",
+          "box": {
+            "x": 56,
+            "y": 418.296875,
+            "width": 141,
+            "height": 32
+          }
+        },
+        {
+          "id": "hdeae9bb",
+          "kind": "link",
+          "label": "Первая страница",
+          "selector": "#mw-content-text > div:nth-of-type(4) > div:nth-of-type(3) > div > div:nth-of-type(2) > a:nth-of-type(1)",
+          "box": {
+            "x": 900,
+            "y": 418.296875,
+            "width": 32,
+            "height": 32
+          }
+        },
+        {
+          "id": "h6df23ca0",
+          "kind": "link",
+          "label": "Предыдущая страница",
+          "selector": "#mw-content-text > div:nth-of-type(4) > div:nth-of-type(3) > div > div:nth-of-type(2) > a:nth-of-type(2)",
+          "box": {
+            "x": 936,
+            "y": 418.296875,
+            "width": 32,
+            "height": 32
+          }
+        },
+        {
+          "id": "h19ef79cd",
+          "kind": "link",
+          "label": "Следующая страница",
+          "selector": "#mw-content-text > div:nth-of-type(4) > div:nth-of-type(3) > div > div:nth-of-type(2) > a:nth-of-type(3)",
+          "box": {
+            "x": 972,
+            "y": 418.296875,
+            "width": 32,
+            "height": 32
+          }
+        },
+        {
+          "id": "h5a28cfbd",
+          "kind": "link",
+          "label": "Единая информационная система в сфере закупок",
+          "selector": "#mw-content-text > div:nth-of-type(4) > div:nth-of-type(4) > ul > li:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > a",
+          "box": {
+            "x": 44,
+            "y": 530.515625,
+            "width": 92,
+            "height": 17
+          }
+        },
+        {
+          "id": "h3afc0f5a",
+          "kind": "link",
+          "label": "Единая информационная система в сфере закупок",
+          "selector": "#mw-content-text > div:nth-of-type(4) > div:nth-of-type(4) > ul > li:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2) > div:nth-of-type(1) > a",
+          "box": {
+            "x": 148,
+            "y": 498.296875,
+            "width": 380.546875,
+            "height": 17
+          }
+        },
+        {
+          "id": "h98fc35a7",
+          "kind": "button",
+          "label": "Открыть предпросмотр этой статьи.",
+          "selector": "#mw-content-text > div:nth-of-type(4) > div:nth-of-type(4) > ul > li:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(2) > button",
+          "box": {
+            "x": 605,
+            "y": 494.296875,
+            "width": 6,
+            "height": 111.515625
+          },
+          "inputType": "button"
+        },
+        {
+          "id": "h65c2c42a",
+          "kind": "link",
+          "label": "Федеральный закон № 223-ФЗ 2011 года",
+          "selector": "#mw-content-text > div:nth-of-type(4) > div:nth-of-type(4) > ul > li:nth-of-type(2) > div > div:nth-of-type(1) > a",
+          "box": {
+            "x": 44,
+            "y": 666.03125,
+            "width": 92,
+            "height": 17
+          }
+        },
+        {
+          "id": "h39cc2cbf",
+          "kind": "link",
+          "label": "Федеральный закон № 223-ФЗ 2011 года",
+          "selector": "#mw-content-text > div:nth-of-type(4) > div:nth-of-type(4) > ul > li:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(1) > a",
+          "box": {
+            "x": 148,
+            "y": 633.8125,
+            "width": 303.859375,
+            "height": 17
+          }
+        },
+        {
+          "id": "hb23b02a1",
+          "kind": "link",
+          "label": "О закупках товаров, работ, услуг отдельными видами юридических лиц",
+          "selector": "#mw-content-text > div:nth-of-type(4) > div:nth-of-type(4) > ul > li:nth-of-type(2) > div > div:nth-of-type(2) > div:nth-of-type(1) > span > a",
+          "box": {
+            "x": 148,
+            "y": 633.8125,
+            "width": 462.359375,
+            "height": 64.953125
+          }
+        },
+        {
+          "id": "h4c29906",
+          "kind": "button",
+          "label": "Открыть предпросмотр этой статьи.",
+          "selector": "#mw-content-text > div:nth-of-type(4) > div:nth-of-type(4) > ul > li:nth-of-type(2) > div > div:nth-of-type(2) > button",
+          "box": {
+            "x": 605,
+            "y": 629.8125,
+            "width": 6,
+            "height": 159.296875
+          },
+          "inputType": "button"
+        },
+        {
+          "id": "h7fafe386",
+          "kind": "link",
+          "label": "В Викитеке",
+          "selector": "#mw-interwiki-results > ul > li:nth-of-type(1) > div:nth-of-type(1) > a",
+          "box": {
+            "x": 724.359375,
+            "y": 477.65625,
+            "width": 86.84375,
+            "height": 19
+          }
+        },
+        {
+          "id": "hcaac71a1",
+          "kind": "link",
+          "label": "Федеральный закон от 05.04.2013 № 44-ФЗ/Глава 3",
+          "selector": "#mw-interwiki-results > ul > li:nth-of-type(1) > div:nth-of-type(2) > a",
+          "box": {
+            "x": 691.984375,
+            "y": 505.71875,
+            "width": 239.984375,
+            "height": 40.765625
+          }
+        },
+        {
+          "id": "h5124bf37",
+          "kind": "link",
+          "label": "Увидеть все результаты",
+          "selector": "#mw-interwiki-results > ul > li:nth-of-type(1) > div:nth-of-type(4) > a",
+          "box": {
+            "x": 691.984375,
+            "y": 665.9375,
+            "width": 155.203125,
+            "height": 16
+          }
+        },
+        {
+          "id": "h1432f5f3",
+          "kind": "link",
+          "label": "В Викиучебнике",
+          "selector": "#mw-interwiki-results > ul > li:nth-of-type(2) > div:nth-of-type(1) > a",
+          "box": {
+            "x": 724.359375,
+            "y": 716.296875,
+            "width": 124.546875,
+            "height": 19
+          }
+        },
+        {
+          "id": "h15169d4",
+          "kind": "link",
+          "label": "Экономика предприятия/Экономические ресурсы предприятия",
+          "selector": "#mw-interwiki-results > ul > li:nth-of-type(2) > div:nth-of-type(2) > a",
+          "box": {
+            "x": 691.984375,
+            "y": 744.359375,
+            "width": 175.59375,
+            "height": 64.53125
+          }
+        }
+      ],
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      }
+    },
+    {
+      "id": "s3",
+      "title": "Карточка статьи",
+      "url": "https://ru.wikipedia.org/wiki/%D0%95%D0%B4%D0%B8%D0%BD%D0%B0%D1%8F_%D0%B8%D0%BD%D1%84%D0%BE%D1%80%D0%BC%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%BD%D0%B0%D1%8F_%D1%81%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%B0_%D0%B2_%D1%81%D1%84%D0%B5%D1%80%D0%B5_%D0%B7%D0%B0%D0%BA%D1%83%D0%BF%D0%BE%D0%BA",
+      "html": "screens/s3.html",
+      "screenshot": "original/s3.png",
+      "hotspots": [
+        {
+          "id": "hb80d151f",
+          "kind": "clickable",
+          "label": "Главное меню",
+          "selector": "#vector-main-menu-dropdown-checkbox",
+          "box": {
+            "x": 38,
+            "y": 17,
+            "width": 32,
+            "height": 32
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "id": "h71e4de30",
+          "kind": "button",
+          "label": "Move Главное меню to sidebar",
+          "selector": "#vector-main-menu > div:nth-of-type(1) > button:nth-of-type(1)",
+          "box": {
+            "x": 53,
+            "y": 89.484375,
+            "width": 189.8125,
+            "height": 22
+          }
+        },
+        {
+          "id": "h831a1851",
+          "kind": "link",
+          "label": "Заглавная страница",
+          "selector": "#n-mainpage-description a",
+          "box": {
+            "x": 53,
+            "y": 124.484375,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hb15e4faf",
+          "kind": "link",
+          "label": "Содержание",
+          "selector": "#n-content a",
+          "box": {
+            "x": 53,
+            "y": 153.875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h15651926",
+          "kind": "link",
+          "label": "Избранные статьи",
+          "selector": "#n-featured a",
+          "box": {
+            "x": 53,
+            "y": 183.265625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hb4b01a4c",
+          "kind": "link",
+          "label": "Случайная статья",
+          "selector": "#n-randompage a",
+          "box": {
+            "x": 53,
+            "y": 212.65625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hd7d30572",
+          "kind": "link",
+          "label": "Текущие события",
+          "selector": "#n-currentevents a",
+          "box": {
+            "x": 53,
+            "y": 242.046875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "he3dca82b",
+          "kind": "link",
+          "label": "Сообщить об ошибке",
+          "selector": "#n-bug_in_article > a",
+          "box": {
+            "x": 53,
+            "y": 311.046875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h1f9ad25c",
+          "kind": "link",
+          "label": "Как править статьи",
+          "selector": "#n-introduction a",
+          "box": {
+            "x": 53,
+            "y": 340.4375,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hbde686be",
+          "kind": "link",
+          "label": "Сообщество",
+          "selector": "#n-portal a",
+          "box": {
+            "x": 53,
+            "y": 369.828125,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h3edf08e7",
+          "kind": "link",
+          "label": "Форум",
+          "selector": "#n-forum a",
+          "box": {
+            "x": 53,
+            "y": 399.21875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h61bf40eb",
+          "kind": "link",
+          "label": "Справка",
+          "selector": "#n-help a",
+          "box": {
+            "x": 53,
+            "y": 428.609375,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h2aac33e",
+          "kind": "link",
+          "label": "Свежие правки",
+          "selector": "#n-recentchanges a",
+          "box": {
+            "x": 53,
+            "y": 458,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h5e263ebe",
+          "kind": "link",
+          "label": "Новые страницы",
+          "selector": "#n-newpages a",
+          "box": {
+            "x": 53,
+            "y": 487.390625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h68f581d1",
+          "kind": "link",
+          "label": "Служебные страницы",
+          "selector": "#n-specialpages a",
+          "box": {
+            "x": 53,
+            "y": 516.78125,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hfd1f363c",
+          "kind": "button",
+          "label": "Установки языка",
+          "selector": "button.uls-settings-trigger",
+          "box": {
+            "x": 237,
+            "y": 558.78125,
+            "width": 16,
+            "height": 16
+          }
+        },
+        {
+          "id": "h32356172",
+          "kind": "link",
+          "label": "Добавить ссылки",
+          "selector": "#p-lang > div:nth-of-type(2) > div > span:nth-of-type(2) > a",
+          "box": {
+            "x": 53,
+            "y": 585.78125,
+            "width": 111.953125,
+            "height": 16
+          }
+        },
+        {
+          "id": "hc39e3e72",
+          "kind": "link",
+          "label": "a",
+          "selector": "a.mw-logo",
+          "box": {
+            "x": 84,
+            "y": 8,
+            "width": 180,
+            "height": 50
+          }
+        },
+        {
+          "id": "h84b023ce",
+          "kind": "input",
+          "label": "Искать в Википедии",
+          "selector": "#searchInput",
+          "box": {
+            "x": 306,
+            "y": 17,
+            "width": 409.03125,
+            "height": 32
+          },
+          "inputType": "search",
+          "placeholder": "Искать в Википедии"
+        },
+        {
+          "id": "h3b422e0",
+          "kind": "button",
+          "label": "Найти",
+          "selector": "#searchform button",
+          "box": {
+            "x": 714.03125,
+            "y": 17,
+            "width": 65.96875,
+            "height": 32
+          }
+        },
+        {
+          "id": "hb72dfeed",
+          "kind": "link",
+          "label": "Пожертвовать",
+          "selector": "#pt-sitesupport-2 a",
+          "box": {
+            "x": 925.9375,
+            "y": 25,
+            "width": 92.265625,
+            "height": 16
+          }
+        },
+        {
+          "id": "h3e3e09d4",
+          "kind": "link",
+          "label": "Создать учётную запись",
+          "selector": "#pt-createaccount-2 a",
+          "box": {
+            "x": 1026.203125,
+            "y": 25,
+            "width": 158.609375,
+            "height": 16
+          }
+        },
+        {
+          "id": "h5f7d7a5e",
+          "kind": "link",
+          "label": "Войти",
+          "selector": "#pt-login-2 a",
+          "box": {
+            "x": 1192.8125,
+            "y": 25,
+            "width": 39.1875,
+            "height": 16
+          }
+        },
+        {
+          "id": "h436b1b6b",
+          "kind": "link",
+          "label": "Photograph a historic site, help Wikipedia, and win a prize. Participate in the world's largest photography competition this month! узнать б",
+          "selector": "#banner1",
+          "box": {
+            "x": 60,
+            "y": 106.046875,
+            "width": 1160,
+            "height": 91
+          }
+        },
+        {
+          "id": "h5ff44bc3",
+          "kind": "button",
+          "label": "Hide Содержание",
+          "selector": "#vector-toc > div > button:nth-of-type(2)",
+          "box": {
+            "x": 158.140625,
+            "y": 283.84375,
+            "width": 54.296875,
+            "height": 22
+          }
+        },
+        {
+          "id": "hab85ee6a",
+          "kind": "link",
+          "label": "Начало",
+          "selector": "#toc-mw-content-text a",
+          "box": {
+            "x": 60,
+            "y": 319.328125,
+            "width": 164,
+            "height": 28
+          }
+        },
+        {
+          "id": "h65bcd521",
+          "kind": "link",
+          "label": "1 История",
+          "selector": "#mw-panel-toc-list > li:nth-of-type(2) > a",
+          "box": {
+            "x": 60,
+            "y": 347.328125,
+            "width": 164,
+            "height": 28
+          }
+        },
+        {
+          "id": "h1459e44",
+          "kind": "link",
+          "label": "2 Информация, размещаемая в Единой информационной системе",
+          "selector": "#mw-panel-toc-list > li:nth-of-type(3) > a",
+          "box": {
+            "x": 60,
+            "y": 375.328125,
+            "width": 164,
+            "height": 76
+          }
+        },
+        {
+          "id": "hec3522b7",
+          "kind": "link",
+          "label": "3 Критика",
+          "selector": "#mw-panel-toc-list > li:nth-of-type(4) > a",
+          "box": {
+            "x": 60,
+            "y": 451.328125,
+            "width": 164,
+            "height": 28
+          }
+        },
+        {
+          "id": "h9ded295a",
+          "kind": "link",
+          "label": "4 Награды",
+          "selector": "#mw-panel-toc-list > li:nth-of-type(5) > a",
+          "box": {
+            "x": 60,
+            "y": 479.328125,
+            "width": 164,
+            "height": 28
+          }
+        },
+        {
+          "id": "hb8682e55",
+          "kind": "link",
+          "label": "5 Примечания",
+          "selector": "#mw-panel-toc-list > li:nth-of-type(6) > a",
+          "box": {
+            "x": 60,
+            "y": 507.328125,
+            "width": 164,
+            "height": 28
+          }
+        },
+        {
+          "id": "hf162d368",
+          "kind": "link",
+          "label": "6 Ссылки",
+          "selector": "#mw-panel-toc-list > li:nth-of-type(7) > a",
+          "box": {
+            "x": 60,
+            "y": 535.328125,
+            "width": 164,
+            "height": 28
+          }
+        },
+        {
+          "id": "h428e60d2",
+          "kind": "clickable",
+          "label": "Добавить языки",
+          "selector": "#p-lang-btn-checkbox",
+          "box": {
+            "x": 845.59375,
+            "y": 260.640625,
+            "width": 182.40625,
+            "height": 32
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "id": "hf7f1ea4e",
+          "kind": "tab",
+          "label": "Статья",
+          "selector": "#ca-nstab-main a",
+          "box": {
+            "x": 264,
+            "y": 316.234375,
+            "width": 45.140625,
+            "height": 32
+          }
+        },
+        {
+          "id": "h2eedfc50",
+          "kind": "tab",
+          "label": "Обсуждение",
+          "selector": "#ca-talk a",
+          "box": {
+            "x": 325.140625,
+            "y": 316.234375,
+            "width": 81.578125,
+            "height": 32
+          }
+        },
+        {
+          "id": "h6d35909f",
+          "kind": "tab",
+          "label": "Читать",
+          "selector": "#ca-view a",
+          "box": {
+            "x": 702.078125,
+            "y": 316.234375,
+            "width": 44.59375,
+            "height": 32
+          }
+        },
+        {
+          "id": "hfac14e40",
+          "kind": "tab",
+          "label": "Править",
+          "selector": "#ca-ve-edit a",
+          "box": {
+            "x": 762.671875,
+            "y": 316.234375,
+            "width": 54.609375,
+            "height": 32
+          }
+        },
+        {
+          "id": "h3afe65da",
+          "kind": "tab",
+          "label": "Править код",
+          "selector": "#ca-edit a",
+          "box": {
+            "x": 833.28125,
+            "y": 316.234375,
+            "width": 80.421875,
+            "height": 32
+          }
+        },
+        {
+          "id": "h4e467a38",
+          "kind": "tab",
+          "label": "История",
+          "selector": "#ca-history a",
+          "box": {
+            "x": 929.703125,
+            "y": 316.234375,
+            "width": 54.296875,
+            "height": 32
+          }
+        },
+        {
+          "id": "ha94d2d65",
+          "kind": "clickable",
+          "label": "Инструменты",
+          "selector": "#vector-page-tools-dropdown-checkbox",
+          "box": {
+            "x": 992,
+            "y": 316.234375,
+            "width": 32,
+            "height": 32
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "id": "hb7967842",
+          "kind": "button",
+          "label": "Move Инструменты to sidebar",
+          "selector": "#vector-page-tools > div:nth-of-type(1) > button:nth-of-type(1)",
+          "box": {
+            "x": 808,
+            "y": 388.71875,
+            "width": 189.8125,
+            "height": 22
+          }
+        },
+        {
+          "id": "hf1f03249",
+          "kind": "link",
+          "label": "Ссылки сюда",
+          "selector": "#t-whatlinkshere a",
+          "box": {
+            "x": 808,
+            "y": 458.71875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hb86aaae9",
+          "kind": "link",
+          "label": "Связанные правки",
+          "selector": "#t-recentchangeslinked a",
+          "box": {
+            "x": 808,
+            "y": 488.109375,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h9473aa41",
+          "kind": "link",
+          "label": "Постоянная ссылка",
+          "selector": "#t-permalink a",
+          "box": {
+            "x": 808,
+            "y": 517.5,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "ha3e61e92",
+          "kind": "link",
+          "label": "Сведения о странице",
+          "selector": "#t-info a",
+          "box": {
+            "x": 808,
+            "y": 546.890625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h390a8339",
+          "kind": "link",
+          "label": "Цитировать страницу",
+          "selector": "#t-cite a",
+          "box": {
+            "x": 808,
+            "y": 576.28125,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h16c4e223",
+          "kind": "link",
+          "label": "Получить сокращённый URL",
+          "selector": "#t-urlshortener a",
+          "box": {
+            "x": 808,
+            "y": 605.671875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hf59ad10f",
+          "kind": "link",
+          "label": "Переключиться на устаревший парсер",
+          "selector": "#parsermigration-switch-to-legacy a",
+          "box": {
+            "x": 808,
+            "y": 635.0625,
+            "width": 200,
+            "height": 44
+          }
+        },
+        {
+          "id": "h97cd0927",
+          "kind": "link",
+          "label": "Добавить ссылки на другие языки",
+          "selector": "#wbc-editpage a",
+          "box": {
+            "x": 808,
+            "y": 709.84375,
+            "width": 200,
+            "height": 44
+          }
+        },
+        {
+          "id": "h178070a0",
+          "kind": "link",
+          "label": "Скачать как PDF",
+          "selector": "#coll-download-as-rl a",
+          "box": {
+            "x": 808,
+            "y": 794.84375,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h49efcc74",
+          "kind": "button",
+          "label": "Hide Внешний вид",
+          "selector": "#vector-appearance > div:nth-of-type(1) > button:nth-of-type(2)",
+          "box": {
+            "x": 1161.578125,
+            "y": 283.84375,
+            "width": 54.296875,
+            "height": 22
+          }
+        },
+        {
+          "id": "h8e5cb9f5",
+          "kind": "clickable",
+          "label": "Мелкий",
+          "selector": "#skin-client-pref-vector-feature-custom-font-size-value-0",
+          "box": {
+            "x": 1056,
+            "y": 361.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "h8d5cb862",
+          "kind": "clickable",
+          "label": "Стандартный",
+          "selector": "#skin-client-pref-vector-feature-custom-font-size-value-1",
+          "box": {
+            "x": 1056,
+            "y": 393.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "h8c5cb6cf",
+          "kind": "clickable",
+          "label": "Крупный",
+          "selector": "#skin-client-pref-vector-feature-custom-font-size-value-2",
+          "box": {
+            "x": 1056,
+            "y": 425.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "hfbb0d9b0",
+          "kind": "clickable",
+          "label": "Стандартно",
+          "selector": "#skin-client-pref-vector-feature-limited-width-value-1",
+          "box": {
+            "x": 1056,
+            "y": 504.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "hfcb0db43",
+          "kind": "clickable",
+          "label": "Широко",
+          "selector": "#skin-client-pref-vector-feature-limited-width-value-0",
+          "box": {
+            "x": 1056,
+            "y": 536.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "h3f88dac2",
+          "kind": "clickable",
+          "label": "Автоматические",
+          "selector": "#skin-client-pref-skin-theme-value-os",
+          "box": {
+            "x": 1056,
+            "y": 615.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "he5ee10d2",
+          "kind": "clickable",
+          "label": "Светлые",
+          "selector": "#skin-client-pref-skin-theme-value-day",
+          "box": {
+            "x": 1056,
+            "y": 647.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "h9928510e",
+          "kind": "clickable",
+          "label": "Тёмные",
+          "selector": "#skin-client-pref-skin-theme-value-night",
+          "box": {
+            "x": 1056,
+            "y": 679.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "hfb420866",
+          "kind": "link",
+          "label": "править код",
+          "selector": "#bodyContent > div:nth-of-type(1) > div:nth-of-type(1) > span > a",
+          "box": {
+            "x": 929.875,
+            "y": 360.234375,
+            "width": 86.125,
+            "height": 13
+          }
+        },
+        {
+          "id": "h96622d84",
+          "kind": "link",
+          "label": "a",
+          "selector": "a.mw-file-description",
+          "box": {
+            "x": 813.90625,
+            "y": 483.71875,
+            "width": 73,
+            "height": 16
+          }
+        },
+        {
+          "id": "h7a4aedb2",
+          "kind": "link",
+          "label": "URL",
+          "selector": "#mwAg > tbody > tr:nth-of-type(3) > th > a",
+          "box": {
+            "x": 694.5625,
+            "y": 538.921875,
+            "width": 29.578125,
+            "height": 16
+          }
+        },
+        {
+          "id": "hf3e1ee3e",
+          "kind": "link",
+          "label": "zakupki.gov.ru",
+          "selector": "#mwAg > tbody > tr:nth-of-type(3) > td > span > a",
+          "box": {
+            "x": 826.234375,
+            "y": 538.921875,
+            "width": 106.109375,
+            "height": 16
+          }
+        },
+        {
+          "id": "hd0a56678",
+          "kind": "link",
+          "label": "государственных закупок",
+          "selector": "#mwAg > tbody > tr:nth-of-type(5) > td > span > a",
+          "box": {
+            "x": 826.234375,
+            "y": 590.109375,
+            "width": 164.28125,
+            "height": 37.59375
+          }
+        },
+        {
+          "id": "h93e5cbe2",
+          "kind": "link",
+          "label": "русский",
+          "selector": "#mwAg > tbody > tr:nth-of-type(7) > td > span > a",
+          "box": {
+            "x": 826.234375,
+            "y": 749.265625,
+            "width": 51.640625,
+            "height": 16
+          }
+        },
+        {
+          "id": "hc897af98",
+          "kind": "link",
+          "label": "заказчиков",
+          "selector": "#mwAg > tbody > tr:nth-of-type(8) > td > a:nth-of-type(1)",
+          "box": {
+            "x": 826.234375,
+            "y": 797.25,
+            "width": 72.828125,
+            "height": 16
+          }
+        },
+        {
+          "id": "h1e0ef43e",
+          "kind": "link",
+          "label": "[1]",
+          "selector": "#mwAw",
+          "box": {
+            "x": 899.0625,
+            "y": 793.453125,
+            "width": 13.625,
+            "height": 14
+          }
+        },
+        {
+          "id": "h403925d",
+          "kind": "link",
+          "label": "государственных закупок",
+          "selector": "#mwDQ",
+          "box": {
+            "x": 462.921875,
+            "y": 451.984375,
+            "width": 187.125,
+            "height": 17
+          }
+        },
+        {
+          "id": "h2e03d47b",
+          "kind": "link",
+          "label": "России",
+          "selector": "#mwDg",
+          "box": {
+            "x": 264,
+            "y": 477.984375,
+            "width": 52.75,
+            "height": 17
+          }
+        },
+        {
+          "id": "h1e03bb4b",
+          "kind": "link",
+          "label": "№ 44-ФЗ",
+          "selector": "#mwDw",
+          "box": {
+            "x": 586.890625,
+            "y": 503.984375,
+            "width": 66.5625,
+            "height": 17
+          }
+        },
+        {
+          "id": "h380622d0",
+          "kind": "link",
+          "label": "№ 223-ФЗ",
+          "selector": "#mwEA",
+          "box": {
+            "x": 264,
+            "y": 529.984375,
+            "width": 75.46875,
+            "height": 17
+          }
+        },
+        {
+          "id": "h280609a0",
+          "kind": "link",
+          "label": "торгах",
+          "selector": "#mwEQ",
+          "box": {
+            "x": 437.53125,
+            "y": 555.984375,
+            "width": 47.328125,
+            "height": 17
+          }
+        },
+        {
+          "id": "h1e05f9e2",
+          "kind": "link",
+          "label": "коррупции",
+          "selector": "#mwEg",
+          "box": {
+            "x": 264,
+            "y": 581.984375,
+            "width": 77.40625,
+            "height": 17
+          }
+        }
+      ],
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      }
+    },
+    {
+      "id": "s4",
+      "title": "Вкладка «Обсуждение»",
+      "url": "https://ru.wikipedia.org/wiki/%D0%9E%D0%B1%D1%81%D1%83%D0%B6%D0%B4%D0%B5%D0%BD%D0%B8%D0%B5:%D0%95%D0%B4%D0%B8%D0%BD%D0%B0%D1%8F_%D0%B8%D0%BD%D1%84%D0%BE%D1%80%D0%BC%D0%B0%D1%86%D0%B8%D0%BE%D0%BD%D0%BD%D0%B0%D1%8F_%D1%81%D0%B8%D1%81%D1%82%D0%B5%D0%BC%D0%B0_%D0%B2_%D1%81%D1%84%D0%B5%D1%80%D0%B5_%D0%B7%D0%B0%D0%BA%D1%83%D0%BF%D0%BE%D0%BA",
+      "html": "screens/s4.html",
+      "screenshot": "original/s4.png",
+      "hotspots": [
+        {
+          "id": "hb80d151f",
+          "kind": "clickable",
+          "label": "Главное меню",
+          "selector": "#vector-main-menu-dropdown-checkbox",
+          "box": {
+            "x": 38,
+            "y": 17,
+            "width": 32,
+            "height": 32
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "id": "h71e4de30",
+          "kind": "button",
+          "label": "Move Главное меню to sidebar",
+          "selector": "#vector-main-menu > div:nth-of-type(1) > button:nth-of-type(1)",
+          "box": {
+            "x": 53,
+            "y": 89.484375,
+            "width": 189.8125,
+            "height": 22
+          }
+        },
+        {
+          "id": "h831a1851",
+          "kind": "link",
+          "label": "Заглавная страница",
+          "selector": "#n-mainpage-description a",
+          "box": {
+            "x": 53,
+            "y": 124.484375,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hb15e4faf",
+          "kind": "link",
+          "label": "Содержание",
+          "selector": "#n-content a",
+          "box": {
+            "x": 53,
+            "y": 153.875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h15651926",
+          "kind": "link",
+          "label": "Избранные статьи",
+          "selector": "#n-featured a",
+          "box": {
+            "x": 53,
+            "y": 183.265625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hb4b01a4c",
+          "kind": "link",
+          "label": "Случайная статья",
+          "selector": "#n-randompage a",
+          "box": {
+            "x": 53,
+            "y": 212.65625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hd7d30572",
+          "kind": "link",
+          "label": "Текущие события",
+          "selector": "#n-currentevents a",
+          "box": {
+            "x": 53,
+            "y": 242.046875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "he3dca82b",
+          "kind": "link",
+          "label": "Сообщить об ошибке",
+          "selector": "#n-bug_in_article > a",
+          "box": {
+            "x": 53,
+            "y": 311.046875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h1f9ad25c",
+          "kind": "link",
+          "label": "Как править статьи",
+          "selector": "#n-introduction a",
+          "box": {
+            "x": 53,
+            "y": 340.4375,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hbde686be",
+          "kind": "link",
+          "label": "Сообщество",
+          "selector": "#n-portal a",
+          "box": {
+            "x": 53,
+            "y": 369.828125,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h3edf08e7",
+          "kind": "link",
+          "label": "Форум",
+          "selector": "#n-forum a",
+          "box": {
+            "x": 53,
+            "y": 399.21875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h61bf40eb",
+          "kind": "link",
+          "label": "Справка",
+          "selector": "#n-help a",
+          "box": {
+            "x": 53,
+            "y": 428.609375,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h2aac33e",
+          "kind": "link",
+          "label": "Свежие правки",
+          "selector": "#n-recentchanges a",
+          "box": {
+            "x": 53,
+            "y": 458,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h5e263ebe",
+          "kind": "link",
+          "label": "Новые страницы",
+          "selector": "#n-newpages a",
+          "box": {
+            "x": 53,
+            "y": 487.390625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h68f581d1",
+          "kind": "link",
+          "label": "Служебные страницы",
+          "selector": "#n-specialpages a",
+          "box": {
+            "x": 53,
+            "y": 516.78125,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hfd1f363c",
+          "kind": "button",
+          "label": "Установки языка",
+          "selector": "button.uls-settings-trigger",
+          "box": {
+            "x": 237,
+            "y": 558.78125,
+            "width": 16,
+            "height": 16
+          }
+        },
+        {
+          "id": "hc39e3e72",
+          "kind": "link",
+          "label": "a",
+          "selector": "a.mw-logo",
+          "box": {
+            "x": 84,
+            "y": 8,
+            "width": 180,
+            "height": 50
+          }
+        },
+        {
+          "id": "h84b023ce",
+          "kind": "input",
+          "label": "Искать в Википедии",
+          "selector": "#searchInput",
+          "box": {
+            "x": 306,
+            "y": 17,
+            "width": 409.03125,
+            "height": 32
+          },
+          "inputType": "search",
+          "placeholder": "Искать в Википедии"
+        },
+        {
+          "id": "h3b422e0",
+          "kind": "button",
+          "label": "Найти",
+          "selector": "#searchform button",
+          "box": {
+            "x": 714.03125,
+            "y": 17,
+            "width": 65.96875,
+            "height": 32
+          }
+        },
+        {
+          "id": "hb72dfeed",
+          "kind": "link",
+          "label": "Пожертвовать",
+          "selector": "#pt-sitesupport-2 a",
+          "box": {
+            "x": 925.9375,
+            "y": 25,
+            "width": 92.265625,
+            "height": 16
+          }
+        },
+        {
+          "id": "h3e3e09d4",
+          "kind": "link",
+          "label": "Создать учётную запись",
+          "selector": "#pt-createaccount-2 a",
+          "box": {
+            "x": 1026.203125,
+            "y": 25,
+            "width": 158.609375,
+            "height": 16
+          }
+        },
+        {
+          "id": "h5f7d7a5e",
+          "kind": "link",
+          "label": "Войти",
+          "selector": "#pt-login-2 a",
+          "box": {
+            "x": 1192.8125,
+            "y": 25,
+            "width": 39.1875,
+            "height": 16
+          }
+        },
+        {
+          "id": "h436b1b6b",
+          "kind": "link",
+          "label": "Photograph a historic site, help Wikipedia, and win a prize. Participate in the world's largest photography competition this month! узнать б",
+          "selector": "#banner1",
+          "box": {
+            "x": 60,
+            "y": 106.046875,
+            "width": 1160,
+            "height": 91
+          }
+        },
+        {
+          "id": "h5ff44bc3",
+          "kind": "button",
+          "label": "Hide Содержание",
+          "selector": "#vector-toc > div > button:nth-of-type(2)",
+          "box": {
+            "x": 158.140625,
+            "y": 283.84375,
+            "width": 54.296875,
+            "height": 22
+          }
+        },
+        {
+          "id": "hab85ee6a",
+          "kind": "link",
+          "label": "Начало",
+          "selector": "#toc-mw-content-text a",
+          "box": {
+            "x": 60,
+            "y": 319.328125,
+            "width": 164,
+            "height": 28
+          }
+        },
+        {
+          "id": "h65bcd521",
+          "kind": "link",
+          "label": "1 Почему не проверяется статья.",
+          "selector": "#mw-panel-toc-list > li:nth-of-type(2) > a",
+          "box": {
+            "x": 60,
+            "y": 347.328125,
+            "width": 164,
+            "height": 44
+          }
+        },
+        {
+          "id": "h1459e44",
+          "kind": "link",
+          "label": "2 Почему не проверяется статья.",
+          "selector": "#mw-panel-toc-list > li:nth-of-type(3) > a",
+          "box": {
+            "x": 60,
+            "y": 413.328125,
+            "width": 164,
+            "height": 44
+          }
+        },
+        {
+          "id": "hec3522b7",
+          "kind": "link",
+          "label": "3 Почему статья предлагается к удалению?",
+          "selector": "#mw-panel-toc-list > li:nth-of-type(4) > a",
+          "box": {
+            "x": 60,
+            "y": 479.328125,
+            "width": 164,
+            "height": 60
+          }
+        },
+        {
+          "id": "h428e60d2",
+          "kind": "clickable",
+          "label": "Добавить языки",
+          "selector": "#p-lang-btn-checkbox",
+          "box": {
+            "x": 833.875,
+            "y": 260.640625,
+            "width": 40,
+            "height": 32
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "id": "ha9ba27bf",
+          "kind": "link",
+          "label": "Добавить тему",
+          "selector": "#ca-addsection",
+          "box": {
+            "x": 873.875,
+            "y": 260.640625,
+            "width": 154.125,
+            "height": 32
+          }
+        },
+        {
+          "id": "hf7f1ea4e",
+          "kind": "tab",
+          "label": "Статья",
+          "selector": "#ca-nstab-main a",
+          "box": {
+            "x": 264,
+            "y": 316.234375,
+            "width": 45.140625,
+            "height": 32
+          }
+        },
+        {
+          "id": "h2eedfc50",
+          "kind": "tab",
+          "label": "Обсуждение",
+          "selector": "#ca-talk a",
+          "box": {
+            "x": 325.140625,
+            "y": 316.234375,
+            "width": 81.578125,
+            "height": 32
+          }
+        },
+        {
+          "id": "h6d35909f",
+          "kind": "tab",
+          "label": "Читать",
+          "selector": "#ca-view a",
+          "box": {
+            "x": 772.6875,
+            "y": 316.234375,
+            "width": 44.59375,
+            "height": 32
+          }
+        },
+        {
+          "id": "h3afe65da",
+          "kind": "tab",
+          "label": "Править код",
+          "selector": "#ca-edit a",
+          "box": {
+            "x": 833.28125,
+            "y": 316.234375,
+            "width": 80.421875,
+            "height": 32
+          }
+        },
+        {
+          "id": "h4e467a38",
+          "kind": "tab",
+          "label": "История",
+          "selector": "#ca-history a",
+          "box": {
+            "x": 929.703125,
+            "y": 316.234375,
+            "width": 54.296875,
+            "height": 32
+          }
+        },
+        {
+          "id": "ha94d2d65",
+          "kind": "clickable",
+          "label": "Инструменты",
+          "selector": "#vector-page-tools-dropdown-checkbox",
+          "box": {
+            "x": 992,
+            "y": 316.234375,
+            "width": 32,
+            "height": 32
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "id": "hb7967842",
+          "kind": "button",
+          "label": "Move Инструменты to sidebar",
+          "selector": "#vector-page-tools > div:nth-of-type(1) > button:nth-of-type(1)",
+          "box": {
+            "x": 808,
+            "y": 388.71875,
+            "width": 189.8125,
+            "height": 22
+          }
+        },
+        {
+          "id": "hf1f03249",
+          "kind": "link",
+          "label": "Ссылки сюда",
+          "selector": "#t-whatlinkshere a",
+          "box": {
+            "x": 808,
+            "y": 458.71875,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hb86aaae9",
+          "kind": "link",
+          "label": "Связанные правки",
+          "selector": "#t-recentchangeslinked a",
+          "box": {
+            "x": 808,
+            "y": 488.109375,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h9473aa41",
+          "kind": "link",
+          "label": "Постоянная ссылка",
+          "selector": "#t-permalink a",
+          "box": {
+            "x": 808,
+            "y": 517.5,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "ha3e61e92",
+          "kind": "link",
+          "label": "Сведения о странице",
+          "selector": "#t-info a",
+          "box": {
+            "x": 808,
+            "y": 546.890625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h16c4e223",
+          "kind": "link",
+          "label": "Получить сокращённый URL",
+          "selector": "#t-urlshortener a",
+          "box": {
+            "x": 808,
+            "y": 576.28125,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "hf59ad10f",
+          "kind": "link",
+          "label": "Переключиться на устаревший парсер",
+          "selector": "#parsermigration-switch-to-legacy a",
+          "box": {
+            "x": 808,
+            "y": 605.671875,
+            "width": 200,
+            "height": 44
+          }
+        },
+        {
+          "id": "h178070a0",
+          "kind": "link",
+          "label": "Скачать как PDF",
+          "selector": "#coll-download-as-rl a",
+          "box": {
+            "x": 808,
+            "y": 720.0625,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h58ba6d3",
+          "kind": "link",
+          "label": "Версия для печати",
+          "selector": "#t-print a",
+          "box": {
+            "x": 808,
+            "y": 749.453125,
+            "width": 200,
+            "height": 28
+          }
+        },
+        {
+          "id": "h49efcc74",
+          "kind": "button",
+          "label": "Hide Внешний вид",
+          "selector": "#vector-appearance > div:nth-of-type(1) > button:nth-of-type(2)",
+          "box": {
+            "x": 1161.578125,
+            "y": 283.84375,
+            "width": 54.296875,
+            "height": 22
+          }
+        },
+        {
+          "id": "h8e5cb9f5",
+          "kind": "clickable",
+          "label": "Мелкий",
+          "selector": "#skin-client-pref-vector-feature-custom-font-size-value-0",
+          "box": {
+            "x": 1056,
+            "y": 361.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "h8d5cb862",
+          "kind": "clickable",
+          "label": "Стандартный",
+          "selector": "#skin-client-pref-vector-feature-custom-font-size-value-1",
+          "box": {
+            "x": 1056,
+            "y": 393.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "h8c5cb6cf",
+          "kind": "clickable",
+          "label": "Крупный",
+          "selector": "#skin-client-pref-vector-feature-custom-font-size-value-2",
+          "box": {
+            "x": 1056,
+            "y": 425.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "hfbb0d9b0",
+          "kind": "clickable",
+          "label": "Стандартно",
+          "selector": "#skin-client-pref-vector-feature-limited-width-value-1",
+          "box": {
+            "x": 1056,
+            "y": 504.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "hfcb0db43",
+          "kind": "clickable",
+          "label": "Широко",
+          "selector": "#skin-client-pref-vector-feature-limited-width-value-0",
+          "box": {
+            "x": 1056,
+            "y": 536.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "h3f88dac2",
+          "kind": "clickable",
+          "label": "Автоматические",
+          "selector": "#skin-client-pref-skin-theme-value-os",
+          "box": {
+            "x": 1056,
+            "y": 615.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "he5ee10d2",
+          "kind": "clickable",
+          "label": "Светлые",
+          "selector": "#skin-client-pref-skin-theme-value-day",
+          "box": {
+            "x": 1056,
+            "y": 647.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "h9928510e",
+          "kind": "clickable",
+          "label": "Тёмные",
+          "selector": "#skin-client-pref-skin-theme-value-night",
+          "box": {
+            "x": 1056,
+            "y": 679.328125,
+            "width": 20,
+            "height": 20
+          },
+          "inputType": "radio"
+        },
+        {
+          "id": "hfb420866",
+          "kind": "link",
+          "label": "править код",
+          "selector": "#bodyContent > div:nth-of-type(1) > div:nth-of-type(1) > span > a",
+          "box": {
+            "x": 929.875,
+            "y": 360.234375,
+            "width": 86.125,
+            "height": 13
+          }
+        },
+        {
+          "id": "hf4b64cd6",
+          "kind": "link",
+          "label": "6 лет назад",
+          "selector": "#mw-content-subtitle > div > a:nth-of-type(1)",
+          "box": {
+            "x": 420.875,
+            "y": 390.984375,
+            "width": 75.203125,
+            "height": 16
+          }
+        },
+        {
+          "id": "h5cb92f25",
+          "kind": "link",
+          "label": "Почему статья предлагается к удалению?",
+          "selector": "#mw-content-subtitle > div > a:nth-of-type(2)",
+          "box": {
+            "x": 641.453125,
+            "y": 390.984375,
+            "width": 273.109375,
+            "height": 16
+          }
+        },
+        {
+          "id": "hdfb5e86",
+          "kind": "link",
+          "label": "править код",
+          "selector": "#mwAw > div > span > a",
+          "box": {
+            "x": 651.3125,
+            "y": 513.734375,
+            "width": 86.125,
+            "height": 13
+          }
+        },
+        {
+          "id": "hfb14626",
+          "kind": "link",
+          "label": "6 лет назад",
+          "selector": "#mwAw > div > div > div:nth-of-type(1) > span:nth-of-type(1) > a",
+          "box": {
+            "x": 420.875,
+            "y": 540.734375,
+            "width": 75.203125,
+            "height": 16
+          }
+        },
+        {
+          "id": "he081f49",
+          "kind": "link",
+          "label": "ВП:Шпаргалка",
+          "selector": "#mwBw",
+          "box": {
+            "x": 628.375,
+            "y": 615.984375,
+            "width": 107.71875,
+            "height": 17
+          }
+        },
+        {
+          "id": "h40a4e22",
+          "kind": "link",
+          "label": "AJZ",
+          "selector": "#mwCA",
+          "box": {
+            "x": 744.984375,
+            "y": 615.984375,
+            "width": 28.453125,
+            "height": 17
+          }
+        },
+        {
+          "id": "hbd755a07",
+          "kind": "link",
+          "label": "12:46, 23 января 2020 (UTC)",
+          "selector": "#mwBg > a:nth-of-type(3)",
+          "box": {
+            "x": 777.890625,
+            "y": 615.984375,
+            "width": 211.296875,
+            "height": 17
+          }
+        },
+        {
+          "id": "h1066759a",
+          "kind": "link",
+          "label": "Ответить",
+          "selector": "#ooui-php-1 a",
+          "box": {
+            "x": 282.59375,
+            "y": 635.75,
+            "width": 78.703125,
+            "height": 32
+          }
+        },
+        {
+          "id": "h95b2c39f",
+          "kind": "link",
+          "label": "a",
+          "selector": "#ooui-php-2 a",
+          "box": {
+            "x": 361.296875,
+            "y": 635.75,
+            "width": 36.28125,
+            "height": 32
+          }
+        },
+        {
+          "id": "hbfdd5622",
+          "kind": "link",
+          "label": "править код",
+          "selector": "#mwCQ > div > span > a",
+          "box": {
+            "x": 651.3125,
+            "y": 724.984375,
+            "width": 86.125,
+            "height": 13
+          }
+        },
+        {
+          "id": "h10cbf12",
+          "kind": "link",
+          "label": "6 лет назад",
+          "selector": "#mwCQ > div > div > div:nth-of-type(1) > span:nth-of-type(1) > a",
+          "box": {
+            "x": 420.875,
+            "y": 751.984375,
+            "width": 75.203125,
+            "height": 16
+          }
+        }
+      ],
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      }
+    }
+  ],
+  "steps": [
+    {
+      "id": "step-1",
+      "index": 0,
+      "screenId": "s1",
+      "action": "input",
+      "hotspotId": "h84b023ce",
+      "expectedValue": "извещение о закупке",
+      "confirm": "match",
+      "nextScreenId": null,
+      "instruction": "На экране «Главная» введите «извещение о закупке» в поле «Искать в Википедии».",
+      "hint": "",
+      "errorText": ""
+    },
+    {
+      "id": "step-2",
+      "index": 1,
+      "screenId": "s1",
+      "action": "click",
+      "hotspotId": "h3b422e0",
+      "expectedValue": "",
+      "confirm": null,
+      "nextScreenId": "s2",
+      "instruction": "На экране «Главная» нажмите «Найти». Откроется экран «Результаты поиска».",
+      "hint": "",
+      "errorText": ""
+    },
+    {
+      "id": "step-3",
+      "index": 2,
+      "screenId": "s2",
+      "action": "click",
+      "hotspotId": "h3afc0f5a",
+      "expectedValue": "",
+      "confirm": null,
+      "nextScreenId": "s3",
+      "instruction": "На экране «Результаты поиска» нажмите «Единая информационная система в сфере закупок». Откроется экран «Карточка статьи».",
+      "hint": "",
+      "errorText": ""
+    },
+    {
+      "id": "step-4",
+      "index": 3,
+      "screenId": "s3",
+      "action": "click",
+      "hotspotId": "h2eedfc50",
+      "expectedValue": "",
+      "confirm": null,
+      "nextScreenId": "s4",
+      "instruction": "На экране «Карточка статьи» нажмите «Обсуждение». Откроется экран «Вкладка «Обсуждение»».",
+      "hint": "",
+      "errorText": ""
+    }
+  ],
+  "meta": {
+    "generatedAt": "2026-10-30T11:51:10.004Z",
+    "generator": "ui-trainer-capture-poc",
+    "stepCount": 4,
+    "manuallyEditedSteps": 0,
+    "autoStepRatio": 1,
+    "fidelity": [
+      {
+        "screenId": "s1",
+        "chosen": "freeze",
+        "rrwebSimilarity": 0.8659267578125001,
+        "freezeSimilarity": 1,
+        "chosenSimilarity": 1
+      },
+      {
+        "screenId": "s2",
+        "chosen": "freeze",
+        "rrwebSimilarity": 0.893001953125,
+        "freezeSimilarity": 0.9275869140625,
+        "chosenSimilarity": 0.9275869140625
+      },
+      {
+        "screenId": "s3",
+        "chosen": "freeze",
+        "rrwebSimilarity": 0.8732197265625,
+        "freezeSimilarity": 1,
+        "chosenSimilarity": 1
+      },
+      {
+        "screenId": "s4",
+        "chosen": "freeze",
+        "rrwebSimilarity": 0.9072275390625,
+        "freezeSimilarity": 1,
+        "chosenSimilarity": 1
+      }
+    ],
+    "warnings": [
+      "s1/rrweb: не скачано ресурсов 162",
+      "s1/freeze: не скачано ресурсов 164",
+      "s2/rrweb: не скачано ресурсов 137",
+      "s2/freeze: не скачано ресурсов 139",
+      "s3/rrweb: не скачано ресурсов 137",
+      "s3/freeze: не скачано ресурсов 139",
+      "s4/rrweb: не скачано ресурсов 154",
+      "s4/freeze: не скачано ресурсов 157"
+    ]
+  }
+}

@@ -1,0 +1,275 @@
+:root {
+  color: #1c1915;
+  background: #efe6d6;
+  font-family: "PT Sans", "Segoe UI", sans-serif;
+  font-size: 16px;
+  line-height: 1.45;
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+}
+
+* { box-sizing: border-box; }
+
+body {
+  margin: 0;
+  min-height: 100vh;
+}
+
+button, input { font: inherit; }
+
+button {
+  border: 1px solid #1c1915;
+  background: #1c1915;
+  color: #fff8ea;
+  border-radius: 4px;
+  padding: 8px 12px;
+  cursor: pointer;
+}
+
+button:hover { background: #3a3126; }
+
+button.ghost {
+  background: transparent;
+  color: #1c1915;
+}
+
+button.on {
+  background: #17375e;
+  border-color: #17375e;
+  color: white;
+}
+
+.app {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.banner {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  background: #ffd84a;
+  color: #1c1915;
+  padding: 10px 16px;
+  border-bottom: 2px solid #1c1915;
+}
+
+.banner strong {
+  display: block;
+  font-size: 18px;
+  letter-spacing: 0.01em;
+}
+
+.banner span {
+  display: block;
+  font-size: 14px;
+}
+
+.banner-mark {
+  width: 14px;
+  height: 28px;
+  background: #1c1915;
+  flex: none;
+}
+
+.catalog {
+  width: min(1080px, calc(100% - 32px));
+  margin: 28px auto 48px;
+}
+
+.catalog-lead h1 {
+  margin: 0 0 8px;
+  font-size: 32px;
+  line-height: 1.15;
+}
+
+.catalog-lead p, .card p { margin: 0; }
+
+.cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: 16px;
+  margin-top: 20px;
+}
+
+.card {
+  background: #fffdf8;
+  border: 1px solid #d9d0c1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 220px;
+}
+
+.card h2 { margin: 0; font-size: 22px; }
+
+.card .site, .meta, .muted, .mode-note, .kicker, .screen-name {
+  color: #6d6458;
+  font-size: 14px;
+}
+
+.card button { margin-top: auto; align-self: flex-start; }
+
+.banner-error, .error {
+  background: #f8e4df;
+  color: #8d2a22;
+  padding: 10px 12px;
+  margin: 12px 0 0;
+}
+
+.workspace {
+  flex: 1;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 360px;
+  min-height: 0;
+}
+
+.stage-wrap {
+  min-width: 0;
+  overflow: auto;
+  padding: 16px;
+  background:
+    linear-gradient(90deg, rgba(28, 25, 21, 0.04) 1px, transparent 1px) 0 0 / 24px 24px,
+    #e7dfd1;
+}
+
+.scaled {
+  width: 1280px;
+  height: 800px;
+  transform-origin: top left;
+}
+
+.frame {
+  width: 1280px;
+  height: 800px;
+  border: 0;
+  background: white;
+  box-shadow: 0 12px 40px rgba(28, 25, 21, 0.18);
+  display: block;
+}
+
+.shot-frame {
+  position: relative;
+}
+
+.shot-frame img {
+  width: 1280px;
+  height: 800px;
+  object-fit: fill;
+  display: block;
+}
+
+.spot, .shot-input {
+  position: absolute;
+  margin: 0;
+  padding: 0;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #1c1915;
+}
+
+.spot-on, .shot-input {
+  border-color: #e0a800;
+  box-shadow: 0 0 0 4px rgba(255, 216, 74, 0.55);
+  z-index: 2;
+}
+
+.shot-input {
+  background: rgba(255, 253, 248, 0.92);
+  padding: 0 6px;
+  z-index: 3;
+}
+
+.panel {
+  background: #fffdf8;
+  border-left: 1px solid #d9d0c1;
+  padding: 16px;
+  overflow: auto;
+}
+
+.switch {
+  display: flex;
+  gap: 6px;
+  margin-top: 10px;
+}
+
+.switch button {
+  flex: 1;
+  background: transparent;
+  color: #1c1915;
+}
+
+.switch button.on {
+  background: #17375e;
+  border-color: #17375e;
+  color: #fff8ea;
+}
+
+.instruction {
+  margin: 6px 0 0;
+  font-size: 18px;
+}
+
+.now { margin-top: 14px; }
+
+.result {
+  margin-top: 14px;
+  padding: 12px;
+  background: #e7f4ec;
+}
+
+.result h2 { margin: 0 0 6px; font-size: 20px; }
+
+.hint {
+  background: #fff3c4;
+  color: #6d5310;
+  padding: 10px 12px;
+  margin: 12px 0 0;
+}
+
+.steps {
+  list-style: none;
+  margin: 16px 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.steps li {
+  display: grid;
+  grid-template-columns: 28px 1fr;
+  gap: 8px;
+  align-items: start;
+}
+
+.steps span {
+  width: 28px;
+  height: 28px;
+  display: grid;
+  place-items: center;
+  border: 1px solid #d9d0c1;
+  font-size: 13px;
+}
+
+.steps p { margin: 4px 0 0; font-size: 14px; }
+
+.steps .done span { background: #1f7a45; color: white; border-color: #1f7a45; }
+.steps .current span { background: #17375e; color: white; border-color: #17375e; }
+.steps .wait { color: #6d6458; }
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+@media (max-width: 960px) {
+  .workspace { grid-template-columns: 1fr; }
+  .panel { border-left: 0; border-top: 1px solid #d9d0c1; }
+}

@@ -1,0 +1,5 @@
+{
+  "reachable": "no",
+  "error": "page.goto: Timeout 25000ms exceeded.",
+  "elapsedMs": "25100"
+}

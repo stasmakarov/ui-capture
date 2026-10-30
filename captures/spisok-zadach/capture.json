@@ -1,0 +1,674 @@
+{
+  "id": "spisok-zadach",
+  "title": "Добавить задачи и переключить фильтр",
+  "description": "Второй, другой сайт — SPA TodoMVC. Поле ввода, список и вкладки-фильтры. Конвейер тот же, что и для вики-сценария, без привязки к ЕИС.",
+  "sourceSite": "https://demo.playwright.dev/todomvc/",
+  "startUrl": "https://demo.playwright.dev/todomvc/",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "capturedAt": "2026-10-30T11:46:42.335Z",
+  "screens": [
+    {
+      "id": "s1",
+      "title": "Пустой список",
+      "url": "https://demo.playwright.dev/todomvc/#/",
+      "pageTitle": "React • TodoMVC",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "screenshotFile": "screens/s1.original.png",
+      "rrwebFile": "screens/s1.rrweb.json",
+      "frozenHtmlFile": "screens/s1.freeze.html",
+      "elements": [
+        {
+          "hotspotId": "hd13e40d5",
+          "selector": "div > a",
+          "kind": "link",
+          "label": "real TodoMVC app.",
+          "box": {
+            "x": 738.8125,
+            "y": 13,
+            "width": 119.59375,
+            "height": 16
+          }
+        },
+        {
+          "hotspotId": "h3def0726",
+          "selector": "input.new-todo",
+          "kind": "input",
+          "label": "What needs to be done?",
+          "box": {
+            "x": 365,
+            "y": 174.59375,
+            "width": 550,
+            "height": 65.59375
+          },
+          "placeholder": "What needs to be done?"
+        },
+        {
+          "hotspotId": "h69580357",
+          "selector": "footer > p:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "Remo H. Jansen",
+          "box": {
+            "x": 628.609375,
+            "y": 324.1875,
+            "width": 74.484375,
+            "height": 11
+          }
+        },
+        {
+          "hotspotId": "h6ff11ffa",
+          "selector": "footer > p:nth-of-type(3) > a",
+          "kind": "link",
+          "label": "TodoMVC",
+          "box": {
+            "x": 634.171875,
+            "y": 344.1875,
+            "width": 43.90625,
+            "height": 11
+          }
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "title": "Одна задача",
+      "url": "https://demo.playwright.dev/todomvc/#/",
+      "pageTitle": "React • TodoMVC",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "screenshotFile": "screens/s2.original.png",
+      "rrwebFile": "screens/s2.rrweb.json",
+      "frozenHtmlFile": "screens/s2.freeze.html",
+      "elements": [
+        {
+          "hotspotId": "hd13e40d5",
+          "selector": "div > a",
+          "kind": "link",
+          "label": "real TodoMVC app.",
+          "box": {
+            "x": 738.8125,
+            "y": 13,
+            "width": 119.59375,
+            "height": 16
+          }
+        },
+        {
+          "hotspotId": "h3def0726",
+          "selector": "input.new-todo",
+          "kind": "input",
+          "label": "What needs to be done?",
+          "box": {
+            "x": 365,
+            "y": 174.59375,
+            "width": 550,
+            "height": 65.59375
+          },
+          "placeholder": "What needs to be done?"
+        },
+        {
+          "hotspotId": "hdf9b9d43",
+          "selector": "input.toggle",
+          "kind": "clickable",
+          "label": "Toggle Todo",
+          "box": {
+            "x": 365,
+            "y": 250.578125,
+            "width": 40,
+            "height": 40
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "hotspotId": "h525b57ff",
+          "selector": "a.selected",
+          "kind": "link",
+          "label": "All",
+          "box": {
+            "x": 545.40625,
+            "y": 307.984375,
+            "width": 31.5625,
+            "height": 24
+          }
+        },
+        {
+          "hotspotId": "h5e136ee5",
+          "selector": "section > div > footer > ul > li:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "Active",
+          "box": {
+            "x": 586.859375,
+            "y": 307.984375,
+            "width": 54.125,
+            "height": 24
+          }
+        },
+        {
+          "hotspotId": "h5a81b6f8",
+          "selector": "section > div > footer > ul > li:nth-of-type(3) > a",
+          "kind": "link",
+          "label": "Completed",
+          "box": {
+            "x": 650.875,
+            "y": 307.984375,
+            "width": 83.703125,
+            "height": 24
+          }
+        },
+        {
+          "hotspotId": "h69580357",
+          "selector": "footer > p:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "Remo H. Jansen",
+          "box": {
+            "x": 628.609375,
+            "y": 424.984375,
+            "width": 74.484375,
+            "height": 11
+          }
+        },
+        {
+          "hotspotId": "h6ff11ffa",
+          "selector": "footer > p:nth-of-type(3) > a",
+          "kind": "link",
+          "label": "TodoMVC",
+          "box": {
+            "x": 634.171875,
+            "y": 444.984375,
+            "width": 43.90625,
+            "height": 11
+          }
+        }
+      ]
+    },
+    {
+      "id": "s3",
+      "title": "Две задачи",
+      "url": "https://demo.playwright.dev/todomvc/#/",
+      "pageTitle": "React • TodoMVC",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "screenshotFile": "screens/s3.original.png",
+      "rrwebFile": "screens/s3.rrweb.json",
+      "frozenHtmlFile": "screens/s3.freeze.html",
+      "elements": [
+        {
+          "hotspotId": "hd13e40d5",
+          "selector": "div > a",
+          "kind": "link",
+          "label": "real TodoMVC app.",
+          "box": {
+            "x": 738.8125,
+            "y": 13,
+            "width": 119.59375,
+            "height": 16
+          }
+        },
+        {
+          "hotspotId": "h3def0726",
+          "selector": "input.new-todo",
+          "kind": "input",
+          "label": "What needs to be done?",
+          "box": {
+            "x": 365,
+            "y": 174.59375,
+            "width": 550,
+            "height": 65.59375
+          },
+          "placeholder": "What needs to be done?"
+        },
+        {
+          "hotspotId": "hcdbcf51a",
+          "selector": "section > div > section > ul > li:nth-of-type(1) > div > input",
+          "kind": "clickable",
+          "label": "Toggle Todo",
+          "box": {
+            "x": 365,
+            "y": 250.578125,
+            "width": 40,
+            "height": 40
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "hotspotId": "h9b96c84d",
+          "selector": "section > div > section > ul > li:nth-of-type(2) > div > input",
+          "kind": "clickable",
+          "label": "Toggle Todo",
+          "box": {
+            "x": 365,
+            "y": 310.375,
+            "width": 40,
+            "height": 40
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "hotspotId": "h525b57ff",
+          "selector": "a.selected",
+          "kind": "link",
+          "label": "All",
+          "box": {
+            "x": 545.40625,
+            "y": 367.78125,
+            "width": 31.5625,
+            "height": 24
+          }
+        },
+        {
+          "hotspotId": "h5e136ee5",
+          "selector": "section > div > footer > ul > li:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "Active",
+          "box": {
+            "x": 586.859375,
+            "y": 367.78125,
+            "width": 54.125,
+            "height": 24
+          }
+        },
+        {
+          "hotspotId": "h5a81b6f8",
+          "selector": "section > div > footer > ul > li:nth-of-type(3) > a",
+          "kind": "link",
+          "label": "Completed",
+          "box": {
+            "x": 650.875,
+            "y": 367.78125,
+            "width": 83.703125,
+            "height": 24
+          }
+        },
+        {
+          "hotspotId": "h69580357",
+          "selector": "footer > p:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "Remo H. Jansen",
+          "box": {
+            "x": 628.609375,
+            "y": 484.78125,
+            "width": 74.484375,
+            "height": 11
+          }
+        },
+        {
+          "hotspotId": "h6ff11ffa",
+          "selector": "footer > p:nth-of-type(3) > a",
+          "kind": "link",
+          "label": "TodoMVC",
+          "box": {
+            "x": 634.171875,
+            "y": 504.78125,
+            "width": 43.90625,
+            "height": 11
+          }
+        }
+      ]
+    },
+    {
+      "id": "s4",
+      "title": "Первая задача выполнена",
+      "url": "https://demo.playwright.dev/todomvc/#/",
+      "pageTitle": "React • TodoMVC",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "screenshotFile": "screens/s4.original.png",
+      "rrwebFile": "screens/s4.rrweb.json",
+      "frozenHtmlFile": "screens/s4.freeze.html",
+      "elements": [
+        {
+          "hotspotId": "hd13e40d5",
+          "selector": "div > a",
+          "kind": "link",
+          "label": "real TodoMVC app.",
+          "box": {
+            "x": 738.8125,
+            "y": 13,
+            "width": 119.59375,
+            "height": 16
+          }
+        },
+        {
+          "hotspotId": "h3def0726",
+          "selector": "input.new-todo",
+          "kind": "input",
+          "label": "What needs to be done?",
+          "box": {
+            "x": 365,
+            "y": 174.59375,
+            "width": 550,
+            "height": 65.59375
+          },
+          "placeholder": "What needs to be done?"
+        },
+        {
+          "hotspotId": "hcdbcf51a",
+          "selector": "section > div > section > ul > li:nth-of-type(1) > div > input",
+          "kind": "clickable",
+          "label": "Toggle Todo",
+          "box": {
+            "x": 365,
+            "y": 250.578125,
+            "width": 40,
+            "height": 40
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "hotspotId": "h14a3ff66",
+          "selector": "section > div > section > ul > li:nth-of-type(1) > div > button",
+          "kind": "button",
+          "label": "Delete",
+          "box": {
+            "x": 865,
+            "y": 248.984375,
+            "width": 40,
+            "height": 40
+          }
+        },
+        {
+          "hotspotId": "h9b96c84d",
+          "selector": "section > div > section > ul > li:nth-of-type(2) > div > input",
+          "kind": "clickable",
+          "label": "Toggle Todo",
+          "box": {
+            "x": 365,
+            "y": 310.375,
+            "width": 40,
+            "height": 40
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "hotspotId": "h525b57ff",
+          "selector": "a.selected",
+          "kind": "link",
+          "label": "All",
+          "box": {
+            "x": 545.40625,
+            "y": 367.78125,
+            "width": 31.5625,
+            "height": 24
+          }
+        },
+        {
+          "hotspotId": "h5e136ee5",
+          "selector": "section > div > footer > ul > li:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "Active",
+          "box": {
+            "x": 586.859375,
+            "y": 367.78125,
+            "width": 54.125,
+            "height": 24
+          }
+        },
+        {
+          "hotspotId": "h5a81b6f8",
+          "selector": "section > div > footer > ul > li:nth-of-type(3) > a",
+          "kind": "link",
+          "label": "Completed",
+          "box": {
+            "x": 650.875,
+            "y": 367.78125,
+            "width": 83.703125,
+            "height": 24
+          }
+        },
+        {
+          "hotspotId": "h26fcb432",
+          "selector": "button.clear-completed",
+          "kind": "button",
+          "label": "Clear completed",
+          "box": {
+            "x": 798.0625,
+            "y": 370.78125,
+            "width": 101.9375,
+            "height": 20
+          }
+        },
+        {
+          "hotspotId": "h69580357",
+          "selector": "footer > p:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "Remo H. Jansen",
+          "box": {
+            "x": 628.609375,
+            "y": 484.78125,
+            "width": 74.484375,
+            "height": 11
+          }
+        },
+        {
+          "hotspotId": "h6ff11ffa",
+          "selector": "footer > p:nth-of-type(3) > a",
+          "kind": "link",
+          "label": "TodoMVC",
+          "box": {
+            "x": 634.171875,
+            "y": 504.78125,
+            "width": 43.90625,
+            "height": 11
+          }
+        }
+      ]
+    },
+    {
+      "id": "s5",
+      "title": "Фильтр «Completed»",
+      "url": "https://demo.playwright.dev/todomvc/#/completed",
+      "pageTitle": "React • TodoMVC",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "screenshotFile": "screens/s5.original.png",
+      "rrwebFile": "screens/s5.rrweb.json",
+      "frozenHtmlFile": "screens/s5.freeze.html",
+      "elements": [
+        {
+          "hotspotId": "hd13e40d5",
+          "selector": "div > a",
+          "kind": "link",
+          "label": "real TodoMVC app.",
+          "box": {
+            "x": 738.8125,
+            "y": 13,
+            "width": 119.59375,
+            "height": 16
+          }
+        },
+        {
+          "hotspotId": "h3def0726",
+          "selector": "input.new-todo",
+          "kind": "input",
+          "label": "What needs to be done?",
+          "box": {
+            "x": 365,
+            "y": 174.59375,
+            "width": 550,
+            "height": 65.59375
+          },
+          "placeholder": "What needs to be done?"
+        },
+        {
+          "hotspotId": "hdf9b9d43",
+          "selector": "input.toggle",
+          "kind": "clickable",
+          "label": "Toggle Todo",
+          "box": {
+            "x": 365,
+            "y": 250.578125,
+            "width": 40,
+            "height": 40
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "hotspotId": "hcfa0f3aa",
+          "selector": "section > div > footer > ul > li:nth-of-type(1) > a",
+          "kind": "link",
+          "label": "All",
+          "box": {
+            "x": 545.40625,
+            "y": 307.984375,
+            "width": 31.5625,
+            "height": 24
+          }
+        },
+        {
+          "hotspotId": "h5e136ee5",
+          "selector": "section > div > footer > ul > li:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "Active",
+          "box": {
+            "x": 586.859375,
+            "y": 307.984375,
+            "width": 54.125,
+            "height": 24
+          }
+        },
+        {
+          "hotspotId": "h525b57ff",
+          "selector": "a.selected",
+          "kind": "link",
+          "label": "Completed",
+          "box": {
+            "x": 650.875,
+            "y": 307.984375,
+            "width": 83.703125,
+            "height": 24
+          }
+        },
+        {
+          "hotspotId": "h26fcb432",
+          "selector": "button.clear-completed",
+          "kind": "button",
+          "label": "Clear completed",
+          "box": {
+            "x": 798.0625,
+            "y": 310.984375,
+            "width": 101.9375,
+            "height": 20
+          }
+        },
+        {
+          "hotspotId": "h69580357",
+          "selector": "footer > p:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "Remo H. Jansen",
+          "box": {
+            "x": 628.609375,
+            "y": 424.984375,
+            "width": 74.484375,
+            "height": 11
+          }
+        },
+        {
+          "hotspotId": "h6ff11ffa",
+          "selector": "footer > p:nth-of-type(3) > a",
+          "kind": "link",
+          "label": "TodoMVC",
+          "box": {
+            "x": 634.171875,
+            "y": 444.984375,
+            "width": 43.90625,
+            "height": 11
+          }
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "screenId": "s1",
+      "kind": "fill",
+      "confirm": "enter",
+      "value": "Купить молоко",
+      "hotspotId": "h3def0726",
+      "selector": "input.new-todo",
+      "label": "What needs to be done?",
+      "box": {
+        "x": 365,
+        "y": 174.59375,
+        "width": 550,
+        "height": 65.59375
+      },
+      "nextScreenId": "s2",
+      "prelude": false
+    },
+    {
+      "screenId": "s2",
+      "kind": "fill",
+      "confirm": "enter",
+      "value": "Написать отчёт",
+      "hotspotId": "h3def0726",
+      "selector": "input.new-todo",
+      "label": "What needs to be done?",
+      "box": {
+        "x": 365,
+        "y": 174.59375,
+        "width": 550,
+        "height": 65.59375
+      },
+      "nextScreenId": "s3",
+      "prelude": false
+    },
+    {
+      "screenId": "s3",
+      "kind": "click",
+      "confirm": null,
+      "value": "",
+      "hotspotId": "hcdbcf51a",
+      "selector": "section > div > section > ul > li:nth-of-type(1) > div > input",
+      "label": "Toggle Todo",
+      "box": {
+        "x": 365,
+        "y": 250.578125,
+        "width": 40,
+        "height": 40
+      },
+      "nextScreenId": "s4",
+      "prelude": false
+    },
+    {
+      "screenId": "s4",
+      "kind": "click",
+      "confirm": null,
+      "value": "",
+      "hotspotId": "h5a81b6f8",
+      "selector": "section > div > footer > ul > li:nth-of-type(3) > a",
+      "label": "Completed",
+      "box": {
+        "x": 650.875,
+        "y": 367.78125,
+        "width": 83.703125,
+        "height": 24
+      },
+      "nextScreenId": "s5",
+      "prelude": false
+    }
+  ],
+  "assets": [
+    {
+      "url": "https://demo.playwright.dev/todomvc/index.css",
+      "file": "267113a4ea-index.css",
+      "contentType": "text/css; charset=utf-8"
+    },
+    {
+      "url": "https://demo.playwright.dev/todomvc/base.css",
+      "file": "c0bd1c5085-base.css",
+      "contentType": "text/css; charset=utf-8"
+    }
+  ]
+}
