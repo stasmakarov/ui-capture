@@ -1,6 +1,7 @@
 import { cpSync, createReadStream, existsSync, statSync } from 'node:fs'
 import path from 'node:path'
 import react from '@vitejs/plugin-react'
+import { viteSingleFile } from 'vite-plugin-singlefile'
 import { defineConfig, type Plugin } from 'vite'
 
 const TYPES: Record<string, string> = {
@@ -43,8 +44,17 @@ function lessonsPlugin(): Plugin {
   }
 }
 
-export default defineConfig({
-  plugins: [react(), lessonsPlugin()],
+export default defineConfig(({ mode }) => ({
+  plugins: [
+    react(),
+    mode === 'singlefile' ? viteSingleFile({ removeViteModuleLoader: true }) : lessonsPlugin(),
+  ],
+  resolve: {
+    alias: {
+      '@embedded': path.resolve(mode === 'singlefile' ? 'src/generated/pack.ts' : 'src/embedded-stub.ts'),
+    },
+  },
+  build: mode === 'singlefile' ? { outDir: 'dist-single', emptyOutDir: true } : undefined,
   server: { host: '127.0.0.1', port: 43127, strictPort: true },
   preview: { host: '127.0.0.1', port: 43127, strictPort: true },
-})
+}))

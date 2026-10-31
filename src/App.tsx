@@ -10,6 +10,7 @@ import {
   type RenderMode,
   type RuntimeState,
 } from '../shared/lesson.ts';
+import { embeddedPack } from '@embedded';
 import { Stage } from './player/Stage.tsx';
 
 type CatalogItem = {
@@ -29,7 +30,8 @@ const MODES: { id: Mode; label: string; note: string }[] = [
 ];
 
 export default function App() {
-  const [catalog, setCatalog] = useState<CatalogItem[] | null>(null);
+  const [catalog, setCatalog] = useState<CatalogItem[] | null>(embeddedPack?.catalog ?? null);
+  const [media, setMedia] = useState<{ documents: Record<string, string>; screenshots: Record<string, string> } | null>(null);
   const [catalogError, setCatalogError] = useState<string | null>(null);
   const [lesson, setLesson] = useState<Lesson | null>(null);
   const [lessonError, setLessonError] = useState<string | null>(null);
@@ -40,6 +42,7 @@ export default function App() {
   const [readyToken, setReadyToken] = useState<string | null>(null);
 
   useEffect(() => {
+    if (embeddedPack) return;
     let cancelled = false;
     fetch('/lessons/index.json')
       .then(async (response) => {
@@ -82,6 +85,15 @@ export default function App() {
     setLesson(null);
     setLessonError(null);
     setReadyToken(null);
+    const packed = embeddedPack?.lessons.find((item) => item.lesson.id === id);
+    if (packed) {
+      setLesson(parseLesson(packed.lesson));
+      setMedia({ documents: packed.documents, screenshots: packed.screenshots });
+      setRuntime(createState(mode));
+      setPaused(false);
+      return;
+    }
+    setMedia(null);
     fetch(`/lessons/${id}/lesson.json`)
       .then(async (response) => {
         if (!response.ok) throw new Error('Урок не найден');
@@ -102,7 +114,6 @@ export default function App() {
     setMode(next);
     setRuntime(createState(next));
     setPaused(false);
-    setReadyToken(null);
   }
 
   return (
@@ -136,6 +147,8 @@ export default function App() {
           <Stage
             lessonId={lesson.id}
             screen={screen}
+            documentHtml={media?.documents[screen.id] ?? null}
+            screenshotSrc={media?.screenshots[screen.id] ?? `/lessons/${lesson.id}/${screen.screenshot}`}
             step={step}
             renderMode={renderMode}
             interactive={mode !== 'show' && runtime.status === 'play'}

@@ -4,6 +4,8 @@ import type { Attempt, LessonScreen, LessonStep, RenderMode } from '../../shared
 type StageProps = {
   lessonId: string;
   screen: LessonScreen;
+  documentHtml: string | null;
+  screenshotSrc: string;
   step: LessonStep | null;
   renderMode: RenderMode;
   interactive: boolean;
@@ -21,7 +23,7 @@ function boxStyle(box: LessonScreen['hotspots'][number]['box']): CSSProperties {
   };
 }
 
-export function Stage({ lessonId, screen, step, renderMode, interactive, demoValue, onAttempt, onReady }: StageProps) {
+export function Stage({ lessonId, screen, documentHtml, screenshotSrc, step, renderMode, interactive, demoValue, onAttempt, onReady }: StageProps) {
   const iframeRef = useRef<HTMLIFrameElement>(null);
   const attemptRef = useRef(onAttempt);
   const interactiveRef = useRef(interactive);
@@ -39,7 +41,10 @@ export function Stage({ lessonId, screen, step, renderMode, interactive, demoVal
     if (!iframe) return;
     const onLoad = () => {
       const doc = iframe.contentDocument;
-      if (!doc?.documentElement || doc.URL === 'about:blank') return;
+      if (!doc?.documentElement || !doc.body) return;
+      const inline = documentHtml !== null;
+      if (!inline && (doc.URL === 'about:blank' || doc.URL.startsWith('about:'))) return;
+      if (inline && doc.body.childElementCount === 0) return;
       if (doc.documentElement.dataset.trainerBound === 'yes') return;
       bindDocument(doc, attemptRef, interactiveRef);
       paintDom(doc, stepRef.current, demoRef.current);
@@ -53,7 +58,7 @@ export function Stage({ lessonId, screen, step, renderMode, interactive, demoVal
       window.clearInterval(timer);
       window.clearTimeout(stop);
     };
-  }, [lessonId, screen.html, renderMode, token, onReady]);
+  }, [documentHtml, lessonId, screen.html, renderMode, token, onReady]);
 
   useEffect(() => {
     if (renderMode !== 'dom') return;
@@ -73,7 +78,7 @@ export function Stage({ lessonId, screen, step, renderMode, interactive, demoVal
     return (
       <div className="frame shot-frame">
         <img
-          src={`/lessons/${lessonId}/${screen.screenshot}`}
+          src={screenshotSrc}
           alt={screen.title}
           width={screen.viewport.width}
           height={screen.viewport.height}
@@ -120,7 +125,7 @@ export function Stage({ lessonId, screen, step, renderMode, interactive, demoVal
       ref={iframeRef}
       className="frame"
       title={screen.title}
-      src={`/lessons/${lessonId}/${screen.html}`}
+      {...(documentHtml ? { srcDoc: documentHtml } : { src: `/lessons/${lessonId}/${screen.html}` })}
     />
   );
 }
