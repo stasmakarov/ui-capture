@@ -61,4 +61,5 @@ export type CaptureBundle = {
   screens: CaptureScreen[];
   actions: CaptureAction[];
   assets: SavedAsset[];
+  preferredRender?: 'dom' | 'screenshot' | 'auto';
 };

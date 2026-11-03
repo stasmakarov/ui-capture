@@ -87,7 +87,9 @@ export default function App() {
     setReadyToken(null);
     const packed = embeddedPack?.lessons.find((item) => item.lesson.id === id);
     if (packed) {
-      setLesson(parseLesson(packed.lesson));
+      const parsed = parseLesson(packed.lesson);
+      setLesson(parsed);
+      setRenderMode(parsed.meta.defaultRenderMode);
       setMedia({ documents: packed.documents, screenshots: packed.screenshots });
       setRuntime(createState(mode));
       setPaused(false);
@@ -102,6 +104,7 @@ export default function App() {
       .then((data) => {
         const parsed = parseLesson(data);
         setLesson(parsed);
+        setRenderMode(parsed.meta.defaultRenderMode);
         setRuntime(createState(mode));
         setPaused(false);
       })

@@ -56,7 +56,7 @@ const dirs = entries
   .filter((dir) => !only || path.basename(dir) === only);
 
 if (dirs.length === 0) {
-  throw new Error('Нет записей. Сначала запустите npm run capture');
+  throw new Error('Нет записей. Сначала запустите npm run capture -- <url>');
 }
 
 await import('node:fs/promises').then((fs) => fs.mkdir('lessons', { recursive: true }));

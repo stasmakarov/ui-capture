@@ -70,6 +70,7 @@ export type LessonMeta = {
   autoStepRatio: number;
   fidelity: ScreenFidelity[];
   warnings: string[];
+  defaultRenderMode: 'dom' | 'screenshot';
 };
 
 export type Lesson = {
@@ -378,6 +379,18 @@ export function parseLesson(data: unknown): Lesson {
       autoStepRatio: typeof meta.autoStepRatio === 'number' ? meta.autoStepRatio : 1,
       fidelity: Array.isArray(meta.fidelity) ? (meta.fidelity as ScreenFidelity[]) : [],
       warnings: Array.isArray(meta.warnings) ? meta.warnings.filter((item) => typeof item === 'string') : [],
+      defaultRenderMode: meta.defaultRenderMode === 'screenshot' ? 'screenshot' : 'dom',
     },
   };
+}
+
+export function chooseRenderMode(
+  preferred: 'dom' | 'screenshot' | 'auto',
+  scores: number[],
+): 'dom' | 'screenshot' {
+  if (preferred === 'screenshot') return 'screenshot';
+  if (preferred === 'dom') return 'dom';
+  if (scores.length === 0) return 'dom';
+  const average = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+  return average < 0.85 ? 'screenshot' : 'dom';
 }

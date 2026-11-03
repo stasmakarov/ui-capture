@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   buildInstruction,
+  chooseRenderMode,
   createState,
   judge,
   parseLesson,
@@ -176,6 +177,17 @@ describe('buildInstruction', () => {
         confirm: 'match',
       }),
     ).toBe('На экране «Главная» введите «извещение о закупке» в поле «Искать в Википедии».');
+  });
+});
+
+describe('chooseRenderMode', () => {
+  it('оставляет разметку, если повтор похож на оригинал', () => {
+    expect(chooseRenderMode('auto', [0.99, 0.97])).toBe('dom');
+  });
+
+  it('переключается на скриншот, если повтор сильно расходится', () => {
+    expect(chooseRenderMode('auto', [0.4, 0.5])).toBe('screenshot');
+    expect(chooseRenderMode('screenshot', [0.99])).toBe('screenshot');
   });
 });
 

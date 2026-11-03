@@ -4,7 +4,7 @@ import path from 'node:path';
 import { PNG } from 'pngjs';
 import pixelmatch from 'pixelmatch';
 import type { Browser, Page } from 'playwright';
-import { buildInstruction, type Hotspot, type Lesson, type LessonStep, type ScreenFidelity } from '../../shared/lesson.ts';
+import { buildInstruction, chooseRenderMode, type Hotspot, type Lesson, type LessonStep, type ScreenFidelity } from '../../shared/lesson.ts';
 import type { CaptureBundle, CaptureScreen } from '../capture/types.ts';
 import { applyHotspots, localizeHtml, readSnapshot, rebuildRrweb } from './html.ts';
 
@@ -176,9 +176,14 @@ async function renderCompare(page: Page, compareDir: string, file: string, title
   await rm(frame, { force: true });
 }
 
-export async function buildCapture(captureDir: string, browser: Browser, origin: string): Promise<Lesson> {
+export async function buildCapture(
+  captureDir: string,
+  browser: Browser,
+  origin: string,
+  lessonsRoot = path.resolve('lessons'),
+): Promise<Lesson> {
   const bundle = alignActions(JSON.parse(await readFile(path.join(captureDir, 'capture.json'), 'utf8')) as CaptureBundle);
-  const lessonDir = path.resolve('lessons', bundle.id);
+  const lessonDir = path.join(lessonsRoot, bundle.id);
   const assetDir = path.join(lessonDir, 'assets');
   await mkdir(path.join(lessonDir, 'screens'), { recursive: true });
   await mkdir(path.join(lessonDir, 'original'), { recursive: true });
@@ -308,6 +313,10 @@ export async function buildCapture(captureDir: string, browser: Browser, origin:
       autoStepRatio: steps.length === 0 ? 1 : 1,
       fidelity,
       warnings,
+      defaultRenderMode: chooseRenderMode(
+        bundle.preferredRender ?? 'auto',
+        fidelity.map((item) => item.chosenSimilarity),
+      ),
     },
   };
   await writeFile(path.join(lessonDir, 'lesson.json'), JSON.stringify(lesson, null, 2));
@@ -319,8 +328,7 @@ function fmt(value: number | null): string {
   return `${Math.round(value * 1000) / 10}%`;
 }
 
-export async function writeCatalog() {
-  const root = path.resolve('lessons');
+export async function writeCatalog(root = path.resolve('lessons')) {
   if (!existsSync(root)) return;
   const entries = await readdir(root, { withFileTypes: true });
   const items = [];

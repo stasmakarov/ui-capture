@@ -1,15 +1,22 @@
 {
-  "name": "ui-trainer-capture-poc",
+  "name": "ui-capture",
   "private": true,
-  "version": "0.1.0",
+  "version": "0.2.0",
   "type": "module",
+  "bin": {
+    "ui-capture": "./bin/ui-capture.js"
+  },
+  "engines": {
+    "node": ">=22"
+  },
   "scripts": {
     "dev": "vite --host 127.0.0.1 --port 43127 --strictPort",
     "build": "tsc -b && vite build",
     "lint": "oxlint",
     "preview": "vite preview --host 127.0.0.1 --port 43127 --strictPort",
     "test": "vitest run",
-    "capture": "tsx tools/capture/run.ts",
+    "capture": "tsx tools/cli.ts",
+    "capture:scenario": "tsx tools/capture/run.ts",
     "build:lessons": "tsx tools/builder/run.ts",
     "pipeline": "tsx tools/capture/run.ts && tsx tools/builder/run.ts",
     "pack:html": "tsx tools/pack/singlefile.ts"
