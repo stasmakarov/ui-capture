@@ -29,6 +29,15 @@ export async function packHtml(options: PackOptions): Promise<{ outFile: string;
     }
     const documents: Record<string, string> = {}
     const screenshots: Record<string, string> = {}
+    for (const step of lesson.steps) {
+      if (!step.audio || step.audio.startsWith('data:')) continue
+      const audioFile = path.join(root, step.audio)
+      try {
+        step.audio = fileDataUri(audioFile)
+      } catch {
+        /* файл аудио уже удалён */
+      }
+    }
     for (const screen of lesson.screens) {
       const htmlFile = path.join(root, screen.html)
       documents[screen.id] = inlineScreenHtml(await readFile(htmlFile, 'utf8'), htmlFile)

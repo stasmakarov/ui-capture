@@ -52,6 +52,8 @@ export type LessonStep = {
   instruction: string;
   hint: string;
   errorText: string;
+  audio?: string;
+  narration?: string;
 };
 
 export type ScreenFidelity = {
@@ -331,6 +333,8 @@ function readStep(value: unknown, index: number): LessonStep {
     instruction: readString(value, 'instruction'),
     hint: typeof value.hint === 'string' ? value.hint : '',
     errorText: typeof value.errorText === 'string' ? value.errorText : '',
+    ...(typeof value.audio === 'string' && value.audio ? { audio: value.audio } : {}),
+    ...(typeof value.narration === 'string' && value.narration ? { narration: value.narration } : {}),
   };
 }
 

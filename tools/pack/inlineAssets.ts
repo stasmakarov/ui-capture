@@ -14,6 +14,8 @@ const MIME: Record<string, string> = {
   '.ttf': 'font/ttf',
   '.otf': 'font/otf',
   '.css': 'text/css',
+  '.wav': 'audio/wav',
+  '.webm': 'audio/webm',
 }
 
 const dataUriCache = new Map<string, string>()

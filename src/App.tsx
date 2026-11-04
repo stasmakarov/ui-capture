@@ -42,6 +42,11 @@ export default function App() {
   const [readyToken, setReadyToken] = useState<string | null>(null);
 
   useEffect(() => {
+    const playId = new URLSearchParams(window.location.search).get('play');
+    if (playId) openLesson(playId);
+  }, []);
+
+  useEffect(() => {
     if (embeddedPack) return;
     let cancelled = false;
     fetch('/lessons/index.json')
@@ -63,6 +68,16 @@ export default function App() {
   const screen = lesson ? currentScreen(lesson, runtime) : undefined;
   const step = lesson && runtime.status === 'play' ? lesson.steps[runtime.stepIndex] ?? null : null;
   const ready = readyToken === `${renderMode}:${screen?.id ?? ''}`;
+
+  useEffect(() => {
+    if (!lesson || mode !== 'show' || runtime.status !== 'play' || !step?.audio) return;
+    const src = step.audio.startsWith('data:') ? step.audio : `/lessons/${lesson.id}/${step.audio}`;
+    const audio = new Audio(src);
+    void audio.play().catch(() => undefined);
+    return () => {
+      audio.pause();
+    };
+  }, [lesson, mode, runtime.status, step?.id, step?.audio]);
 
   useEffect(() => {
     if (!lesson || mode !== 'show' || runtime.status !== 'play' || paused || !ready) return;
@@ -274,6 +289,7 @@ function Player({
           <div className="now">
             <p className="kicker">Шаг {runtime.stepIndex + 1} из {total}</p>
             <p className="instruction">{mode === 'test' ? 'Выполните действие на экране без подсказки.' : step?.instruction}</p>
+            {mode === 'show' && step?.narration ? <p className="hint">Комментарий: {step.narration}</p> : null}
           </div>
         )}
         {runtime.error && <p className="error" role="alert">{runtime.error}</p>}

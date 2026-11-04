@@ -12,6 +12,7 @@ dist
 dist-single
 dist-ssr
 src/generated
+.ui-capture
 artifacts/*.html
 *.local
 

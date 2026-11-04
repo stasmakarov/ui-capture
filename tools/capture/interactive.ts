@@ -279,6 +279,13 @@ export type RecordOptions = {
   channel?: string;
   executablePath?: string;
   onReady?: (page: Page) => Promise<void>;
+  onAction?: (action: CaptureAction) => void;
+  onSession?: (controls: RecordingControls) => void;
+};
+
+export type RecordingControls = {
+  stop: () => Promise<void>;
+  setPaused: (paused: boolean) => void;
 };
 
 export async function recordInteractive(options: RecordOptions): Promise<string> {
@@ -298,6 +305,7 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
   await context.exposeBinding('__trainerReport', (_source, payload: Reported) => {
     if (!payload || seen.has(payload.id)) return;
     seen.add(payload.id);
+    if (paused) return;
     pending.push(payload);
     schedule();
   });
@@ -310,6 +318,7 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
   const actions: CaptureAction[] = [];
   let current: CaptureScreen | null = null;
   let currentPrint = '';
+  let paused = false;
   let timer: NodeJS.Timeout | undefined;
   let chain = Promise.resolve();
   const pullQueue = async (target: Page) => {
@@ -322,6 +331,7 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
     for (const item of batch) {
       if (seen.has(item.id)) continue;
       seen.add(item.id);
+      if (paused) continue;
       pending.push(item);
     }
   };
@@ -329,8 +339,9 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
   const flush = async () => {
     const target = page;
     if (!target.isClosed()) await pullQueue(target);
+    if (!current) return;
     const batch = pending.splice(0);
-    if (!batch.length || !current) return;
+    if (!batch.length) return;
     let after = currentPrint;
     if (!target.isClosed()) {
       await target.waitForLoadState('domcontentloaded', { timeout: 8000 }).catch(() => undefined);
@@ -362,6 +373,7 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
           prelude: false,
         });
         console.log(`  ввод «${input.value}» в «${described.label}»`);
+        options.onAction?.(actions[actions.length - 1]!);
       }
       const described = remember(current!, event.described);
       actions.push({
@@ -377,6 +389,7 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
         prelude: false,
       });
       console.log(`  ${event.type} «${described.label}»${last && nextId ? ` → ${nextId}` : ''}`);
+      options.onAction?.(actions[actions.length - 1]!);
     });
     if (nextId) {
       current = screens[screens.length - 1] ?? current;
@@ -412,6 +425,14 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
     screens.push(current);
     currentPrint = await fingerprint(page).catch(() => page.url());
     console.log(`Стартовый экран: «${current.title}»`);
+    options.onSession?.({
+      stop: async () => {
+        if (browser.isConnected()) await browser.close();
+      },
+      setPaused: (value) => {
+        paused = value;
+      },
+    });
 
     const finished = new Promise<void>((resolve) => {
       browser.on('disconnected', () => resolve());

@@ -5,10 +5,10 @@ import '@fontsource/pt-sans/cyrillic-700.css'
 import '@fontsource/pt-sans/latin-400.css'
 import '@fontsource/pt-sans/latin-700.css'
 import './index.css'
-import App from './App.tsx'
+import { StudioGate } from './studio/StudioGate.tsx'
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
-    <App />
+    <StudioGate />
   </StrictMode>,
 )

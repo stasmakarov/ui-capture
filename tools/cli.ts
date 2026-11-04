@@ -11,8 +11,15 @@ const HELP = `ui-capture — запись урока с живого сайта 
   npx ui-capture <url> [--lesson-name "Найти извещение"] [--mode auto|dom|screenshot] [--out ./lessons]
   npm run capture -- <url> --lesson-name "Найти извещение"
 
+Студия в браузере (запись, голос, правки, скачивание trainer.html):
+  npx ui-capture studio
+  npm start
+
 Пересобрать один HTML из уже записанных уроков в каталоге:
   npx ui-capture pack [--out ./lessons] [--html ./lessons/trainer.html]
+
+Скачать офлайн-модель распознавания русской речи:
+  npx ui-capture whisper-download
 
 Браузер:
   --headless              без окна (для проверки)
@@ -43,6 +50,27 @@ async function main() {
   const argv = process.argv.slice(2)
   if (argv.length === 0 || has(argv, '--help') || has(argv, '-h')) {
     console.log(HELP)
+    return
+  }
+  if (argv[0] === 'studio') {
+    const { startStudio } = await import('./studio/server.ts')
+    const port = Number(flag(argv, '--port') ?? 44731)
+    const studio = await startStudio({
+      port,
+      open: !has(argv, '--no-open'),
+      lessonsDir: path.resolve(flag(argv, '--out') ?? './lessons'),
+      capturesDir: path.resolve('captures'),
+    })
+    console.log(`Студия: ${studio.url}`)
+    console.log('Остановка: Ctrl+C')
+    await new Promise(() => undefined)
+    return
+  }
+  if (argv[0] === 'whisper-download') {
+    const { downloadWhisper } = await import('./studio/transcribe.ts')
+    console.log('Скачиваю whisper-small. Нужен интернет, дальше модель работает офлайн.')
+    await downloadWhisper()
+    console.log('Модель сохранена в .ui-capture/models')
     return
   }
   if (argv[0] === 'pack') {
