@@ -1,0 +1,1054 @@
+{
+  "id": "urok-81befff2",
+  "title": "Найти извещение",
+  "description": "Запись https://zakupki.gov.ru/epz/main/public/home.html. Пройдите шаги так же, как при записи.",
+  "sourceSite": "https://zakupki.gov.ru",
+  "startUrl": "https://zakupki.gov.ru/epz/main/public/home.html",
+  "viewport": {
+    "width": 1280,
+    "height": 800
+  },
+  "capturedAt": "2026-11-04T10:01:43.798Z",
+  "screens": [
+    {
+      "id": "s1",
+      "title": "Главная ЕИС в сфере закупок",
+      "url": "https://zakupki.gov.ru/epz/main/public/home.html",
+      "pageTitle": "Главная ЕИС в сфере закупок",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "screenshotFile": "screens/s1.original.png",
+      "rrwebFile": "screens/s1.rrweb.json",
+      "frozenHtmlFile": "screens/s1.freeze.html",
+      "elements": [
+        {
+          "hotspotId": "hf62ab7de",
+          "selector": "header:nth-of-type(1) > div > div > div:nth-of-type(3) > a",
+          "kind": "link",
+          "label": "Мой регион: Не выбран",
+          "box": {
+            "x": 655.9921875,
+            "y": 14.296875,
+            "width": 255.5,
+            "height": 21
+          }
+        },
+        {
+          "hotspotId": "hc5af0916",
+          "selector": "a.header-link",
+          "kind": "link",
+          "label": "a",
+          "box": {
+            "x": 982.4921875,
+            "y": 7.796875,
+            "width": 34,
+            "height": 34
+          }
+        },
+        {
+          "hotspotId": "h5c644d3a",
+          "selector": "header:nth-of-type(2) > div > div > div:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "Техническая поддержка",
+          "box": {
+            "x": 656,
+            "y": 84.03125,
+            "width": 205.0859375,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "h55ccc397",
+          "selector": "header:nth-of-type(2) > div > div > div:nth-of-type(3) > a",
+          "kind": "link",
+          "label": "Часто задаваемые вопросы",
+          "box": {
+            "x": 893.0859375,
+            "y": 84.03125,
+            "width": 229.171875,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "h29d65a0f",
+          "selector": "header:nth-of-type(3) > div > div > div > ul > ul > li:nth-of-type(1) > a",
+          "kind": "link",
+          "label": "Все разделы",
+          "box": {
+            "x": 100.46875,
+            "y": 163.59375,
+            "width": 78.3125,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "h18d66040",
+          "selector": "header:nth-of-type(3) > div > div > div > ul > ul > li:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "Закупки",
+          "box": {
+            "x": 202.78125,
+            "y": 163.59375,
+            "width": 49.984375,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "h79814a8d",
+          "selector": "header:nth-of-type(3) > div > div > div > ul > ul > li:nth-of-type(3) > a",
+          "kind": "link",
+          "label": "Контракты и договоры",
+          "box": {
+            "x": 276.765625,
+            "y": 163.59375,
+            "width": 141.234375,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "h14dbdc3e",
+          "selector": "header:nth-of-type(3) > div > div > div > ul > ul > li:nth-of-type(4) > a",
+          "kind": "link",
+          "label": "Планирование",
+          "box": {
+            "x": 442,
+            "y": 163.59375,
+            "width": 89.953125,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "hee42855b",
+          "selector": "header:nth-of-type(3) > div > div > div > ul > ul > li:nth-of-type(5) > a",
+          "kind": "link",
+          "label": "Каталог",
+          "box": {
+            "x": 555.953125,
+            "y": 163.59375,
+            "width": 48.921875,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "h1e3aa89c",
+          "selector": "header:nth-of-type(3) > div > div > div > ul > ul > li:nth-of-type(6) > a",
+          "kind": "link",
+          "label": "Документы",
+          "box": {
+            "x": 628.875,
+            "y": 163.59375,
+            "width": 70.7265625,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "h17a18bf9",
+          "selector": "header:nth-of-type(3) > div > div > div > ul > ul > li:nth-of-type(7) > a",
+          "kind": "link",
+          "label": "Новости",
+          "box": {
+            "x": 723.6015625,
+            "y": 163.59375,
+            "width": 52.078125,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "h88c71ed8",
+          "selector": "section:nth-of-type(1) > div > div > div:nth-of-type(1) > a",
+          "kind": "link",
+          "label": "Поставщикам",
+          "box": {
+            "x": 81,
+            "y": 231.7890625,
+            "width": 351.328125,
+            "height": 88
+          }
+        },
+        {
+          "hotspotId": "h24d7a667",
+          "selector": "section:nth-of-type(1) > div > div > div:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "Заказчикам",
+          "box": {
+            "x": 464.328125,
+            "y": 231.7890625,
+            "width": 351.328125,
+            "height": 88
+          }
+        },
+        {
+          "hotspotId": "hc19da40a",
+          "selector": "section:nth-of-type(1) > div > div > div:nth-of-type(3) > a",
+          "kind": "link",
+          "label": "Органам контроля",
+          "box": {
+            "x": 847.65625,
+            "y": 231.7890625,
+            "width": 351.328125,
+            "height": 88
+          }
+        },
+        {
+          "hotspotId": "h35d5e9db",
+          "selector": "#quickSearchForm_header_searchString",
+          "kind": "input",
+          "label": "Введите полностью или часть номера, наименования закупки, идентификационного кода закупки (ИКЗ), наименования или ИНН Заказчика",
+          "box": {
+            "x": 81,
+            "y": 351.7890625,
+            "width": 1118,
+            "height": 56
+          },
+          "inputType": "dirname",
+          "placeholder": "Введите полностью или часть номера, наименования закупки, идентификационного кода закупки (ИКЗ), наименования или ИНН Заказчика"
+        },
+        {
+          "hotspotId": "h4f92a299",
+          "selector": "#form-btn",
+          "kind": "button",
+          "label": "button",
+          "box": {
+            "x": 1165,
+            "y": 369.7890625,
+            "width": 18,
+            "height": 18.828125
+          },
+          "inputType": "button"
+        },
+        {
+          "hotspotId": "h23234779",
+          "selector": "#strictEqual",
+          "kind": "clickable",
+          "label": "Искать точно, как в запросе",
+          "box": {
+            "x": 777.6796875,
+            "y": 425.7890625,
+            "width": 13,
+            "height": 13
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "hotspotId": "hba90c730",
+          "selector": "#go-to-all-param",
+          "kind": "link",
+          "label": "Все параметры поиска",
+          "box": {
+            "x": 1033.9609375,
+            "y": 429.7890625,
+            "width": 140.5703125,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "h3d6026d4",
+          "selector": "section:nth-of-type(2) > div:nth-of-type(1) > div > div > div:nth-of-type(1) > div > div > div > div > div:nth-of-type(1) > div > div > article > div > div:nth-of-type(1) > span:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "НПА в сфере закупок",
+          "box": {
+            "x": -439.78125,
+            "y": 557.7890625,
+            "width": 130.9453125,
+            "height": 12
+          }
+        },
+        {
+          "hotspotId": "he68177a3",
+          "selector": "#slick-slide01 > div > div > article > div > div:nth-of-type(1) > span:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "НПА в сфере закупок",
+          "box": {
+            "x": 1025.3359375,
+            "y": 557.7890625,
+            "width": 130.9453125,
+            "height": 12
+          }
+        },
+        {
+          "hotspotId": "h3cfdc7c0",
+          "selector": "#slick-slide02 > div > div > article > div > div:nth-of-type(1) > span:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "НПА в сфере закупок",
+          "box": {
+            "x": 1765.21875,
+            "y": 557.7890625,
+            "width": 130.9453125,
+            "height": 12
+          }
+        },
+        {
+          "hotspotId": "h643e1c39",
+          "selector": "#slick-slide03 > div > div > article > div > div:nth-of-type(1) > span:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "НПА в сфере закупок",
+          "box": {
+            "x": 2500.21875,
+            "y": 557.7890625,
+            "width": 130.9453125,
+            "height": 12
+          }
+        },
+        {
+          "hotspotId": "h5aec0e3e",
+          "selector": "#slick-slide04 > div > div > article > div > div:nth-of-type(1) > span:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "НПА в сфере закупок",
+          "box": {
+            "x": 3235.21875,
+            "y": 557.7890625,
+            "width": 130.9453125,
+            "height": 12
+          }
+        },
+        {
+          "hotspotId": "h9e2ae7e3",
+          "selector": "section:nth-of-type(2) > div:nth-of-type(1) > div > div > div:nth-of-type(1) > div > div > div > div > div:nth-of-type(8) > div > div > article > div > div:nth-of-type(1) > span:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "НПА в сфере закупок",
+          "box": {
+            "x": 4700.3359375,
+            "y": 557.7890625,
+            "width": 130.9453125,
+            "height": 12
+          }
+        },
+        {
+          "hotspotId": "hb7a278ec",
+          "selector": "section:nth-of-type(2) > div:nth-of-type(1) > div > div > div:nth-of-type(1) > div > div > div > div > div:nth-of-type(9) > div > div > article > div > div:nth-of-type(1) > span:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "НПА в сфере закупок",
+          "box": {
+            "x": 5440.21875,
+            "y": 557.7890625,
+            "width": 130.9453125,
+            "height": 12
+          }
+        },
+        {
+          "hotspotId": "h7cc5929e",
+          "selector": "section:nth-of-type(2) > div:nth-of-type(1) > div > div > div:nth-of-type(1) > div > div > div > div > div:nth-of-type(10) > div > div > article > div > div:nth-of-type(1) > span:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "НПА в сфере закупок",
+          "box": {
+            "x": 6175.21875,
+            "y": 557.7890625,
+            "width": 130.9453125,
+            "height": 12
+          }
+        },
+        {
+          "hotspotId": "hfaf81375",
+          "selector": "section:nth-of-type(2) > div:nth-of-type(1) > div > div > div:nth-of-type(1) > div > div > div > div > div:nth-of-type(11) > div > div > article > div > div:nth-of-type(1) > span:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "НПА в сфере закупок",
+          "box": {
+            "x": 6910.21875,
+            "y": 557.7890625,
+            "width": 130.9453125,
+            "height": 12
+          }
+        },
+        {
+          "hotspotId": "haaf97e3e",
+          "selector": "section:nth-of-type(2) > div:nth-of-type(1) > div > div > div:nth-of-type(2) > aside > div:nth-of-type(1) > div:nth-of-type(1) > a",
+          "kind": "link",
+          "label": "a",
+          "box": {
+            "x": 952.609375,
+            "y": 529.2890625,
+            "width": 20,
+            "height": 16.5
+          }
+        },
+        {
+          "hotspotId": "hbdfae65b",
+          "selector": "section:nth-of-type(2) > div:nth-of-type(1) > div > div > div:nth-of-type(2) > aside > div:nth-of-type(1) > div:nth-of-type(2) > span > a",
+          "kind": "link",
+          "label": "Все новости",
+          "box": {
+            "x": 1075.2109375,
+            "y": 527.7890625,
+            "width": 75.3125,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "he1044c25",
+          "selector": "section:nth-of-type(2) > div:nth-of-type(1) > div > div > div:nth-of-type(2) > aside > div:nth-of-type(2) > article:nth-of-type(1) > div:nth-of-type(2) > span > a",
+          "kind": "link",
+          "label": "НПА в сфере закупок",
+          "box": {
+            "x": 871.6640625,
+            "y": 674.7890625,
+            "width": 130.9453125,
+            "height": 12
+          }
+        },
+        {
+          "hotspotId": "hb6f9e2a",
+          "selector": "section:nth-of-type(2) > div:nth-of-type(1) > div > div > div:nth-of-type(2) > aside > div:nth-of-type(2) > article:nth-of-type(2) > div:nth-of-type(2) > span > a",
+          "kind": "link",
+          "label": "НПА в сфере закупок",
+          "box": {
+            "x": 871.6640625,
+            "y": 782.7890625,
+            "width": 130.9453125,
+            "height": 12
+          }
+        },
+        {
+          "hotspotId": "hb5da41dc",
+          "selector": "header:nth-of-type(3) > div > div > div > ul > ul > li:nth-of-type(3) > ul > li > ul > li:nth-of-type(5) > a",
+          "kind": "link",
+          "label": "Библиотека типовых контрактов, типовых условий контрактов 44-ФЗ",
+          "box": {
+            "x": 276.765625,
+            "y": 392.59375,
+            "width": 350,
+            "height": 54
+          }
+        }
+      ]
+    },
+    {
+      "id": "s2",
+      "title": "Библиотека типовых контрактов, типовых условий контрактов",
+      "url": "https://zakupki.gov.ru/epz/btk/search/results.html",
+      "pageTitle": "Библиотека типовых контрактов, типовых условий контрактов",
+      "viewport": {
+        "width": 1280,
+        "height": 800
+      },
+      "screenshotFile": "screens/s2.original.png",
+      "rrwebFile": "screens/s2.rrweb.json",
+      "frozenHtmlFile": "screens/s2.freeze.html",
+      "elements": [
+        {
+          "hotspotId": "hf62ab7de",
+          "selector": "header:nth-of-type(1) > div > div > div:nth-of-type(3) > a",
+          "kind": "link",
+          "label": "Мой регион: Не выбран",
+          "box": {
+            "x": 655.9921875,
+            "y": 14.296875,
+            "width": 255.5,
+            "height": 21
+          }
+        },
+        {
+          "hotspotId": "hc5af0916",
+          "selector": "a.header-link",
+          "kind": "link",
+          "label": "a",
+          "box": {
+            "x": 982.4921875,
+            "y": 7.796875,
+            "width": 34,
+            "height": 34
+          }
+        },
+        {
+          "hotspotId": "h5c644d3a",
+          "selector": "header:nth-of-type(2) > div > div > div:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "Техническая поддержка",
+          "box": {
+            "x": 656,
+            "y": 84.03125,
+            "width": 205.0859375,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "h55ccc397",
+          "selector": "header:nth-of-type(2) > div > div > div:nth-of-type(3) > a",
+          "kind": "link",
+          "label": "Часто задаваемые вопросы",
+          "box": {
+            "x": 893.0859375,
+            "y": 84.03125,
+            "width": 229.171875,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "h29d65a0f",
+          "selector": "header:nth-of-type(3) > div > div > div > ul > ul > li:nth-of-type(1) > a",
+          "kind": "link",
+          "label": "Все разделы",
+          "box": {
+            "x": 100.46875,
+            "y": 163.59375,
+            "width": 78.3125,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "h18d66040",
+          "selector": "header:nth-of-type(3) > div > div > div > ul > ul > li:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "Закупки",
+          "box": {
+            "x": 202.78125,
+            "y": 163.59375,
+            "width": 49.984375,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "h79814a8d",
+          "selector": "header:nth-of-type(3) > div > div > div > ul > ul > li:nth-of-type(3) > a",
+          "kind": "link",
+          "label": "Контракты и договоры",
+          "box": {
+            "x": 276.765625,
+            "y": 163.59375,
+            "width": 141.234375,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "h14dbdc3e",
+          "selector": "header:nth-of-type(3) > div > div > div > ul > ul > li:nth-of-type(4) > a",
+          "kind": "link",
+          "label": "Планирование",
+          "box": {
+            "x": 442,
+            "y": 163.59375,
+            "width": 89.953125,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "hee42855b",
+          "selector": "header:nth-of-type(3) > div > div > div > ul > ul > li:nth-of-type(5) > a",
+          "kind": "link",
+          "label": "Каталог",
+          "box": {
+            "x": 555.953125,
+            "y": 163.59375,
+            "width": 48.921875,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "h1e3aa89c",
+          "selector": "header:nth-of-type(3) > div > div > div > ul > ul > li:nth-of-type(6) > a",
+          "kind": "link",
+          "label": "Документы",
+          "box": {
+            "x": 628.875,
+            "y": 163.59375,
+            "width": 70.7265625,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "h17a18bf9",
+          "selector": "header:nth-of-type(3) > div > div > div > ul > ul > li:nth-of-type(7) > a",
+          "kind": "link",
+          "label": "Новости",
+          "box": {
+            "x": 723.6015625,
+            "y": 163.59375,
+            "width": 52.078125,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "h128023d3",
+          "selector": "#searchString",
+          "kind": "input",
+          "label": "Введите полностью или часть номера, наименования или ИНН организации, разместившей сведения, или ответственного органа – разработчика типово",
+          "box": {
+            "x": 81,
+            "y": 312.59375,
+            "width": 1118,
+            "height": 56
+          },
+          "inputType": "dirname",
+          "placeholder": "Введите полностью или часть номера, наименования или ИНН организации, разместившей сведения, или ответственного органа – разработчика типового контракта (типовых условий контракта)"
+        },
+        {
+          "hotspotId": "h82b467a5",
+          "selector": "button.search__btn",
+          "kind": "button",
+          "label": "button",
+          "box": {
+            "x": 1165,
+            "y": 330.59375,
+            "width": 18,
+            "height": 18.828125
+          },
+          "inputType": "submit"
+        },
+        {
+          "hotspotId": "h23234779",
+          "selector": "#strictEqual",
+          "kind": "clickable",
+          "label": "Искать точно, как в запросе",
+          "box": {
+            "x": 1000.71875,
+            "y": 387.59375,
+            "width": 13,
+            "height": 13
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "hotspotId": "hd91448a9",
+          "selector": "a.rss-search",
+          "kind": "link",
+          "label": "a",
+          "box": {
+            "x": 899.5,
+            "y": 559.59375,
+            "width": 12,
+            "height": 21
+          }
+        },
+        {
+          "hotspotId": "h71b3d139",
+          "selector": "#quickSearchForm_header > section:nth-of-type(2) > div > div > div:nth-of-type(1) > div:nth-of-type(3) > div:nth-of-type(1) > div > div:nth-of-type(1) > div:nth-of-type(1) > div > div:nth-of-type(1) > a",
+          "kind": "link",
+          "label": "№ 1400700000525001",
+          "box": {
+            "x": 106,
+            "y": 664.59375,
+            "width": 196.9453125,
+            "height": 22
+          }
+        },
+        {
+          "hotspotId": "hdf60dfdc",
+          "selector": "#quickSearchForm_header > section:nth-of-type(2) > div > div > div:nth-of-type(1) > div:nth-of-type(3) > div:nth-of-type(1) > div > div:nth-of-type(1) > div:nth-of-type(1) > div > div:nth-of-type(3) > a:nth-of-type(1)",
+          "kind": "link",
+          "label": "a",
+          "box": {
+            "x": 562.328125,
+            "y": 663.59375,
+            "width": 20,
+            "height": 24
+          }
+        },
+        {
+          "hotspotId": "h3f592837",
+          "selector": "#quickSearchForm_header > section:nth-of-type(2) > div > div > div:nth-of-type(1) > div:nth-of-type(3) > div:nth-of-type(1) > div > div:nth-of-type(1) > div:nth-of-type(1) > div > div:nth-of-type(3) > a:nth-of-type(2)",
+          "kind": "link",
+          "label": "a",
+          "box": {
+            "x": 598.328125,
+            "y": 663.59375,
+            "width": 20,
+            "height": 24
+          }
+        },
+        {
+          "hotspotId": "ha5435c3a",
+          "selector": "#quickSearchForm_header > section:nth-of-type(2) > div > div > div:nth-of-type(1) > div:nth-of-type(3) > div:nth-of-type(1) > div > div:nth-of-type(1) > div:nth-of-type(2) > div:nth-of-type(1) > div:nth-of-type(2) > a",
+          "kind": "link",
+          "label": "ОБЩЕСТВО С ОГРАНИЧЕННОЙ ОТВЕТСТВЕННОСТЬЮ \"НЬЮКОНТАКТ\"",
+          "box": {
+            "x": 106,
+            "y": 725.09375,
+            "width": 424.875,
+            "height": 15
+          }
+        },
+        {
+          "hotspotId": "had81cde5",
+          "selector": "#top-back-button a",
+          "kind": "link",
+          "label": "Все параметры",
+          "box": {
+            "x": 944.5,
+            "y": 565.59375,
+            "width": 253.5,
+            "height": 20
+          }
+        },
+        {
+          "hotspotId": "hd17aa380",
+          "selector": "#published",
+          "kind": "clickable",
+          "label": "Размещено",
+          "box": {
+            "x": 944.5,
+            "y": 670.59375,
+            "width": 13,
+            "height": 13
+          },
+          "inputType": "checkbox"
+        },
+        {
+          "hotspotId": "h2be52d19",
+          "selector": "#invalid",
+          "kind": "clickable",
+          "label": "Недействительно",
+          "box": {
+            "x": 944.5,
+            "y": 706.59375,
+            "width": 13,
+            "height": 13
+          },
+          "inputType": "checkbox"
+        }
+      ]
+    }
+  ],
+  "actions": [
+    {
+      "screenId": "s1",
+      "kind": "click",
+      "confirm": null,
+      "value": "",
+      "hotspotId": "hb5da41dc",
+      "selector": "header:nth-of-type(3) > div > div > div > ul > ul > li:nth-of-type(3) > ul > li > ul > li:nth-of-type(5) > a",
+      "label": "Библиотека типовых контрактов, типовых условий контрактов 44-ФЗ",
+      "box": {
+        "x": 276.765625,
+        "y": 392.59375,
+        "width": 350,
+        "height": 54
+      },
+      "nextScreenId": "s2",
+      "prelude": false
+    }
+  ],
+  "assets": [
+    {
+      "url": "https://zakupki.gov.ru/epz/static/css/jquery_msgbox.css",
+      "file": "b419116650-jquery_msgbox.css",
+      "contentType": "text/css"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/css/jquery.datepick.css",
+      "file": "610bbf0634-jquery.datepick.css",
+      "contentType": "text/css"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/css/ui.dynatree.css",
+      "file": "aa3e5d6e48-ui.dynatree.css",
+      "contentType": "text/css"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/css/skin.css",
+      "file": "859476e0c6-skin.css",
+      "contentType": "text/css"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/css/app.css",
+      "file": "75e5285d29-app.css",
+      "contentType": "text/css"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/icon_eye.svg",
+      "file": "ea3ea7e92d-icon_eye.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/icon_region.svg",
+      "file": "ba6931f5ee-icon_region.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/icon_arrow_region.svg",
+      "file": "85b0695bdb-icon_arrow_region.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/arrow.svg",
+      "file": "ddf21953b8-arrow.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/icon_arrow_lk.svg",
+      "file": "24caf026ca-icon_arrow_lk.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/icon_user.svg",
+      "file": "dfd94208c3-icon_user.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/icon_envelop_circle.svg",
+      "file": "d16794e85a-icon_envelop_circle.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/icon_sitemap.svg",
+      "file": "4a11c6837a-icon_sitemap.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/arrow_blue.svg",
+      "file": "864e265823-arrow_blue.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/icon_faq.svg",
+      "file": "99356be44b-icon_faq.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/to_suppliers.svg",
+      "file": "236100f71f-to_suppliers.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/logos/news-logo.png",
+      "file": "958b2d8b04-news-logo.png",
+      "contentType": "image/png"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/to_customers.svg",
+      "file": "5b72f2cf84-to_customers.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/icon_cross.svg",
+      "file": "927648e3b4-icon_cross.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/icon_rss.svg",
+      "file": "615741f8e3-icon_rss.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/to_control_bodies.svg",
+      "file": "5bd011573b-to_control_bodies.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/icon_search.svg",
+      "file": "8b90640912-icon_search.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/icon_fltr_small.svg",
+      "file": "54c0f102af-icon_fltr_small.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/status/icon-main.svg",
+      "file": "d951c90e84-icon-main.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/main/public/download/download.html?id=29247",
+      "file": "7c140d6441-download.html.jpg",
+      "contentType": "image/jpeg; charset=UTF-8"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/main/public/download/download.html?id=29245",
+      "file": "97d21b3f3c-download.html.jpg",
+      "contentType": "image/jpeg; charset=UTF-8"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/main/public/download/download.html?id=29243",
+      "file": "df8b3495d5-download.html.jpg",
+      "contentType": "image/jpeg; charset=UTF-8"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/main/public/download/download.html?id=29244",
+      "file": "3357a282d0-download.html.jpg",
+      "contentType": "image/jpeg; charset=UTF-8"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/main/public/download/download.html?id=29241",
+      "file": "37ff1dd845-download.html.jpg",
+      "contentType": "image/jpeg; charset=UTF-8"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/main/public/download/download.html?id=29239",
+      "file": "b327470d80-download.html.jpg",
+      "contentType": "image/jpeg; charset=UTF-8"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/main/public/download/download.html?id=29427",
+      "file": "dc220968e9-download.html.jpg",
+      "contentType": "image/jpeg; charset=UTF-8"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/main/public/download/download.html?id=29231",
+      "file": "931a2ea5ed-download.html.jpg",
+      "contentType": "image/jpeg; charset=UTF-8"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/main/public/download/download.html?id=31568",
+      "file": "288c85dadb-download.html.bin",
+      "contentType": "image/bmp; charset=UTF-8"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/help_icon.svg",
+      "file": "3df44bbd51-help_icon.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/partners/rostorg_new.svg",
+      "file": "a8b91e25b1-rostorg_new.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/partners/rts.svg",
+      "file": "dd8f278310-rts.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/partners/ets.svg",
+      "file": "874d81b91c-ets.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/partners/sberbank_new.svg",
+      "file": "061f96b32e-sberbank_new.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/ico_sub.svg",
+      "file": "83eb9b9c7a-ico_sub.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/main/public/download/download.html?id=29238",
+      "file": "6f39049978-download.html.jpg",
+      "contentType": "image/jpeg; charset=UTF-8"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/icon-footer-eagle.svg",
+      "file": "38b0eca407-icon-footer-eagle.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/partners/etpgpb.svg",
+      "file": "814d032204-etpgpb.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/partners/newGZ.svg",
+      "file": "e37e555748-newGZ.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/partners/etp.svg",
+      "file": "cce04bbe46-etp.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/partners/astgoz.svg",
+      "file": "8261af2006-astgoz.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/main/public/download/download.html?id=29388",
+      "file": "9cfc767fe3-download.html.jpg",
+      "contentType": "image/jpeg; charset=UTF-8"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/arrow-on-top.svg",
+      "file": "b14c7fc8f6-arrow-on-top.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/partners/etpgpbspec.svg",
+      "file": "af6ff4ad93-etpgpbspec.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/partners/etprf.svg",
+      "file": "7606889925-etprf.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/header/emblem.svg",
+      "file": "d308373fbb-emblem.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/partners/tektorg_new.svg",
+      "file": "d375b103c4-tektorg_new.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/acfa17134bbcaebe7b8d3bd592720f52.gif",
+      "file": "0700a2a78a-acfa17134bbcaebe7b8d3bd592720f52.gif",
+      "contentType": "image/gif"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/main/public/download/download.html?id=32441",
+      "file": "7eebae05fb-download.html.jpg",
+      "contentType": "image/jpeg; charset=UTF-8"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/left_arrow.svg",
+      "file": "fb5e6a2726-left_arrow.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/right_arrow.svg",
+      "file": "9ad9e12aa9-right_arrow.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/fonts/roboto2/Roboto-Regular.ttf",
+      "file": "e0e3e1b03b-Roboto-Regular.ttf",
+      "contentType": "application/x-font-ttf"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/fonts/roboto2/Roboto-Bold.ttf",
+      "file": "68e0ae60dd-Roboto-Bold.ttf",
+      "contentType": "application/x-font-ttf"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/fonts/roboto2/Roboto-Medium.ttf",
+      "file": "780a874985-Roboto-Medium.ttf",
+      "contentType": "application/x-font-ttf"
+    },
+    {
+      "url": "https://mc.yandex.ru/metrika/advert.gif?t=gdpr(14)ti(4)",
+      "file": "f376150254-advert.gif",
+      "contentType": "image/gif"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/icon_key.svg",
+      "file": "efcfd1c8d4-icon_key.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/icon_print_small.svg",
+      "file": "2a3c5f51a0-icon_print_small.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/arrow-prime.svg",
+      "file": "5c43524519-arrow-prime.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/icon_cross_btn.svg",
+      "file": "2765173533-icon_cross_btn.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/icon_arrow_region--gray.svg",
+      "file": "b1ced2bee4-icon_arrow_region--gray.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/static/img/icons/calendar.svg",
+      "file": "bbc2401ed5-calendar.svg",
+      "contentType": "image/svg+xml"
+    },
+    {
+      "url": "https://zakupki.gov.ru/epz/organization/css/styles.css",
+      "file": "f39524c931-styles.css",
+      "contentType": "text/css; charset=UTF-8"
+    }
+  ],
+  "preferredRender": "auto"
+}

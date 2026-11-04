@@ -9,6 +9,15 @@
     "autoStepRatio": 1
   },
   {
+    "id": "urok-81befff2",
+    "title": "Найти извещение",
+    "description": "Запись https://zakupki.gov.ru/epz/main/public/home.html. Пройдите шаги так же, как при записи.",
+    "sourceSite": "https://zakupki.gov.ru",
+    "screens": 2,
+    "steps": 1,
+    "autoStepRatio": 1
+  },
+  {
     "id": "najti-statyu",
     "title": "Найти статью и открыть вкладку",
     "description": "Аналог сценария «Найти извещение и открыть карточку» на публичном сайте: главная, поиск по ключевой фразе, список результатов, карточка статьи, вкладка «Обсуждение». Портал zakupki.gov.ru из этой среды недоступен — TLS-рукопожатие обрывается.",

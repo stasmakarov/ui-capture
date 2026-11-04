@@ -1,0 +1,16 @@
+div.msgBox.dualFz {
+    width: 700px;
+}
+.dualFz div.msgBoxContent {
+    width: 550px;
+}
+.dualFz input.msgButton {
+    width: 330px;
+}
+.dualFz .icoAlign {
+    vertical-align: bottom;
+    margin-right: 5px;
+}
+.bankStatusNotActive {
+    color: red;
+}
