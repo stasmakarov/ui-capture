@@ -16,12 +16,13 @@ type TrainerApi = {
 };
 
 type Reported = {
-  id: number;
+  id: string;
   type: 'click' | 'fill' | 'select';
   described: DescribedElement;
   value: string;
   confirm: 'match' | 'enter' | null;
   changedInputs: Array<{ described: DescribedElement; value: string }>;
+  href?: string;
 };
 
 const RECORDER = `
@@ -31,7 +32,9 @@ const RECORDER = `
   window.__trainerQueue = window.__trainerQueue || [];
   let seq = 0;
   const push = (payload) => {
-    payload.id = ++seq;
+    // timeOrigin свой у каждого документа: после перехода и в новой вкладке номера не повторяются
+    payload.id = String(Math.round(performance.timeOrigin)) + '-' + (++seq);
+    payload.href = location.href;
     window.__trainerQueue.push(payload);
     const report = window.__trainerReport;
     if (typeof report === 'function') void report(payload);
@@ -302,25 +305,45 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
     deviceScaleFactor: 1,
   });
   const flushAssets = trackAssets(context, netDir, assets);
-  await context.exposeBinding('__trainerReport', (_source, payload: Reported) => {
-    if (!payload || seen.has(payload.id)) return;
-    seen.add(payload.id);
-    if (paused) return;
-    pending.push(payload);
-    schedule();
-  });
-  await context.addInitScript(script);
-  await context.addInitScript(RECORDER);
-  const page = await context.newPage();
-  const seen = new Set<number>();
-  const pending: Reported[] = [];
+  const seen = new Set<string>();
+  const pending: Array<Reported & { page: Page }> = [];
   const screens: CaptureScreen[] = [];
   const actions: CaptureAction[] = [];
+  const pages = new Set<Page>();
   let current: CaptureScreen | null = null;
+  let currentPage: Page | null = null;
   let currentPrint = '';
+  let active: Page | null = null;
   let paused = false;
   let timer: NodeJS.Timeout | undefined;
   let chain = Promise.resolve();
+  let schedule = () => {};
+  const rememberEvent = (from: Page, payload: Reported) => {
+    if (!payload?.id || seen.has(payload.id)) return;
+    seen.add(payload.id);
+    if (paused) return;
+    pending.push({ ...payload, page: from });
+    active = from;
+    schedule();
+  };
+  await context.exposeBinding('__trainerReport', (source: { page: Page }, payload: Reported) => {
+    rememberEvent(source.page, payload);
+  });
+  await context.addInitScript(script);
+  await context.addInitScript(RECORDER);
+  const watchPage = (next: Page) => {
+    if (pages.has(next)) return;
+    pages.add(next);
+    active = next;
+    next.on('close', () => {
+      pages.delete(next);
+      if (active === next) active = [...pages].at(-1) ?? null;
+      if (pages.size === 0 && browser.isConnected()) void browser.close();
+    });
+  };
+  context.on('page', watchPage);
+  const page = await context.newPage();
+  watchPage(page);
   const pullQueue = async (target: Page) => {
     if (target.isClosed()) return;
     const batch = await target.evaluate(() => {
@@ -328,40 +351,45 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
       (window as Window & { __trainerQueue?: Reported[] }).__trainerQueue = [];
       return queue;
     }).catch(() => [] as Reported[]);
-    for (const item of batch) {
-      if (seen.has(item.id)) continue;
-      seen.add(item.id);
-      if (paused) continue;
-      pending.push(item);
-    }
+    for (const item of batch) rememberEvent(target, item);
+  };
+
+  const adopt = async (target: Page) => {
+    if (target.isClosed()) return null;
+    await target.waitForLoadState('domcontentloaded', { timeout: 8000 }).catch(() => undefined);
+    const next = await captureScreen(target, captureDir, `s${screens.length + 1}`, flushAssets).catch((error: unknown) => {
+      console.error('Не удалось снять экран', target.url(), error instanceof Error ? error.message : error);
+      return null;
+    });
+    if (!next) return null;
+    screens.push(next);
+    const previous = actions[actions.length - 1];
+    if (previous && previous.nextScreenId === null) previous.nextScreenId = next.id;
+    current = next;
+    currentPage = target;
+    currentPrint = await fingerprint(target).catch(() => target.url());
+    return next;
   };
 
   const flush = async () => {
-    const target = page;
-    if (!target.isClosed()) await pullQueue(target);
+    for (const target of [...pages]) await pullQueue(target);
     if (!current) return;
     const batch = pending.splice(0);
     if (!batch.length) return;
-    let after = currentPrint;
-    if (!target.isClosed()) {
-      await target.waitForLoadState('domcontentloaded', { timeout: 8000 }).catch(() => undefined);
-      await target.waitForTimeout(200).catch(() => undefined);
-      after = await fingerprint(target).catch(() => currentPrint);
-    }
-    const moved = after !== currentPrint && !target.isClosed();
-    let nextId: string | null = null;
-    if (moved && !target.isClosed()) {
-      const next = await captureScreen(target, captureDir, `s${screens.length + 1}`, flushAssets);
-      screens.push(next);
-      nextId = next.id;
-    }
-    batch.forEach((event, index) => {
-      const last = index === batch.length - 1;
+    for (const event of batch) {
+      const href = event.href || (event.page.isClosed() ? current?.url : event.page.url());
+      const otherDocument = !!current && !!href && href !== current.url;
+      if (otherDocument && !event.page.isClosed()) {
+        const stillThere = event.page.url() === href;
+        if (stillThere || event.page !== currentPage) await adopt(event.page);
+      }
+      const screen = current;
+      if (!screen) continue;
       const fills = event.type === 'click' ? event.changedInputs : [];
       for (const input of fills) {
-        const described = remember(current!, input.described);
+        const described = remember(screen, input.described);
         actions.push({
-          screenId: current!.id,
+          screenId: screen.id,
           kind: 'fill',
           confirm: 'match',
           value: input.value,
@@ -375,9 +403,9 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
         console.log(`  ввод «${input.value}» в «${described.label}»`);
         options.onAction?.(actions[actions.length - 1]!);
       }
-      const described = remember(current!, event.described);
+      const described = remember(screen, event.described);
       actions.push({
-        screenId: current!.id,
+        screenId: screen.id,
         kind: event.type === 'fill' ? 'fill' : event.type === 'select' ? 'select' : 'click',
         confirm: event.type === 'fill' ? event.confirm : null,
         value: event.value,
@@ -385,20 +413,23 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
         selector: described.selector,
         label: described.label,
         box: described.box,
-        nextScreenId: last ? nextId : null,
+        nextScreenId: null,
         prelude: false,
       });
-      console.log(`  ${event.type} «${described.label}»${last && nextId ? ` → ${nextId}` : ''}`);
+      console.log(`  ${event.type} «${described.label}»`);
       options.onAction?.(actions[actions.length - 1]!);
-    });
-    if (nextId) {
-      current = screens[screens.length - 1] ?? current;
-      currentPrint = after;
+    }
+    const target = currentPage && !currentPage.isClosed() ? currentPage : active;
+    if (target && !target.isClosed()) {
+      await target.waitForLoadState('domcontentloaded', { timeout: 8000 }).catch(() => undefined);
+      await target.waitForTimeout(200).catch(() => undefined);
+      const after = await fingerprint(target).catch(() => currentPrint);
+      if (after !== currentPrint) await adopt(target);
     }
     if (pending.length) schedule();
   };
 
-  const schedule = () => {
+  schedule = () => {
     if (timer) return;
     timer = setTimeout(() => {
       timer = undefined;
@@ -409,9 +440,9 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
   };
 
   const poll = setInterval(() => {
-    void pullQueue(page).then(() => {
-      if (pending.length) schedule();
-    }).catch(() => undefined);
+    void (async () => {
+      for (const target of [...pages]) await pullQueue(target);
+    })().catch(() => undefined);
   }, 250);
 
   try {
@@ -423,7 +454,9 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
     await page.waitForLoadState('networkidle', { timeout: 8000 }).catch(() => undefined);
     current = await captureScreen(page, captureDir, 's1', flushAssets);
     screens.push(current);
+    currentPage = page;
     currentPrint = await fingerprint(page).catch(() => page.url());
+    if (pending.length) schedule();
     console.log(`Стартовый экран: «${current.title}»`);
     options.onSession?.({
       stop: async () => {
@@ -442,9 +475,6 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
       void browser.close();
     };
     process.on('SIGINT', onSigint);
-    page.on('close', () => {
-      void browser.close();
-    });
     if (options.onReady) await options.onReady(page);
     if (browser.isConnected()) await finished;
     process.off('SIGINT', onSigint);

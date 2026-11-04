@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { encodeWavMono, sliceChannel } from './wav.ts'
+import { clipBounds, encodeWavMono, sliceChannel } from './wav.ts'
 
 describe('wav', () => {
   it('режет канал и пишет заголовок RIFF', () => {
@@ -12,5 +12,11 @@ describe('wav', () => {
     expect(String.fromCharCode(...wav.slice(0, 4))).toBe('RIFF')
     expect(String.fromCharCode(...wav.slice(8, 12))).toBe('WAVE')
     expect(wav.length).toBe(44 + clip.length * 2)
+  })
+
+  it('последний шаг забирает запись до конца, а не долю секунды после клика', () => {
+    expect(clipBounds(0, [0.2], 3)).toEqual({ start: 0, end: 3 })
+    expect(clipBounds(0, [1, 2.5], 4)).toEqual({ start: 0, end: 2.5 })
+    expect(clipBounds(1, [1, 2.5], 4)).toEqual({ start: 1, end: 4 })
   })
 })

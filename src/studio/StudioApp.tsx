@@ -2,6 +2,8 @@ import { useEffect, useRef, useState } from 'react'
 import type { Lesson } from '../../shared/lesson.ts'
 import { sliceRecording, type StepMark } from './sliceAudio.ts'
 import { downloadLabel } from '../../tools/studio/downloadProgress.ts'
+import { ConfirmDialog } from './ConfirmDialog.tsx'
+import { StepEditor } from './StepEditor.tsx'
 import './studio.css'
 
 type View = 'catalog' | 'new' | 'recording' | 'preview' | 'editor'
@@ -34,7 +36,11 @@ export function StudioApp() {
   const [whisper, setWhisper] = useState<Whisper | null>(null)
   const [previewId, setPreviewId] = useState<string | null>(null)
   const [editor, setEditor] = useState<Lesson | null>(null)
+  const [baseline, setBaseline] = useState('')
+  const [leaveOpen, setLeaveOpen] = useState(false)
+  const [pendingDelete, setPendingDelete] = useState<CatalogItem | null>(null)
   const [selected, setSelected] = useState<string[]>([])
+  const dirty = !!editor && JSON.stringify(editor) !== baseline
 
   async function reload() {
     const response = await fetch('/api/lessons')
@@ -69,13 +75,12 @@ export function StudioApp() {
             onOpen={(id) => { setPreviewId(id); setView('preview') }}
             onEdit={async (id) => {
               const response = await fetch(`/api/lessons/${id}`)
-              setEditor(await response.json() as Lesson)
+              const lesson = await response.json() as Lesson
+              setEditor(lesson)
+              setBaseline(JSON.stringify(lesson))
               setView('editor')
             }}
-            onDelete={async (id) => {
-              await fetch(`/api/lessons/${id}`, { method: 'DELETE' })
-              await reload()
-            }}
+            onDelete={(item) => setPendingDelete(item)}
             onDownload={async () => {
               setError(null)
               const response = await fetch('/api/export', {
@@ -103,14 +108,18 @@ export function StudioApp() {
             onError={setError}
             onStopped={async (id, marks, blob) => {
               if (blob && marks.length) {
-                const clips = await sliceRecording(blob, marks)
-                const response = await fetch(`/api/lessons/${id}/audio`, {
-                  method: 'POST',
-                  headers: { 'Content-Type': 'application/json' },
-                  body: JSON.stringify({ clips: clips.map((wavBase64, index) => ({ stepId: `step-${index + 1}`, wavBase64 })) }),
-                })
-                const payload = await response.json() as { warnings?: string[] }
-                if (payload.warnings?.length) setError(payload.warnings[0] ?? null)
+                try {
+                  const clips = await sliceRecording(blob, marks)
+                  const response = await fetch(`/api/lessons/${id}/audio`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ clips: clips.map((wavBase64, index) => ({ stepId: `step-${index + 1}`, wavBase64 })) }),
+                  })
+                  const payload = await response.json() as { warnings?: string[] }
+                  if (payload.warnings?.length) setError(payload.warnings[0] ?? null)
+                } catch {
+                  setError('Не удалось разобрать запись микрофона. Шаги сохранены без звука.')
+                }
               }
               setPreviewId(id)
               setView('preview')
@@ -122,10 +131,12 @@ export function StudioApp() {
           <section>
             <div className="row">
               <h1>Просмотр урока</h1>
-              <button type="button" onClick={() => setView('catalog')}>К каталогу</button>
-              <button type="button" onClick={async () => {
+              <button type="button" className="tertiary" onClick={() => setView('catalog')}>К каталогу</button>
+              <button type="button" className="primary" onClick={async () => {
                 const response = await fetch(`/api/lessons/${previewId}`)
-                setEditor(await response.json() as Lesson)
+                const lesson = await response.json() as Lesson
+                setEditor(lesson)
+                setBaseline(JSON.stringify(lesson))
                 setView('editor')
               }}>Править шаги</button>
             </div>
@@ -133,10 +144,14 @@ export function StudioApp() {
           </section>
         )}
         {view === 'editor' && editor && (
-          <Editor
+          <StepEditor
             lesson={editor}
+            dirty={dirty}
             onChange={setEditor}
-            onCancel={() => { setPreviewId(editor.id); setView('preview') }}
+            onBack={() => {
+              if (dirty) setLeaveOpen(true)
+              else { setPreviewId(editor.id); setView('preview') }
+            }}
             onSave={async () => {
               const response = await fetch(`/api/lessons/${editor.id}`, {
                 method: 'PUT',
@@ -148,14 +163,53 @@ export function StudioApp() {
                 setError(payload.error ?? 'Не удалось сохранить')
                 return
               }
-              setEditor(await response.json() as Lesson)
+              const saved = await response.json() as Lesson
+              setEditor(saved)
+              setBaseline(JSON.stringify(saved))
               await reload()
             }}
             onTranscribe={async (stepId) => {
               const response = await fetch(`/api/lessons/${editor.id}/steps/${encodeURIComponent(stepId)}/transcribe`, { method: 'POST' })
               const payload = await response.json() as Lesson & { error?: string }
               if (!response.ok) { setError(payload.error ?? 'Не удалось распознать'); return }
-              setEditor(payload)
+              setEditor((current) => {
+                if (!current) return payload
+                return {
+                  ...current,
+                  steps: current.steps.map((step) => {
+                    const next = payload.steps.find((item) => item.id === step.id)
+                    return step.id === stepId && next ? { ...step, hint: next.hint, narration: next.narration } : step
+                  }),
+                }
+              })
+            }}
+          />
+        )}
+        {pendingDelete && (
+          <ConfirmDialog
+            title={`Удалить урок «${pendingDelete.title}»?`}
+            message="Действие нельзя отменить."
+            confirmLabel="Удалить"
+            tone="danger"
+            onCancel={() => setPendingDelete(null)}
+            onConfirm={async () => {
+              await fetch(`/api/lessons/${pendingDelete.id}`, { method: 'DELETE' })
+              setPendingDelete(null)
+              await reload()
+            }}
+          />
+        )}
+        {leaveOpen && editor && (
+          <ConfirmDialog
+            title="Есть несохранённые изменения"
+            message="Уйти без сохранения? Правки урока пропадут."
+            confirmLabel="Уйти"
+            tone="danger"
+            onCancel={() => setLeaveOpen(false)}
+            onConfirm={() => {
+              setLeaveOpen(false)
+              setPreviewId(editor.id)
+              setView('preview')
             }}
           />
         )}
@@ -172,15 +226,15 @@ function Catalog({ items, selected, whisper, onSelect, onNew, onOpen, onEdit, on
   onNew: () => void
   onOpen: (id: string) => void
   onEdit: (id: string) => void
-  onDelete: (id: string) => void
+  onDelete: (item: CatalogItem) => void
   onDownload: () => void
 }) {
   return (
     <section>
-      <div className="row">
+      <div className="toolbar">
         <h1>Уроки</h1>
-        <button type="button" onClick={onNew}>Новый урок</button>
-        <button type="button" className="ghost" onClick={onDownload}>Скачать trainer.html</button>
+        <button type="button" className="primary" onClick={onNew}>Новый урок</button>
+        <button type="button" className="tertiary" onClick={onDownload}>Скачать trainer.html</button>
       </div>
       {whisper?.ready && <p className="installed">Модель установлена</p>}
       {whisper && !whisper.ready && <p className="whisper">{whisper.hint}</p>}
@@ -200,9 +254,9 @@ function Catalog({ items, selected, whisper, onSelect, onNew, onOpen, onEdit, on
             <p>{item.description}</p>
             <p className="meta">{item.screens} экр. · {item.steps} шаг.</p>
             <div className="row">
-              <button type="button" onClick={() => onOpen(item.id)}>Открыть</button>
-              <button type="button" className="ghost" onClick={() => onEdit(item.id)}>Править</button>
-              <button type="button" className="ghost" onClick={() => onDelete(item.id)}>Удалить</button>
+              <button type="button" className="tertiary" onClick={() => onOpen(item.id)}>Открыть</button>
+              <button type="button" className="tertiary" onClick={() => onEdit(item.id)}>Править</button>
+              <button type="button" className="tertiary danger-text" onClick={() => onDelete(item)}>Удалить</button>
             </div>
           </article>
         ))}
@@ -353,10 +407,10 @@ function NewLesson({ whisper, onCancel, onError, onWhisper, onStarted }: {
             <option value="screenshot">Только скриншоты</option>
           </select>
         </label>
-        {!micGranted && (
+          {!micGranted && (
           <div className="field">
             <span>Микрофон</span>
-            <button type="button" onClick={() => void allowMic()}>Разрешить микрофон</button>
+            <button type="button" className="primary" onClick={() => void allowMic()}>Разрешить микрофон</button>
           </div>
         )}
         {micGranted && (
@@ -405,7 +459,7 @@ function NewLesson({ whisper, onCancel, onError, onWhisper, onStarted }: {
         {whisper && !whisper.ready && <p className="whisper">{whisper.hint}</p>}
         {whisper?.error && <p className="error" role="alert">{whisper.error}</p>}
         {whisper && !whisper.ready && (
-          <button type="button" className="ghost" disabled={downloading} onClick={async () => {
+          <button type="button" className="tertiary" disabled={downloading} onClick={async () => {
             onError('')
             const response = await fetch('/api/whisper/download', { method: 'POST' })
             const payload = await response.json() as Whisper & { error?: string }
@@ -416,9 +470,9 @@ function NewLesson({ whisper, onCancel, onError, onWhisper, onStarted }: {
             onWhisper(payload)
           }}>{downloading ? downloadLabel(whisper.percent, whisper.loadedBytes, whisper.totalBytes) : 'Скачать модель речи'}</button>
         )}
-        <div className="row">
-          <button type="submit" disabled={busy}>{busy ? 'Открываю браузер…' : 'Начать запись'}</button>
-          <button type="button" className="ghost" onClick={onCancel}>Отмена</button>
+        <div className="action-bar">
+          <button type="submit" className="primary" disabled={busy}>{busy ? 'Открываю браузер…' : 'Начать запись'}</button>
+          <button type="button" className="tertiary" onClick={onCancel}>Отмена</button>
         </div>
       </form>
     </section>
@@ -436,6 +490,7 @@ function Recording({ onError, onStopped }: {
   const [micOn, setMicOn] = useState(false)
   const marks = useRef<StepMark[]>([])
   const started = useRef(performance.now())
+  const audioOrigin = useRef(performance.now())
   const recorder = useRef<MediaRecorder | null>(null)
   const chunks = useRef<Blob[]>([])
 
@@ -446,10 +501,10 @@ function Recording({ onError, onStopped }: {
       const payload = JSON.parse(event.data) as { type: string; step?: LiveStep; steps?: LiveStep[] }
       if (payload.type === 'ready' && payload.steps) {
         setSteps(payload.steps)
-        marks.current = payload.steps.map(() => ({ t: (performance.now() - started.current) / 1000 }))
+        marks.current = payload.steps.map(() => ({ t: Math.max(0, (performance.now() - audioOrigin.current) / 1000) }))
       }
       if (payload.type === 'step' && payload.step) {
-        marks.current.push({ t: (performance.now() - started.current) / 1000 })
+        marks.current.push({ t: Math.max(0, (performance.now() - audioOrigin.current) / 1000) })
         setSteps((current) => [...current, payload.step!])
       }
       if (payload.type === 'paused') setPaused(true)
@@ -473,10 +528,13 @@ function Recording({ onError, onStopped }: {
         frame = requestAnimationFrame(tick)
       }
       tick()
+      const delay = (performance.now() - audioOrigin.current) / 1000
+      audioOrigin.current = performance.now()
+      marks.current = marks.current.map((mark) => ({ t: Math.max(0, mark.t - delay) }))
       const media = new MediaRecorder(stream)
       chunks.current = []
       media.ondataavailable = (event) => { if (event.data.size) chunks.current.push(event.data) }
-      media.start()
+      media.start(1000)
       recorder.current = media
       return () => { cancelAnimationFrame(frame); void context.close() }
     }).catch(() => onError('Микрофон недоступен. Запись шагов продолжится без голоса.'))
@@ -500,12 +558,12 @@ function Recording({ onError, onStopped }: {
         ))}
       </ol>
       <div className="row">
-        <button type="button" onClick={async () => {
+        <button type="button" className="tertiary" onClick={async () => {
           await fetch(paused ? '/api/record/resume' : '/api/record/pause', { method: 'POST' })
           if (paused) recorder.current?.resume()
           else recorder.current?.pause()
         }}>{paused ? 'Продолжить' : 'Пауза'}</button>
-        <button type="button" onClick={async () => {
+        <button type="button" className="primary" onClick={async () => {
           const blob = await stopRecorder(recorder.current, chunks.current)
           const response = await fetch('/api/record/stop', { method: 'POST' })
           const payload = await response.json() as { id?: string; steps?: Array<{ id: string }>; error?: string }
@@ -525,59 +583,3 @@ function stopRecorder(media: MediaRecorder | null, chunks: Blob[]): Promise<Blob
   })
 }
 
-function Editor({ lesson, onChange, onCancel, onSave, onTranscribe }: {
-  lesson: Lesson
-  onChange: (lesson: Lesson) => void
-  onCancel: () => void
-  onSave: () => void
-  onTranscribe: (stepId: string) => void
-}) {
-  function update(index: number, patch: Partial<Lesson['steps'][number]>) {
-    const steps = lesson.steps.map((step, stepIndex) => stepIndex === index ? { ...step, ...patch } : step)
-    onChange({ ...lesson, steps })
-  }
-  function move(index: number, direction: -1 | 1) {
-    const next = index + direction
-    if (next < 0 || next >= lesson.steps.length) return
-    const steps = [...lesson.steps]
-    const current = steps[index]
-    const other = steps[next]
-    if (!current || !other) return
-    steps[index] = other
-    steps[next] = current
-    onChange({ ...lesson, steps: steps.map((step, stepIndex) => ({ ...step, index: stepIndex })) })
-  }
-  return (
-    <section>
-      <div className="row">
-        <h1>Шаги: {lesson.title}</h1>
-        <button type="button" onClick={onSave}>Сохранить</button>
-        <button type="button" className="ghost" onClick={onCancel}>К просмотру</button>
-      </div>
-      <div className="live-steps">
-        {lesson.steps.map((step, index) => (
-          <article key={step.id} className="editor-step">
-            <strong>Шаг {index + 1}</strong>
-            <label>Инструкция
-              <textarea value={step.instruction} onChange={(event) => update(index, { instruction: event.target.value })} />
-            </label>
-            <label>Подсказка
-              <textarea value={step.hint} onChange={(event) => update(index, { hint: event.target.value })} />
-            </label>
-            <label>Сообщение об ошибке
-              <textarea value={step.errorText} onChange={(event) => update(index, { errorText: event.target.value })} />
-            </label>
-            <div className="row">
-              <button type="button" className="ghost" onClick={() => move(index, -1)}>Выше</button>
-              <button type="button" className="ghost" onClick={() => move(index, 1)}>Ниже</button>
-              <button type="button" className="ghost" onClick={() => onChange({ ...lesson, steps: lesson.steps.filter((_, stepIndex) => stepIndex !== index).map((item, stepIndex) => ({ ...item, index: stepIndex })) })}>Удалить шаг</button>
-              {step.audio && <audio controls src={step.audio.startsWith('data:') ? step.audio : `/lessons/${lesson.id}/${step.audio}`} />}
-              {step.audio && <button type="button" className="ghost" onClick={() => update(index, { audio: undefined })}>Удалить аудио</button>}
-              {step.audio && <button type="button" className="ghost" onClick={() => onTranscribe(step.id)}>Распознать ещё раз</button>}
-            </div>
-          </article>
-        ))}
-      </div>
-    </section>
-  )
-}

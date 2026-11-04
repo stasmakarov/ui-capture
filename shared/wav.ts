@@ -1,3 +1,9 @@
+export function clipBounds(index: number, marks: number[], duration: number): { start: number; end: number } {
+  const start = index === 0 ? 0 : Math.max(0, marks[index - 1] ?? 0)
+  const boundary = index === marks.length - 1 ? Math.max(duration, (marks[index] ?? 0) + 0.4) : (marks[index + 1] ?? duration)
+  return { start, end: Math.max(boundary, start + 0.3) }
+}
+
 export function sliceChannel(samples: Float32Array, sampleRate: number, startSec: number, endSec: number): Float32Array {
   const start = Math.max(0, Math.floor(startSec * sampleRate))
   const end = Math.min(samples.length, Math.ceil(endSec * sampleRate))

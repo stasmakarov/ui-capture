@@ -1,4 +1,4 @@
-import { encodeWavMono, sliceChannel } from '../../shared/wav.ts'
+import { clipBounds, encodeWavMono, sliceChannel } from '../../shared/wav.ts'
 
 export type StepMark = { t: number }
 
@@ -8,11 +8,14 @@ export async function sliceRecording(blob: Blob, marks: StepMark[]): Promise<str
   const decoded = await context.decodeAudioData(await blob.arrayBuffer())
   const channel = decoded.getChannelData(0)
   const clips: string[] = []
+  const times = marks.map((mark) => mark.t)
   for (let index = 0; index < marks.length; index += 1) {
-    const end = (marks[index]?.t ?? 0) + 0.35
-    const start = index === 0 ? 0 : Math.max(0, (marks[index - 1]?.t ?? 0) - 0.05)
-    const samples = sliceChannel(channel, decoded.sampleRate, start, Math.max(end, start + 0.3))
-    if (!samples.length) continue
+    const { start, end } = clipBounds(index, times, decoded.duration)
+    const samples = sliceChannel(channel, decoded.sampleRate, start, end)
+    if (!samples.length) {
+      clips.push('')
+      continue
+    }
     const wav = encodeWavMono(samples, decoded.sampleRate)
     let binary = ''
     for (let i = 0; i < wav.length; i += 1) binary += String.fromCharCode(wav[i] ?? 0)

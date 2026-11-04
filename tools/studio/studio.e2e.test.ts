@@ -117,11 +117,19 @@ describe('студия', () => {
       await page.getByRole('heading', { name: 'Просмотр урока' }).waitFor({ timeout: 120000 })
       await page.screenshot({ path: path.join(shots, '03-preview.png') })
       await page.getByRole('button', { name: 'Править шаги' }).click()
-      await page.getByRole('heading', { name: /Шаги:/ }).waitFor()
-      const hint = page.locator('textarea').nth(1)
-      await hint.fill('Подсказка из редактора')
+      await page.getByRole('heading', { name: 'Найти извещение' }).waitFor()
+      await page.locator('.screen-preview img').first().waitFor()
+      await page.getByLabel('Подсказка').fill('Подсказка из редактора')
+      await page.getByText('Есть несохранённые изменения').waitFor()
+      await page.getByRole('button', { name: 'Переместить шаг ниже' }).first().waitFor()
+      await page.evaluate(() => window.scrollTo(0, 0))
       await page.screenshot({ path: path.join(shots, '04-editor.png') })
+      await page.getByRole('button', { name: 'Удалить шаг' }).click()
+      await page.getByRole('heading', { name: 'Удалить шаг 1?' }).waitFor()
+      await page.screenshot({ path: path.join(shots, '07-confirm-delete.png') })
+      await page.getByRole('button', { name: 'Отмена' }).click()
       await page.getByRole('button', { name: 'Сохранить' }).click()
+      await page.getByText('Есть несохранённые изменения').waitFor({ state: 'hidden' })
       await page.getByRole('button', { name: 'К просмотру' }).click()
       const saved = JSON.parse(await readFile(path.join(lessons, lessonIdFromName('Найти извещение'), 'lesson.json'), 'utf8')) as { steps: Array<{ hint: string; audio?: string }> }
       expect(saved.steps.some((step) => step.hint === 'Подсказка из редактора')).toBe(true)
@@ -129,6 +137,8 @@ describe('студия', () => {
       const wav = await readFile(path.join(lessons, lessonIdFromName('Найти извещение'), saved.steps.find((step) => step.audio)?.audio ?? ''))
       expect(wav.subarray(0, 4).toString()).toBe('RIFF')
       await page.getByRole('button', { name: 'К каталогу' }).click()
+      await page.getByRole('heading', { name: 'Уроки' }).waitFor()
+      await page.screenshot({ path: path.join(shots, '08-catalog.png') })
       const [exported] = await Promise.all([
         page.waitForResponse((response) => response.url().includes('/api/export')),
         page.getByRole('button', { name: 'Скачать trainer.html' }).click(),
