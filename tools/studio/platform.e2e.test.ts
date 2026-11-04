@@ -43,9 +43,6 @@ describe.skipIf(!platformUrl)('платформа: студия публикуе
     const lessonsDir = path.join(root, 'lessons')
     await mkdir(lessonsDir, { recursive: true })
     await cp(path.resolve('lessons', LESSON_ID), path.join(lessonsDir, LESSON_ID), { recursive: true })
-    const studio = await startStudio({ port: 44731, open: false, lessonsDir, capturesDir: path.join(root, 'captures') })
-    cleanup.push(() => studio.close())
-
     const browser = await chromium.launch({ headless: true })
     cleanup.push(() => browser.close())
     const context = await browser.newContext({ viewport: { width: 1440, height: 900 }, locale: 'ru-RU' })
@@ -57,6 +54,15 @@ describe.skipIf(!platformUrl)('платформа: студия публикуе
     await page.goto(`${platformUrl}/lessons`)
     await page.locator('#recordInStudio').waitFor()
     await shot(page, '02-lessons-before')
+
+    // Студия не запущена: схема не сработала, 127.0.0.1:44731 молчит — админка показывает инструкцию и ссылку
+    await page.locator('#recordInStudio').click()
+    await page.getByText('Студия не найдена').waitFor({ timeout: 20000 })
+    await shot(page, '03a-studio-not-found')
+    await page.getByRole('button', { name: 'Закрыть' }).click()
+
+    const studio = await startStudio({ port: 44731, open: false, lessonsDir, capturesDir: path.join(root, 'captures') })
+    cleanup.push(() => studio.close())
 
     const studioTab = context.waitForEvent('page')
     await page.locator('#recordInStudio').click()
@@ -120,5 +126,14 @@ describe.skipIf(!platformUrl)('платформа: студия публикуе
     await page.waitForTimeout(800)
     expect(await page.locator('#lessonsGrid .uic-status-published').count()).toBeGreaterThan(0)
     await shot(page, '13-lessons-published-filter')
+
+    // Ученик видит только опубликованные уроки
+    await context.clearCookies()
+    await login(page, 'student')
+    await page.goto(`${platformUrl}/lessons`)
+    await page.locator('#lessonsGrid').waitFor()
+    await page.waitForTimeout(800)
+    expect(await page.locator('#lessonsGrid .uic-status-draft').count()).toBe(0)
+    await shot(page, '14-student-published-only')
   })
 })
