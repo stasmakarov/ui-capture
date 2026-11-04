@@ -46,7 +46,7 @@ public class StudioApiController {
     }
 
     private ResponseEntity<Map<String, Object>> doImport(byte[] body, HttpServletRequest request) {
-        Optional<String> username = tokenService.authenticate(bearer(request));
+        Optional<String> username = systemAuthenticator.withSystem(() -> tokenService.authenticate(bearer(request)));
         if (username.isEmpty()) return error(HttpStatus.UNAUTHORIZED, "Нужен действующий токен студии в заголовке Authorization: Bearer …");
         UUID courseId;
         try {
@@ -80,7 +80,7 @@ public class StudioApiController {
     @PostMapping("/studio/exchange")
     public ResponseEntity<Map<String, Object>> exchange(@RequestBody ExchangeRequest body) {
         try {
-            StudioTokenService.Exchange exchange = tokenService.exchangeTicket(body == null ? null : body.ticket());
+            StudioTokenService.Exchange exchange = systemAuthenticator.withSystem(() -> tokenService.exchangeTicket(body == null ? null : body.ticket()));
             Map<String, Object> out = new LinkedHashMap<>();
             out.put("token", exchange.token());
             out.put("username", exchange.username());
@@ -95,7 +95,7 @@ public class StudioApiController {
 
     @GetMapping("/studio/whoami")
     public ResponseEntity<Map<String, Object>> whoami(HttpServletRequest request) {
-        Optional<String> username = tokenService.authenticate(bearer(request));
+        Optional<String> username = systemAuthenticator.withSystem(() -> tokenService.authenticate(bearer(request)));
         if (username.isEmpty()) return error(HttpStatus.UNAUTHORIZED, "Токен студии недействителен или отозван");
         Map<String, Object> out = new LinkedHashMap<>();
         out.put("username", username.get());

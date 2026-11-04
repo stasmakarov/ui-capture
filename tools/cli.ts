@@ -25,8 +25,10 @@ const HELP = `ui-capture — запись урока с живого сайта 
   npx ui-capture package <id> [--out ./lessons] [--file ./id.lesson.zip]
   npx ui-capture import <файл.lesson.zip> [--out ./lessons]
 
-Ссылка из админки (обмен ticket — этап M2):
-  npx ui-capture open-url "uicapture://new?course=…&server=…&ticket=…"
+Связь с платформой (M2):
+  npx ui-capture open-url "uicapture://new?course=…&server=…&ticket=…"   обменять тикет из админки на токен
+  npx ui-capture platform-login http://localhost:8080 --token uicst_…   токен с экрана «Мои токены студии»
+  npx ui-capture publish <id> [--out ./lessons]                          отправить урок черновиком на платформу
 
 Скачать офлайн-модель распознавания русской речи:
   npx ui-capture whisper-download
@@ -96,9 +98,31 @@ async function main() {
   }
   if (argv[0] === 'open-url') {
     const { parseLaunchUrl } = await import('./studio/launchUrl.ts')
+    const { exchangeTicket } = await import('./studio/platform.ts')
     const task = parseLaunchUrl(argv[1] ?? '')
-    console.log(`Задание курса ${task.course} на ${task.server}.`)
-    console.log('Обмен одноразового ticket на токен и отправка черновика после «Стоп» — этап M2.')
+    const lessonsDir = path.resolve(flag(argv, '--out') ?? './lessons')
+    const link = await exchangeTicket(lessonsDir, task.server, task.ticket, task.course)
+    console.log(`Студия связана с ${link.server} как ${link.username}${link.courseTitle ? `, курс «${link.courseTitle}»` : ''}.`)
+    console.log('Запишите урок (npm start) и нажмите «Опубликовать на сервер» — или: npx ui-capture publish <id>')
+    return
+  }
+  if (argv[0] === 'platform-login') {
+    const { loginWithToken } = await import('./studio/platform.ts')
+    const server = argv[1]
+    const token = flag(argv, '--token') ?? process.env.UI_CAPTURE_STUDIO_TOKEN
+    if (!server || server.startsWith('--') || !token) throw new Error('Использование: npx ui-capture platform-login <server> --token <токен> [--course <id>]')
+    const lessonsDir = path.resolve(flag(argv, '--out') ?? './lessons')
+    const link = await loginWithToken(lessonsDir, server, token, flag(argv, '--course'))
+    console.log(`Студия связана с ${link.server} как ${link.username}.`)
+    return
+  }
+  if (argv[0] === 'publish') {
+    const id = argv[1]
+    if (!id || id.startsWith('--')) throw new Error('Укажите идентификатор урока: npx ui-capture publish <id>')
+    const { publishLesson } = await import('./studio/platform.ts')
+    const lessonsDir = path.resolve(flag(argv, '--out') ?? './lessons')
+    const result = await publishLesson(lessonsDir, id, { withTrainer: !has(argv, '--no-trainer') })
+    console.log(`Урок «${result.title}» загружен как версия ${result.versionNo} (${result.status}): ${result.adminUrl}`)
     return
   }
   if (argv[0] === 'package') {

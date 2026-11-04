@@ -40,7 +40,15 @@ export function StudioApp() {
   const [leaveOpen, setLeaveOpen] = useState(false)
   const [pendingDelete, setPendingDelete] = useState<CatalogItem | null>(null)
   const [selected, setSelected] = useState<string[]>([])
+  const [platform, setPlatform] = useState<PlatformState>({ connected: false })
+  const [notice, setNotice] = useState<string | null>(null)
+  const [publishing, setPublishing] = useState<string | null>(null)
   const dirty = !!editor && JSON.stringify(editor) !== baseline
+
+  async function reloadPlatform() {
+    const response = await fetch('/api/platform')
+    setPlatform(await response.json() as PlatformState)
+  }
 
   async function reload() {
     const response = await fetch('/api/lessons')
@@ -49,6 +57,23 @@ export function StudioApp() {
 
   useEffect(() => {
     void reload()
+    void (async () => {
+      // Ссылка из админки: ?server=…&ticket=…&course=… (схема uicapture:// или ручной переход)
+      const params = new URLSearchParams(window.location.search)
+      const server = params.get('server')
+      const ticket = params.get('ticket')
+      if (server && ticket) {
+        const response = await fetch('/api/platform/link', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ server, ticket, course: params.get('course') }),
+        })
+        const payload = await response.json() as { error?: string }
+        if (!response.ok) setError(payload.error ?? 'Не удалось связать студию с платформой')
+        window.history.replaceState(null, '', '/')
+      }
+      await reloadPlatform()
+    })()
     const source = new EventSource('/api/whisper/events')
     source.onmessage = (event) => setWhisper(JSON.parse(event.data) as Whisper)
     return () => source.close()
@@ -65,6 +90,11 @@ export function StudioApp() {
       </header>
       <main className="studio">
         {error && <p className="error" role="alert">{error}</p>}
+        {notice && <p className="installed" role="status" data-testid="platform-notice">{notice}</p>}
+        <PlatformBar platform={platform} onForget={async () => {
+          await fetch('/api/platform', { method: 'DELETE' })
+          await reloadPlatform()
+        }} />
         {view === 'catalog' && (
           <Catalog
             items={catalog}
@@ -82,6 +112,21 @@ export function StudioApp() {
             }}
             onDelete={(item) => setPendingDelete(item)}
             onPackage={(id) => { window.location.href = `/api/lessons/${id}/package` }}
+            platformConnected={platform.connected}
+            publishing={publishing}
+            onPublish={async (id) => {
+              setError(null)
+              setNotice(null)
+              setPublishing(id)
+              try {
+                const response = await fetch(`/api/lessons/${id}/publish`, { method: 'POST' })
+                const payload = await response.json() as { error?: string; title?: string; versionNo?: number; adminUrl?: string }
+                if (!response.ok) { setError(payload.error ?? 'Не удалось опубликовать'); return }
+                setNotice(`«${payload.title}» отправлен на платформу черновиком, версия ${payload.versionNo}. ${payload.adminUrl ?? ''}`)
+              } finally {
+                setPublishing(null)
+              }
+            }}
             onImport={async (file) => {
               setError(null)
               const response = await fetch('/api/import', {
@@ -230,7 +275,7 @@ export function StudioApp() {
   )
 }
 
-function Catalog({ items, selected, whisper, onSelect, onNew, onOpen, onEdit, onDelete, onDownload, onPackage, onImport }: {
+function Catalog({ items, selected, whisper, onSelect, onNew, onOpen, onEdit, onDelete, onDownload, onPackage, onImport, platformConnected, publishing, onPublish }: {
   items: CatalogItem[]
   selected: string[]
   whisper: Whisper | null
@@ -242,6 +287,9 @@ function Catalog({ items, selected, whisper, onSelect, onNew, onOpen, onEdit, on
   onDownload: () => void
   onPackage: (id: string) => void
   onImport: (file: File) => void
+  platformConnected: boolean
+  publishing: string | null
+  onPublish: (id: string) => void
 }) {
   return (
     <section>
@@ -282,6 +330,11 @@ function Catalog({ items, selected, whisper, onSelect, onNew, onOpen, onEdit, on
             <div className="row">
               <button type="button" className="tertiary" onClick={() => onOpen(item.id)}>Открыть</button>
               <button type="button" className="tertiary" onClick={() => onPackage(item.id)}>Пакет</button>
+              {platformConnected && (
+                <button type="button" className="primary" data-testid={`publish-${item.id}`} disabled={publishing !== null} onClick={() => onPublish(item.id)}>
+                  {publishing === item.id ? 'Отправляю…' : 'Опубликовать на сервер'}
+                </button>
+              )}
               <button type="button" className="tertiary" onClick={() => onEdit(item.id)}>Править</button>
               <button type="button" className="tertiary danger-text" onClick={() => onDelete(item)}>Удалить</button>
             </div>
@@ -610,3 +663,24 @@ function stopRecorder(media: MediaRecorder | null, chunks: Blob[]): Promise<Blob
   })
 }
 
+
+type PlatformState =
+  | { connected: false }
+  | { connected: true; server: string; username: string; courseId: string | null; courseTitle: string | null; tokenPrefix: string; expiresAt: string | null }
+
+function PlatformBar({ platform, onForget }: { platform: PlatformState; onForget: () => void }) {
+  if (!platform.connected) {
+    return (
+      <p className="muted" data-testid="platform-status">
+        Платформа не подключена. В админке нажмите «Записать в студии» — студия получит доступ сама.
+      </p>
+    )
+  }
+  return (
+    <p className="meta" data-testid="platform-status">
+      Платформа: <a href={platform.server} target="_blank" rel="noreferrer">{platform.server}</a> · {platform.username}
+      {platform.courseTitle ? ` · курс «${platform.courseTitle}»` : ''} · токен {platform.tokenPrefix}{' '}
+      <button type="button" className="tertiary" onClick={onForget}>Отключить</button>
+    </p>
+  )
+}

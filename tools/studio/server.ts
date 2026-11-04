@@ -11,6 +11,7 @@ import { serveLessons } from '../builder/staticServer.ts'
 import { packHtml } from '../pack/packHtml.ts'
 import { exportLessonPackage, importLessonPackage } from '../package/lessonPackage.ts'
 import { detectBrowsers, gostBrowserHint, resolveBrowserLaunch, settingsFromSaved, type BrowserId, type StudioSettings } from './browsers.ts'
+import { exchangeTicket, forgetPlatformLink, normalizeServer, publicLink, publishLesson, readPlatformLink } from './platform.ts'
 import { downloadWhisper, onWhisperStatus, transcribeWav, whisperStatus } from './transcribe.ts'
 
 type StudioOptions = {
@@ -179,7 +180,7 @@ export async function startStudio(options: StudioOptions): Promise<{ url: string
     server: {
       middlewareMode: true,
       watch: {
-        ignored: ['**/artifacts/**', '**/dist-single/**', '**/captures/**', '**/lessons/**', '**/.ui-capture/**'],
+        ignored: ['**/artifacts/**', '**/platform-backend/**', '**/dist-single/**', '**/captures/**', '**/lessons/**', '**/.ui-capture/**'],
       },
     },
     appType: 'spa',
@@ -295,6 +296,30 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
     sendJson(response, 200, whisperStatus())
     return
   }
+  if (request.method === 'GET' && url.pathname === '/api/platform') {
+    sendJson(response, 200, publicLink(await readPlatformLink(lessonsDir)))
+    return
+  }
+  if (request.method === 'DELETE' && url.pathname === '/api/platform') {
+    await forgetPlatformLink(lessonsDir)
+    sendJson(response, 200, { connected: false })
+    return
+  }
+  if (request.method === 'POST' && url.pathname === '/api/platform/link') {
+    // Задание из админки (запасной путь кнопки «Записать в студии») или из ссылки uicapture://new.
+    // Тело — JSON, но приходит как text/plain из fetch(no-cors), поэтому тип не проверяем.
+    const body = JSON.parse(await readBody(request)) as { server?: string; ticket?: string; course?: string }
+    if (!body.server || !body.ticket) throw new Error('Нужны server и ticket')
+    const server = normalizeServer(body.server)
+    const origin = request.headers.origin
+    if (origin && origin !== 'null' && new URL(origin).origin !== new URL(server).origin) {
+      sendJson(response, 403, { error: `Задание пришло со страницы ${origin}, а сервер в нём ${server}` })
+      return
+    }
+    const link = await exchangeTicket(lessonsDir, server, body.ticket, body.course)
+    sendJson(response, 200, publicLink(link))
+    return
+  }
   if (request.method === 'GET' && url.pathname === '/api/lessons') {
     sendJson(response, 200, await lessonList(lessonsDir))
     return
@@ -316,6 +341,10 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
     if (request.method === 'GET' && rest === '/package') {
       const bytes = await exportLessonPackage(path.join(lessonsDir, id))
       sendBytes(response, 200, bytes, 'application/zip', `${id}.lesson.zip`)
+      return
+    }
+    if (request.method === 'POST' && rest === '/publish') {
+      sendJson(response, 200, await publishLesson(lessonsDir, id))
       return
     }
     if (request.method === 'PUT' && rest === '') {
