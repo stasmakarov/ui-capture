@@ -1,0 +1,11 @@
+.jmix-login-main-layout {
+    background: var(--lumo-contrast-5pct);
+}
+.uic-token-plain {
+    font-family: var(--lumo-font-family-monospace, monospace);
+}
+.uic-preview-frame {
+    border: 1px solid var(--lumo-contrast-20pct);
+    border-radius: var(--lumo-border-radius-m);
+    background: white;
+}
