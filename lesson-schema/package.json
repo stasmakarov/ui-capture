@@ -1,7 +1,7 @@
 {
   "name": "@ui-capture/lesson-schema",
   "private": true,
-  "version": "0.5.0",
+  "version": "0.6.0",
   "type": "module",
   "description": "Схема урока: исходник TypeScript и JSON Schema, которую он порождает.",
   "exports": {

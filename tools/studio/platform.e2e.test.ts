@@ -62,7 +62,8 @@ describe.skipIf(!platformUrl)('платформа: студия публикуе
     await page.getByRole('button', { name: 'Закрыть' }).click()
 
     const studio = await startStudio({ port: 44731, open: false, lessonsDir, capturesDir: path.join(root, 'captures') })
-    cleanup.push(() => studio.close())
+    // закрыть после браузера: открытая вкладка студии держит SSE-соединение
+    cleanup.splice(1, 0, () => studio.close())
 
     const studioTab = context.waitForEvent('page')
     await page.locator('#recordInStudio').click()

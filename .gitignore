@@ -26,3 +26,6 @@ artifacts/*.html
 *.njsproj
 *.sln
 *.sw?
+
+# Токен студии для платформы (M2)
+.studio-platform.json

@@ -1,4 +1,4 @@
-# Локальная база платформы. Сервисы backend и портала подключаются в M2–M3.
+# Локальная база платформы (PostgreSQL 16). Бэкенд platform-backend/ (M2) подключается к ней: ./gradlew bootRun.
 services:
   postgres:
     image: postgres:16
