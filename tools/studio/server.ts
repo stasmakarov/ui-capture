@@ -9,6 +9,7 @@ import { lessonIdFromName, recordInteractive, type RecordingControls } from '../
 import { buildCapture, writeCatalog } from '../builder/build.ts'
 import { serveLessons } from '../builder/staticServer.ts'
 import { packHtml } from '../pack/packHtml.ts'
+import { exportLessonPackage, importLessonPackage } from '../package/lessonPackage.ts'
 import { detectBrowsers, gostBrowserHint, resolveBrowserLaunch, settingsFromSaved, type BrowserId, type StudioSettings } from './browsers.ts'
 import { downloadWhisper, onWhisperStatus, transcribeWav, whisperStatus } from './transcribe.ts'
 
@@ -53,6 +54,33 @@ async function readSettings(lessonsDir: string): Promise<StudioSettings> {
 function browserChoice(value: string | undefined): BrowserId {
   if (value === 'chrome' || value === 'yandex' || value === 'custom' || value === 'chromium') return value
   return 'chromium'
+}
+
+function sendBytes(response: http.ServerResponse, status: number, body: Uint8Array, type: string, filename?: string) {
+  response.writeHead(status, {
+    'Content-Type': type,
+    'Content-Length': body.length,
+    ...(filename ? { 'Content-Disposition': `attachment; filename="${filename}"` } : {}),
+  })
+  response.end(body)
+}
+
+function readRaw(request: http.IncomingMessage, limit = 80_000_000): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    const chunks: Buffer[] = []
+    let size = 0
+    request.on('data', (chunk: Buffer) => {
+      size += chunk.length
+      if (size > limit) {
+        reject(new Error('Слишком большой пакет'))
+        request.destroy()
+        return
+      }
+      chunks.push(chunk)
+    })
+    request.on('end', () => resolve(Buffer.concat(chunks)))
+    request.on('error', reject)
+  })
 }
 
 function sendJson(response: http.ServerResponse, status: number, body: unknown) {
@@ -271,12 +299,23 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
     sendJson(response, 200, await lessonList(lessonsDir))
     return
   }
+  if (request.method === 'POST' && url.pathname === '/api/import') {
+    const lesson = await importLessonPackage(new Uint8Array(await readRaw(request)), lessonsDir)
+    await writeCatalog(lessonsDir)
+    sendJson(response, 200, { id: lesson.id, title: lesson.title })
+    return
+  }
   const lessonMatch = url.pathname.match(/^\/api\/lessons\/([a-z0-9-]+)(.*)$/)
   if (lessonMatch) {
     const id = lessonMatch[1] ?? ''
     const rest = lessonMatch[2] ?? ''
     if (request.method === 'GET' && rest === '') {
       sendJson(response, 200, JSON.parse(await readFile(lessonFile(lessonsDir, id), 'utf8')))
+      return
+    }
+    if (request.method === 'GET' && rest === '/package') {
+      const bytes = await exportLessonPackage(path.join(lessonsDir, id))
+      sendBytes(response, 200, bytes, 'application/zip', `${id}.lesson.zip`)
       return
     }
     if (request.method === 'PUT' && rest === '') {

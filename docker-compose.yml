@@ -1,0 +1,15 @@
+# Локальная база платформы. Сервисы backend и портала подключаются в M2–M3.
+services:
+  postgres:
+    image: postgres:16
+    environment:
+      POSTGRES_USER: uicapture
+      POSTGRES_PASSWORD: uicapture
+      POSTGRES_DB: uicapture
+    ports:
+      - "5432:5432"
+    volumes:
+      - uicapture-pg:/var/lib/postgresql/data
+
+volumes:
+  uicapture-pg:

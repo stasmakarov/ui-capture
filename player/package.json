@@ -1,0 +1,16 @@
+{
+  "name": "@ui-capture/player",
+  "private": true,
+  "version": "0.5.0",
+  "type": "module",
+  "description": "Плеер урока. Импортируется студией, trainer.html и позже порталом ученика.",
+  "exports": {
+    "./app": "./src/App.tsx",
+    "./stage": "./src/Stage.tsx"
+  },
+  "dependencies": {
+    "@ui-capture/lesson-schema": "0.5.0",
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1"
+  }
+}

@@ -84,6 +84,28 @@
 
 .studio button:disabled { opacity: 0.45; cursor: default; }
 
+.file-button {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 16px;
+  color: var(--lumo-primary-text-color);
+  font-weight: 600;
+  cursor: pointer;
+}
+
+.file-button:hover { background: var(--lumo-contrast-5pct); border-radius: 4px; }
+
+.file-button input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+  min-height: 0;
+  padding: 0;
+}
+
 .toolbar, .action-bar, .audio-actions, .row {
   display: flex;
   gap: var(--lumo-space-s);

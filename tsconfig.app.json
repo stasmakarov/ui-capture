@@ -25,5 +25,5 @@
       "@embedded": ["./src/embedded-stub.ts"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "player", "studio", "lesson-schema/src"]
 }

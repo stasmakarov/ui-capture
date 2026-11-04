@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import App from '../App.tsx'
+import App from '../../player/src/App.tsx'
 import { StudioApp } from './StudioApp.tsx'
 
 export function StudioGate() {
