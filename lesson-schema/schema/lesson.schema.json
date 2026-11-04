@@ -1,0 +1,350 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://cursor.com/codebase/stanislav-makarov/ui-capture/lesson.schema.json",
+  "title": "Lesson",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schemaVersion",
+    "id",
+    "title",
+    "description",
+    "sourceSite",
+    "viewport",
+    "screens",
+    "steps",
+    "meta"
+  ],
+  "properties": {
+    "schemaVersion": {
+      "type": "integer",
+      "const": 1
+    },
+    "id": {
+      "type": "string"
+    },
+    "title": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string"
+    },
+    "sourceSite": {
+      "type": "string"
+    },
+    "viewport": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "width",
+        "height"
+      ],
+      "properties": {
+        "width": {
+          "type": "number"
+        },
+        "height": {
+          "type": "number"
+        }
+      }
+    },
+    "screens": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "title",
+          "url",
+          "html",
+          "screenshot",
+          "hotspots",
+          "viewport"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "title": {
+            "type": "string"
+          },
+          "url": {
+            "type": "string"
+          },
+          "html": {
+            "type": "string",
+            "description": "Относительный путь к HTML экрана внутри папки урока, обычно screens/<id>.html"
+          },
+          "screenshot": {
+            "type": "string",
+            "description": "Относительный путь к снимку, обычно original/<id>.png"
+          },
+          "hotspots": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "additionalProperties": false,
+              "required": [
+                "id",
+                "kind",
+                "label",
+                "selector",
+                "box"
+              ],
+              "properties": {
+                "id": {
+                  "type": "string"
+                },
+                "kind": {
+                  "type": "string",
+                  "enum": [
+                    "input",
+                    "textarea",
+                    "select",
+                    "button",
+                    "link",
+                    "tab",
+                    "clickable"
+                  ]
+                },
+                "label": {
+                  "type": "string"
+                },
+                "selector": {
+                  "type": "string"
+                },
+                "box": {
+                  "type": "object",
+                  "additionalProperties": false,
+                  "required": [
+                    "x",
+                    "y",
+                    "width",
+                    "height"
+                  ],
+                  "properties": {
+                    "x": {
+                      "type": "number"
+                    },
+                    "y": {
+                      "type": "number"
+                    },
+                    "width": {
+                      "type": "number"
+                    },
+                    "height": {
+                      "type": "number"
+                    }
+                  }
+                },
+                "inputType": {
+                  "type": "string"
+                },
+                "placeholder": {
+                  "type": "string"
+                }
+              }
+            }
+          },
+          "viewport": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "width",
+              "height"
+            ],
+            "properties": {
+              "width": {
+                "type": "number"
+              },
+              "height": {
+                "type": "number"
+              }
+            }
+          }
+        }
+      }
+    },
+    "steps": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "id",
+          "index",
+          "screenId",
+          "action",
+          "hotspotId",
+          "expectedValue",
+          "confirm",
+          "nextScreenId",
+          "instruction",
+          "hint",
+          "errorText"
+        ],
+        "properties": {
+          "id": {
+            "type": "string"
+          },
+          "index": {
+            "type": "integer"
+          },
+          "screenId": {
+            "type": "string"
+          },
+          "action": {
+            "type": "string",
+            "enum": [
+              "input",
+              "click",
+              "select",
+              "key"
+            ]
+          },
+          "hotspotId": {
+            "type": "string"
+          },
+          "expectedValue": {
+            "type": "string"
+          },
+          "confirm": {
+            "anyOf": [
+              {
+                "type": "string",
+                "enum": [
+                  "match",
+                  "enter"
+                ]
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "nextScreenId": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ]
+          },
+          "instruction": {
+            "type": "string"
+          },
+          "hint": {
+            "type": "string"
+          },
+          "errorText": {
+            "type": "string"
+          },
+          "audio": {
+            "type": "string",
+            "description": "Относительный путь к WAV, обычно audio/<stepId>.wav, либо data:"
+          },
+          "narration": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "meta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "generatedAt",
+        "generator",
+        "stepCount",
+        "manuallyEditedSteps",
+        "autoStepRatio",
+        "fidelity",
+        "warnings",
+        "defaultRenderMode"
+      ],
+      "properties": {
+        "generatedAt": {
+          "type": "string"
+        },
+        "generator": {
+          "type": "string"
+        },
+        "stepCount": {
+          "type": "integer"
+        },
+        "manuallyEditedSteps": {
+          "type": "integer"
+        },
+        "autoStepRatio": {
+          "type": "number"
+        },
+        "fidelity": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "screenId",
+              "chosen",
+              "rrwebSimilarity",
+              "freezeSimilarity",
+              "chosenSimilarity"
+            ],
+            "properties": {
+              "screenId": {
+                "type": "string"
+              },
+              "chosen": {
+                "type": "string",
+                "enum": [
+                  "rrweb",
+                  "freeze"
+                ]
+              },
+              "rrwebSimilarity": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "freezeSimilarity": {
+                "anyOf": [
+                  {
+                    "type": "number"
+                  },
+                  {
+                    "type": "null"
+                  }
+                ]
+              },
+              "chosenSimilarity": {
+                "type": "number"
+              }
+            }
+          }
+        },
+        "warnings": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        },
+        "defaultRenderMode": {
+          "type": "string",
+          "enum": [
+            "dom",
+            "screenshot"
+          ]
+        }
+      }
+    }
+  }
+}

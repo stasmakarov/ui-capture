@@ -81,6 +81,18 @@ export function StudioApp() {
               setView('editor')
             }}
             onDelete={(item) => setPendingDelete(item)}
+            onPackage={(id) => { window.location.href = `/api/lessons/${id}/package` }}
+            onImport={async (file) => {
+              setError(null)
+              const response = await fetch('/api/import', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/zip' },
+                body: await file.arrayBuffer(),
+              })
+              const payload = await response.json() as { error?: string; title?: string }
+              if (!response.ok) { setError(payload.error ?? 'Не удалось импортировать пакет'); return }
+              await reload()
+            }}
             onDownload={async () => {
               setError(null)
               const response = await fetch('/api/export', {
@@ -218,7 +230,7 @@ export function StudioApp() {
   )
 }
 
-function Catalog({ items, selected, whisper, onSelect, onNew, onOpen, onEdit, onDelete, onDownload }: {
+function Catalog({ items, selected, whisper, onSelect, onNew, onOpen, onEdit, onDelete, onDownload, onPackage, onImport }: {
   items: CatalogItem[]
   selected: string[]
   whisper: Whisper | null
@@ -228,6 +240,8 @@ function Catalog({ items, selected, whisper, onSelect, onNew, onOpen, onEdit, on
   onEdit: (id: string) => void
   onDelete: (item: CatalogItem) => void
   onDownload: () => void
+  onPackage: (id: string) => void
+  onImport: (file: File) => void
 }) {
   return (
     <section>
@@ -235,6 +249,18 @@ function Catalog({ items, selected, whisper, onSelect, onNew, onOpen, onEdit, on
         <h1>Уроки</h1>
         <button type="button" className="primary" onClick={onNew}>Новый урок</button>
         <button type="button" className="tertiary" onClick={onDownload}>Скачать trainer.html</button>
+        <label className="tertiary file-button">
+          Импорт .lesson.zip
+          <input
+            type="file"
+            accept=".zip,application/zip"
+            onChange={(event) => {
+              const file = event.target.files?.[0]
+              event.target.value = ''
+              if (file) onImport(file)
+            }}
+          />
+        </label>
       </div>
       {whisper?.ready && <p className="installed">Модель установлена</p>}
       {whisper && !whisper.ready && <p className="whisper">{whisper.hint}</p>}
@@ -255,6 +281,7 @@ function Catalog({ items, selected, whisper, onSelect, onNew, onOpen, onEdit, on
             <p className="meta">{item.screens} экр. · {item.steps} шаг.</p>
             <div className="row">
               <button type="button" className="tertiary" onClick={() => onOpen(item.id)}>Открыть</button>
+              <button type="button" className="tertiary" onClick={() => onPackage(item.id)}>Пакет</button>
               <button type="button" className="tertiary" onClick={() => onEdit(item.id)}>Править</button>
               <button type="button" className="tertiary danger-text" onClick={() => onDelete(item)}>Удалить</button>
             </div>

@@ -9,9 +9,9 @@ import {
   type Mode,
   type RenderMode,
   type RuntimeState,
-} from '../shared/lesson.ts';
+} from '../../shared/lesson.ts';
 import { embeddedPack } from '@embedded';
-import { Stage } from './player/Stage.tsx';
+import { Stage } from './Stage.tsx';
 
 type CatalogItem = {
   id: string;

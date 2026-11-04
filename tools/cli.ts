@@ -1,7 +1,9 @@
+import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
 import { lessonIdFromName, recordInteractive } from './capture/interactive.ts'
 import { defaultHtml, publishCapture } from './pipeline/publish.ts'
 import { packHtml } from './pack/packHtml.ts'
+import { exportLessonPackage, importLessonPackage } from './package/lessonPackage.ts'
 
 type Mode = 'dom' | 'screenshot' | 'auto'
 
@@ -18,6 +20,13 @@ const HELP = `ui-capture — запись урока с живого сайта 
 
 Пересобрать один HTML из уже записанных уроков в каталоге:
   npx ui-capture pack [--out ./lessons] [--html ./lessons/trainer.html]
+
+Пакет урока для платформы (.lesson.zip, манифест и SHA-256):
+  npx ui-capture package <id> [--out ./lessons] [--file ./id.lesson.zip]
+  npx ui-capture import <файл.lesson.zip> [--out ./lessons]
+
+Ссылка из админки (обмен ticket — этап M2):
+  npx ui-capture open-url "uicapture://new?course=…&server=…&ticket=…"
 
 Скачать офлайн-модель распознавания русской речи:
   npx ui-capture whisper-download
@@ -83,6 +92,32 @@ async function main() {
       stop()
     }
     console.log('Модель установлена. Файлы: .ui-capture/models')
+    return
+  }
+  if (argv[0] === 'open-url') {
+    const { parseLaunchUrl } = await import('./studio/launchUrl.ts')
+    const task = parseLaunchUrl(argv[1] ?? '')
+    console.log(`Задание курса ${task.course} на ${task.server}.`)
+    console.log('Обмен одноразового ticket на токен и отправка черновика после «Стоп» — этап M2.')
+    return
+  }
+  if (argv[0] === 'package') {
+    const id = argv[1]
+    if (!id || id.startsWith('--')) throw new Error('Укажите идентификатор урока: npx ui-capture package <id>')
+    const lessonsDir = path.resolve(flag(argv, '--out') ?? './lessons')
+    const file = path.resolve(flag(argv, '--file') ?? path.join(lessonsDir, `${id}.lesson.zip`))
+    const bytes = await exportLessonPackage(path.join(lessonsDir, id))
+    await mkdir(path.dirname(file), { recursive: true })
+    await writeFile(file, bytes)
+    console.log(`Пакет: ${file}`)
+    return
+  }
+  if (argv[0] === 'import') {
+    const file = argv[1]
+    if (!file || file.startsWith('--')) throw new Error('Укажите файл пакета: npx ui-capture import <файл.lesson.zip>')
+    const lessonsDir = path.resolve(flag(argv, '--out') ?? './lessons')
+    const lesson = await importLessonPackage(new Uint8Array(await readFile(file)), lessonsDir)
+    console.log(`Урок «${lesson.title}» записан в ${path.join(lessonsDir, lesson.id)}`)
     return
   }
   if (argv[0] === 'pack') {
