@@ -20,7 +20,7 @@
   padding: 16px;
 }
 
-.form label { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: #6d6458; }
+.form label, .form .field { display: flex; flex-direction: column; gap: 4px; font-size: 14px; color: #6d6458; }
 
 .form input, .form select, .form textarea {
   border: 1px solid #d9d0c1;
@@ -78,6 +78,18 @@
   color: #6d5310;
   padding: 10px 12px;
 }
+
+.installed {
+  background: #e5f4ea;
+  color: #145c32;
+  padding: 10px 12px;
+}
+
+.hint { color: #6d6458; font-size: 14px; margin: 0; }
+
+.form .level { width: min(280px, 100%); }
+
+.studio button:disabled { opacity: 0.6; cursor: progress; }
 
 @media (max-width: 800px) {
   .studio-grid { grid-template-columns: 1fr; }

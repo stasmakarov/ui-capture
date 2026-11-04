@@ -9,7 +9,6 @@ import { startStudio } from './server.ts'
 
 const root = await mkdtemp(path.join(tmpdir(), 'ui-studio-'))
 process.env.UI_CAPTURE_HEADLESS = '1'
-process.env.UI_CAPTURE_FAKE_TRANSCRIPT = 'комментарий к шагу'
 
 function siteServer(dir: string): Promise<{ url: string; close: () => Promise<void> }> {
   const server = createServer(async (request, response) => {
@@ -37,11 +36,14 @@ function siteServer(dir: string): Promise<{ url: string; close: () => Promise<vo
 describe('студия', () => {
   afterAll(async () => {
     delete process.env.UI_CAPTURE_HEADLESS
-    delete process.env.UI_CAPTURE_FAKE_TRANSCRIPT
+    delete process.env.UI_CAPTURE_WHISPER_SIMULATE
+    delete process.env.UI_CAPTURE_MODEL_DIR
     await rm(root, { recursive: true, force: true })
   })
 
   it('записывает локальную страницу, правит шаг и отдаёт trainer.html', async () => {
+    process.env.UI_CAPTURE_WHISPER_SIMULATE = '1'
+    process.env.UI_CAPTURE_MODEL_DIR = path.join(root, 'models')
     const siteDir = path.join(root, 'site')
     await mkdir(siteDir)
     await writeFile(path.join(siteDir, 'mark.svg'), '<svg xmlns="http://www.w3.org/2000/svg" id="trainer-mark-icon"><rect width="8" height="8"/></svg>')
@@ -68,9 +70,44 @@ describe('студия', () => {
     try {
       await page.goto(studio.url)
       await page.getByRole('button', { name: 'Новый урок' }).click()
+      await page.waitForFunction(() => {
+        const select = document.querySelector('select[name="browser"]')
+        return !!select && Array.from((select as HTMLSelectElement).options).some((option) => option.textContent?.includes('Встроенный Chromium'))
+      })
+      await page.getByText('Если сайт не открывается из-за сертификата (российские сертификаты ГОСТ), выберите Яндекс Браузер.').waitFor()
+      await page.screenshot({ path: path.join(shots, '01-mic-permission.png') })
+      await page.getByRole('button', { name: 'Разрешить микрофон' }).click()
+      const micSelect = page.locator('select[name="mic"]')
+      await micSelect.waitFor({ state: 'attached' })
+      const micLabel = micSelect.locator('option').first()
+      await micLabel.waitFor({ state: 'attached' })
+      expect(await micLabel.textContent()).not.toMatch(/^(Микрофон|Микрофон не найден|Микрофон без названия)$/)
+      await page.waitForFunction(() => {
+        const meter = document.querySelector('[data-level]')
+        return meter !== null && Number(meter.getAttribute('data-level')) > 0
+      })
       await page.locator('input[name="url"]').fill(`${site.url}/index.html?drive=1`)
       await page.locator('input[name="lessonName"]').fill('Найти извещение')
+      await page.locator('select[name="browser"]').selectOption('chromium')
       await page.screenshot({ path: path.join(shots, '01-new-lesson.png') })
+      await page.getByRole('button', { name: 'Скачать модель речи' }).click()
+      await page.getByRole('button', { name: /Загрузка \d+%/ }).waitFor()
+      await page.screenshot({ path: path.join(shots, '05-whisper-progress.png') })
+      await page.getByText('Модель установлена').first().waitFor()
+      expect(await page.getByRole('button', { name: 'Скачать модель речи' }).count()).toBe(0)
+      await page.screenshot({ path: path.join(shots, '06-model-installed.png') })
+      await page.reload()
+      await page.getByText('Модель установлена').first().waitFor()
+      await page.getByRole('button', { name: 'Новый урок' }).click()
+      const micSelectAgain = page.locator('select[name="mic"]')
+      try {
+        await micSelectAgain.waitFor({ state: 'attached', timeout: 3000 })
+      } catch {
+        await page.getByRole('button', { name: 'Разрешить микрофон' }).click()
+        await micSelectAgain.waitFor({ state: 'attached' })
+      }
+      await page.locator('input[name="url"]').fill(`${site.url}/index.html?drive=1`)
+      await page.locator('input[name="lessonName"]').fill('Найти извещение')
       await page.getByRole('button', { name: 'Начать запись' }).click()
       await page.getByRole('heading', { name: 'Запись' }).waitFor({ timeout: 30000 })
       await page.getByText('Найти').first().waitFor({ timeout: 20000 })

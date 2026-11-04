@@ -9,7 +9,8 @@ import { lessonIdFromName, recordInteractive, type RecordingControls } from '../
 import { buildCapture, writeCatalog } from '../builder/build.ts'
 import { serveLessons } from '../builder/staticServer.ts'
 import { packHtml } from '../pack/packHtml.ts'
-import { downloadWhisper, transcribeWav, whisperHint, whisperModelName, whisperReady } from './transcribe.ts'
+import { detectBrowsers, gostBrowserHint, resolveBrowserLaunch, settingsFromSaved, type BrowserId, type StudioSettings } from './browsers.ts'
+import { downloadWhisper, onWhisperStatus, transcribeWav, whisperStatus } from './transcribe.ts'
 
 type StudioOptions = {
   port: number
@@ -40,13 +41,18 @@ function settingsFile(lessonsDir: string): string {
   return path.join(lessonsDir, '.studio-settings.json')
 }
 
-async function readSettings(lessonsDir: string): Promise<{ channel: string; executablePath: string }> {
+async function readSettings(lessonsDir: string): Promise<StudioSettings> {
   try {
-    const parsed = JSON.parse(await readFile(settingsFile(lessonsDir), 'utf8')) as { channel?: string; executablePath?: string }
-    return { channel: parsed.channel ?? '', executablePath: parsed.executablePath ?? '' }
+    const parsed = JSON.parse(await readFile(settingsFile(lessonsDir), 'utf8')) as { browser?: string; channel?: string; executablePath?: string }
+    return settingsFromSaved(parsed)
   } catch {
-    return { channel: '', executablePath: '' }
+    return { browser: 'chromium', executablePath: '' }
   }
+}
+
+function browserChoice(value: string | undefined): BrowserId {
+  if (value === 'chrome' || value === 'yandex' || value === 'custom' || value === 'chromium') return value
+  return 'chromium'
 }
 
 function sendJson(response: http.ServerResponse, status: number, body: unknown) {
@@ -226,22 +232,39 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
     return
   }
   if (request.method === 'PUT' && url.pathname === '/api/settings') {
-    const body = JSON.parse(await readBody(request)) as { channel?: string; executablePath?: string }
-    const settings = {
-      channel: body.channel ?? '',
+    const body = JSON.parse(await readBody(request)) as { browser?: string; executablePath?: string }
+    const settings: StudioSettings = {
+      browser: browserChoice(body.browser),
       executablePath: body.executablePath ?? '',
     }
     await writeFile(settingsFile(lessonsDir), JSON.stringify(settings, null, 2))
     sendJson(response, 200, settings)
     return
   }
+  if (request.method === 'GET' && url.pathname === '/api/browsers') {
+    sendJson(response, 200, { options: detectBrowsers(), hint: gostBrowserHint })
+    return
+  }
   if (request.method === 'GET' && url.pathname === '/api/whisper') {
-    sendJson(response, 200, { ready: whisperReady(), model: whisperModelName(), hint: whisperHint() })
+    sendJson(response, 200, whisperStatus())
+    return
+  }
+  if (request.method === 'GET' && url.pathname === '/api/whisper/events') {
+    response.writeHead(200, {
+      'Content-Type': 'text/event-stream',
+      'Cache-Control': 'no-cache',
+      Connection: 'keep-alive',
+    })
+    response.write(`data: ${JSON.stringify(whisperStatus())}\n\n`)
+    const stop = onWhisperStatus((status) => {
+      if (!response.writableEnded) response.write(`data: ${JSON.stringify(status)}\n\n`)
+    })
+    request.on('close', stop)
     return
   }
   if (request.method === 'POST' && url.pathname === '/api/whisper/download') {
-    await downloadWhisper()
-    sendJson(response, 200, { ready: true, hint: whisperHint() })
+    void downloadWhisper().catch(() => undefined)
+    sendJson(response, 200, whisperStatus())
     return
   }
   if (request.method === 'GET' && url.pathname === '/api/lessons') {
@@ -320,15 +343,16 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
       url?: string
       lessonName?: string
       mode?: 'dom' | 'screenshot' | 'auto'
-      channel?: string
+      browser?: string
       executablePath?: string
     }
     if (!body.url) throw new Error('Укажите адрес сайта')
-    const settings = {
-      channel: body.channel ?? '',
+    const settings: StudioSettings = {
+      browser: browserChoice(body.browser),
       executablePath: body.executablePath ?? '',
     }
     await writeFile(settingsFile(lessonsDir), JSON.stringify(settings, null, 2))
+    const launch = resolveBrowserLaunch(settings.browser, settings.executablePath)
     const lessonName = body.lessonName?.trim() || new URL(body.url).hostname
     const lessonId = lessonIdFromName(lessonName)
     let controls: RecordingControls | null = null
@@ -340,8 +364,8 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
         mode: body.mode ?? 'auto',
         capturesDir,
         headless: process.env.UI_CAPTURE_HEADLESS === '1',
-        channel: settings.channel || undefined,
-        executablePath: settings.executablePath || undefined,
+        channel: launch.channel,
+        executablePath: launch.executablePath,
         onAction: (action) => {
           if (!session) return
           const step: LiveStep = {

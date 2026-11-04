@@ -1,3 +1,5 @@
+import { gostBrowserHint } from '../studio/browsers.ts'
+
 export function explainOpenError(error: unknown, url: string): string {
   const message = error instanceof Error ? error.message.split('\n')[0] ?? 'неизвестная ошибка' : String(error);
   const tls = /ERR_SSL|ERR_CERT|SSL_PROTOCOL|CERT_|CIPHER|ГОСТ|handshake/i.test(message);
@@ -7,13 +9,15 @@ export function explainOpenError(error: unknown, url: string): string {
   ];
   if (tls) {
     lines.push(
-      'Встроенный Chromium не открывает сайты с TLS по ГОСТ (так устроены часть российских порталов, включая zakupki.gov.ru).',
-      'Укажите браузер, в котором сайт у вас уже открывается:',
+      'Сайт не открылся из-за сертификата (российские сертификаты ГОСТ). Встроенный Chromium их не понимает.',
+      gostBrowserHint,
+      'В студии откройте «Браузер для записи», выберите Яндекс Браузер и начните запись снова.',
+      'Из терминала:',
       '  npx ui-capture <url> --channel chrome',
       '  npx ui-capture <url> --executable-path "/Applications/Yandex.app/Contents/MacOS/Yandex"',
     );
   } else {
-    lines.push('Проверьте адрес и сеть. Для браузера с ГОСТ-сертификатами добавьте --channel chrome или --executable-path.');
+    lines.push('Проверьте адрес и сеть. Если сайт не открывается из-за сертификата, в студии выберите Яндекс Браузер в списке «Браузер для записи».');
   }
   return lines.join('\n');
 }

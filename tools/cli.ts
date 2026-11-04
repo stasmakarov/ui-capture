@@ -14,6 +14,7 @@ const HELP = `ui-capture — запись урока с живого сайта 
 Студия в браузере (запись, голос, правки, скачивание trainer.html):
   npx ui-capture studio
   npm start
+  В студии список «Браузер для записи»: Chromium, Chrome, Яндекс Браузер или свой путь.
 
 Пересобрать один HTML из уже записанных уроков в каталоге:
   npx ui-capture pack [--out ./lessons] [--html ./lessons/trainer.html]
@@ -67,10 +68,21 @@ async function main() {
     return
   }
   if (argv[0] === 'whisper-download') {
-    const { downloadWhisper } = await import('./studio/transcribe.ts')
+    const { downloadWhisper, onWhisperStatus } = await import('./studio/transcribe.ts')
+    const { downloadLabel } = await import('./studio/downloadProgress.ts')
     console.log('Скачиваю whisper-small. Нужен интернет, дальше модель работает офлайн.')
-    await downloadWhisper()
-    console.log('Модель сохранена в .ui-capture/models')
+    let last = -1
+    const stop = onWhisperStatus((status) => {
+      if (status.phase !== 'downloading' || status.percent === last) return
+      last = status.percent
+      console.log(downloadLabel(status.percent, status.loadedBytes, status.totalBytes))
+    })
+    try {
+      await downloadWhisper()
+    } finally {
+      stop()
+    }
+    console.log('Модель установлена. Файлы: .ui-capture/models')
     return
   }
   if (argv[0] === 'pack') {

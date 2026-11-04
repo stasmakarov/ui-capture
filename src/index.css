@@ -120,6 +120,7 @@ button.on {
   color: #8d2a22;
   padding: 10px 12px;
   margin: 12px 0 0;
+  white-space: pre-wrap;
 }
 
 .workspace {

@@ -1,13 +1,31 @@
 import { useEffect, useRef, useState } from 'react'
 import type { Lesson } from '../../shared/lesson.ts'
 import { sliceRecording, type StepMark } from './sliceAudio.ts'
+import { downloadLabel } from '../../tools/studio/downloadProgress.ts'
 import './studio.css'
 
 type View = 'catalog' | 'new' | 'recording' | 'preview' | 'editor'
 type CaptureMode = 'auto' | 'dom' | 'screenshot'
 type CatalogItem = { id: string; title: string; description: string; screens: number; steps: number }
 type LiveStep = { id: string; label: string; kind: string; value: string; at: number }
-type Whisper = { ready: boolean; model: string; hint: string }
+type WhisperPhase = 'idle' | 'downloading' | 'ready' | 'error'
+type Whisper = {
+  ready: boolean
+  model: string
+  hint: string
+  phase: WhisperPhase
+  percent: number
+  loadedBytes: number
+  totalBytes: number
+  file: string
+  error: string
+}
+type BrowserChoice = 'chromium' | 'chrome' | 'yandex' | 'custom'
+type BrowserOption = { id: BrowserChoice; label: string; available: boolean }
+
+const MIC_KEY = 'ui-capture-mic'
+const MIC_READY = 'ui-capture-mic-ready'
+const GOST_HINT = 'Если сайт не открывается из-за сертификата (российские сертификаты ГОСТ), выберите Яндекс Браузер.'
 
 export function StudioApp() {
   const [view, setView] = useState<View>('catalog')
@@ -25,7 +43,9 @@ export function StudioApp() {
 
   useEffect(() => {
     void reload()
-    void fetch('/api/whisper').then(async (response) => setWhisper(await response.json() as Whisper))
+    const source = new EventSource('/api/whisper/events')
+    source.onmessage = (event) => setWhisper(JSON.parse(event.data) as Whisper)
+    return () => source.close()
   }, [])
 
   return (
@@ -162,7 +182,8 @@ function Catalog({ items, selected, whisper, onSelect, onNew, onOpen, onEdit, on
         <button type="button" onClick={onNew}>Новый урок</button>
         <button type="button" className="ghost" onClick={onDownload}>Скачать trainer.html</button>
       </div>
-      {whisper && <p className="whisper">{whisper.hint}</p>}
+      {whisper?.ready && <p className="installed">Модель установлена</p>}
+      {whisper && !whisper.ready && <p className="whisper">{whisper.hint}</p>}
       {items.length === 0 && <p className="muted">Записей пока нет. Создайте первый урок.</p>}
       <div className="cards">
         {items.map((item) => (
@@ -200,25 +221,101 @@ function NewLesson({ whisper, onCancel, onError, onWhisper, onStarted }: {
   const [url, setUrl] = useState('https://zakupki.gov.ru/epz/main/public/home.html')
   const [lessonName, setLessonName] = useState('Найти извещение')
   const [mode, setMode] = useState<CaptureMode>('auto')
-  const [channel, setChannel] = useState('')
-  const [executablePath, setExecutablePath] = useState('')
+  const [browsers, setBrowsers] = useState<BrowserOption[]>([])
+  const [browser, setBrowser] = useState<BrowserChoice>('chromium')
+  const [customPath, setCustomPath] = useState('')
+  const [browserHint, setBrowserHint] = useState(GOST_HINT)
   const [mics, setMics] = useState<MediaDeviceInfo[]>([])
   const [micId, setMicId] = useState('')
+  const [micGranted, setMicGranted] = useState(false)
+  const [level, setLevel] = useState(0)
   const [busy, setBusy] = useState(false)
 
+  async function refreshMics(prefer?: string) {
+    const devices = await navigator.mediaDevices.enumerateDevices()
+    const audio = devices.filter((device) => device.kind === 'audioinput')
+    setMics(audio)
+    const saved = prefer ?? localStorage.getItem(MIC_KEY) ?? ''
+    const next = audio.find((device) => device.deviceId === saved)?.deviceId ?? audio[0]?.deviceId ?? ''
+    setMicId(next)
+    if (next) localStorage.setItem(MIC_KEY, next)
+    return audio
+  }
+
   useEffect(() => {
-    void navigator.mediaDevices?.enumerateDevices().then((devices) => {
-      const audio = devices.filter((device) => device.kind === 'audioinput')
-      setMics(audio)
-      if (audio[0]) setMicId(audio[0].deviceId)
+    void refreshMics().then((audio) => {
+      const remembered = localStorage.getItem(MIC_READY) === '1'
+      if (remembered && audio.some((device) => device.label)) setMicGranted(true)
+    }).catch(() => undefined)
+    const onChange = () => { void refreshMics().catch(() => undefined) }
+    navigator.mediaDevices?.addEventListener('devicechange', onChange)
+    void fetch('/api/browsers').then(async (response) => {
+      const payload = await response.json() as { options: BrowserOption[]; hint: string }
+      setBrowsers(payload.options)
+      if (payload.hint) setBrowserHint(payload.hint)
     }).catch(() => undefined)
     void fetch('/api/settings').then(async (response) => {
-      const settings = await response.json() as { channel: string; executablePath: string }
-      setChannel(settings.channel)
-      setExecutablePath(settings.executablePath)
-    })
+      const settings = await response.json() as { browser: BrowserChoice; executablePath: string }
+      setBrowser(settings.browser)
+      setCustomPath(settings.executablePath)
+    }).catch(() => undefined)
+    return () => navigator.mediaDevices?.removeEventListener('devicechange', onChange)
   }, [])
 
+  useEffect(() => {
+    if (!micGranted || !micId) return
+    let cancelled = false
+    let frame = 0
+    let context: AudioContext | null = null
+    let stream: MediaStream | null = null
+    void navigator.mediaDevices.getUserMedia({ audio: { deviceId: { exact: micId } } }).then(async (next) => {
+      if (cancelled) {
+        next.getTracks().forEach((track) => track.stop())
+        return
+      }
+      stream = next
+      context = new AudioContext()
+      await context.resume()
+      if (cancelled) {
+        next.getTracks().forEach((track) => track.stop())
+        await context.close()
+        return
+      }
+      const analyser = context.createAnalyser()
+      context.createMediaStreamSource(next).connect(analyser)
+      const data = new Uint8Array(analyser.fftSize)
+      const tick = () => {
+        analyser.getByteTimeDomainData(data)
+        let sum = 0
+        for (const value of data) sum += Math.abs(value - 128)
+        setLevel(Math.min(100, sum / data.length))
+        frame = requestAnimationFrame(tick)
+      }
+      tick()
+    }).catch(() => onError('Не удалось открыть выбранный микрофон. Выберите другой или нажмите «Разрешить микрофон» ещё раз.'))
+    return () => {
+      cancelled = true
+      cancelAnimationFrame(frame)
+      stream?.getTracks().forEach((track) => track.stop())
+      void context?.close()
+    }
+  }, [micGranted, micId, onError])
+
+  async function allowMic() {
+    onError('')
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      stream.getTracks().forEach((track) => track.stop())
+      const audio = await refreshMics()
+      localStorage.setItem(MIC_READY, '1')
+      setMicGranted(true)
+      if (!audio.some((device) => device.label)) onError('Браузер не сообщил названия микрофонов. Разрешите доступ и обновите список.')
+    } catch {
+      onError('Нет доступа к микрофону. Разрешите его в браузере и нажмите «Разрешить микрофон» ещё раз.')
+    }
+  }
+
+  const downloading = whisper?.phase === 'downloading'
   return (
     <section>
       <h1>Новый урок</h1>
@@ -229,12 +326,18 @@ function NewLesson({ whisper, onCancel, onError, onWhisper, onStarted }: {
         const response = await fetch('/api/record/start', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ url, lessonName, mode, channel, executablePath, micId }),
+          body: JSON.stringify({
+            url,
+            lessonName,
+            mode,
+            browser,
+            executablePath: browser === 'custom' ? customPath : '',
+          }),
         })
         const payload = await response.json() as { error?: string }
         setBusy(false)
         if (!response.ok) { onError(payload.error ?? 'Не удалось начать запись'); return }
-        sessionStorage.setItem('ui-capture-mic', micId)
+        if (micId) localStorage.setItem(MIC_KEY, micId)
         onStarted()
       }}>
         <label>Стартовая страница
@@ -250,26 +353,68 @@ function NewLesson({ whisper, onCancel, onError, onWhisper, onStarted }: {
             <option value="screenshot">Только скриншоты</option>
           </select>
         </label>
-        <label>Микрофон
-          <select name="mic" value={micId} onChange={(event) => setMicId(event.target.value)}>
-            {mics.length === 0 && <option value="">Микрофон не найден</option>}
-            {mics.map((mic) => <option key={mic.deviceId} value={mic.deviceId}>{mic.label || 'Микрофон'}</option>)}
+        {!micGranted && (
+          <div className="field">
+            <span>Микрофон</span>
+            <button type="button" onClick={() => void allowMic()}>Разрешить микрофон</button>
+          </div>
+        )}
+        {micGranted && (
+          <label>Микрофон
+            <select name="mic" value={micId} onChange={(event) => {
+              setMicId(event.target.value)
+              localStorage.setItem(MIC_KEY, event.target.value)
+            }}>
+              {mics.length === 0 && <option value="">Микрофон не найден</option>}
+              {mics.map((mic) => <option key={mic.deviceId} value={mic.deviceId}>{mic.label || 'Микрофон без названия'}</option>)}
+            </select>
+          </label>
+        )}
+        {micGranted && (
+          <div>
+            <div
+              className="level"
+              role="meter"
+              aria-label="Уровень сигнала"
+              aria-valuemin={0}
+              aria-valuemax={100}
+              aria-valuenow={Math.round(level)}
+              data-level={level}
+            >
+              <span style={{ width: `${Math.min(100, level)}%` }} />
+            </div>
+            <p className="hint">Уровень выбранного микрофона. Говорите — полоска должна двигаться до начала записи.</p>
+          </div>
+        )}
+        <label>Браузер для записи
+          <select name="browser" value={browser} onChange={(event) => setBrowser(event.target.value as BrowserChoice)}>
+            {browsers.map((item) => (
+              <option key={item.id} value={item.id} disabled={!item.available}>
+                {item.label}{item.available ? '' : ' (не найден)'}
+              </option>
+            ))}
           </select>
         </label>
-        <label>Канал браузера (--channel), для Chrome укажите chrome
-          <input name="channel" value={channel} onChange={(event) => setChannel(event.target.value)} placeholder="пусто или chrome" />
-        </label>
-        <label>Путь к браузеру с ГОСТ TLS (--executable-path)
-          <input name="executablePath" value={executablePath} onChange={(event) => setExecutablePath(event.target.value)} placeholder="/Applications/Yandex.app/Contents/MacOS/Yandex" />
-        </label>
-        {whisper && <p className="whisper">{whisper.hint}</p>}
+        {browser === 'custom' && (
+          <label>Путь к браузеру
+            <input name="executablePath" value={customPath} onChange={(event) => setCustomPath(event.target.value)} placeholder="/Applications/Yandex.app/Contents/MacOS/Yandex" />
+          </label>
+        )}
+        <p className="hint">{browserHint}</p>
+        {whisper?.ready && <p className="installed">Модель установлена</p>}
+        {whisper && !whisper.ready && <p className="whisper">{whisper.hint}</p>}
+        {whisper?.error && <p className="error" role="alert">{whisper.error}</p>}
         {whisper && !whisper.ready && (
-          <button type="button" className="ghost" onClick={async () => {
+          <button type="button" className="ghost" disabled={downloading} onClick={async () => {
+            onError('')
             const response = await fetch('/api/whisper/download', { method: 'POST' })
             const payload = await response.json() as Whisper & { error?: string }
-            if (!response.ok) { onError(payload.error ?? 'Не удалось скачать модель'); return }
-            onWhisper({ ready: true, model: whisper.model, hint: payload.hint })
-          }}>Скачать модель речи</button>
+            if (!response.ok) {
+              onError(payload.error ?? 'Не удалось скачать модель речи. Проверьте интернет и повторите.')
+              return
+            }
+            onWhisper(payload)
+          }}>{downloading ? downloadLabel(whisper.percent, whisper.loadedBytes, whisper.totalBytes) : 'Скачать модель речи'}</button>
         )}
         <div className="row">
           <button type="submit" disabled={busy}>{busy ? 'Открываю браузер…' : 'Начать запись'}</button>
@@ -310,10 +455,11 @@ function Recording({ onError, onStopped }: {
       if (payload.type === 'paused') setPaused(true)
       if (payload.type === 'resumed') setPaused(false)
     }
-    const micId = sessionStorage.getItem('ui-capture-mic') ?? ''
-    void navigator.mediaDevices.getUserMedia({ audio: micId ? { deviceId: { exact: micId } } : true }).then((stream) => {
+    const micId = localStorage.getItem(MIC_KEY) ?? ''
+    void navigator.mediaDevices.getUserMedia({ audio: micId ? { deviceId: { exact: micId } } : true }).then(async (stream) => {
       setMicOn(true)
       const context = new AudioContext()
+      await context.resume()
       const node = context.createMediaStreamSource(stream)
       const analyser = context.createAnalyser()
       node.connect(analyser)
