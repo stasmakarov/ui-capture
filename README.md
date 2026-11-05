@@ -191,7 +191,7 @@ npx ui-capture publish spisok-zadach
 ### Сквозной тест и скриншоты
 
 ```bash
-# бэкенд запущен в профиле dev на :8080, порт студии 44731 свободен
+# бэкенд запущен в профиле dev на :8090, порт студии 44731 свободен
 UI_CAPTURE_PLATFORM_URL=http://localhost:8090 UI_CAPTURE_SCREENS_DIR=docs/screens/m2 \
   npx vitest run tools/studio/platform.e2e.test.ts
 ```
