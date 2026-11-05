@@ -9,7 +9,7 @@
   },
   "dependencies": {
     "@ui-capture/lesson-schema": "*",
-    "@ui-capture/player": "0.5.0",
+    "@ui-capture/player": "*",
     "react": "^19.3.1"
   }
 }
