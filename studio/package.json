@@ -8,7 +8,7 @@
     "./gate": "./src/StudioGate.tsx"
   },
   "dependencies": {
-    "@ui-capture/lesson-schema": "0.5.0",
+    "@ui-capture/lesson-schema": "*",
     "@ui-capture/player": "0.5.0",
     "react": "^19.3.1"
   }
