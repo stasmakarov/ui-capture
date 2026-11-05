@@ -4,7 +4,7 @@
 
 ```bash
 docker compose up -d                                        # из корня репозитория
-./gradlew bootRun --args='--spring.profiles.active=dev'     # http://localhost:8080, trainer/trainer
+./gradlew bootRun --args='--spring.profiles.active=dev'     # http://localhost:8090, trainer/trainer
 ./gradlew build                                             # сборка и тесты (база uicapture_test)
 ```
 

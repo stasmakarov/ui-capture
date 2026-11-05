@@ -38,7 +38,7 @@ export function normalizeServer(value: string): string {
   try {
     parsed = new URL(value)
   } catch {
-    throw new Error('server должен быть адресом платформы, например http://localhost:8080')
+    throw new Error('server должен быть адресом платформы, например http://localhost:8090')
   }
   if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') throw new Error('server должен быть http или https')
   return `${parsed.origin}${parsed.pathname.replace(/\/+$/, '')}`

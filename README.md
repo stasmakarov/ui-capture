@@ -141,7 +141,7 @@ npx ui-capture "https://zakupki.gov.ru/epz/main/public/home.html" \
 docker compose up -d                 # PostgreSQL 16 на localhost:5432, база/логин/пароль uicapture
 cd platform-backend
 ./gradlew bootRun --args='--spring.profiles.active=dev'
-# админка: http://localhost:8080 (первый запуск собирает фронтенд Vaadin, это 1–2 минуты)
+# админка: http://localhost:8090 (первый запуск собирает фронтенд Vaadin, это 1–2 минуты)
 ```
 
 В профиле `dev` при старте создаются демо-пользователи и демо-курс. Пароль у всех совпадает с логином.
@@ -172,9 +172,9 @@ cd platform-backend && ./gradlew build
 Без админки (например, на другой машине):
 
 ```bash
-npx ui-capture open-url "uicapture://new?course=…&server=http://localhost:8080&ticket=uictk_…"
+npx ui-capture open-url "uicapture://new?course=…&server=http://localhost:8090&ticket=uictk_…"
 # или токен, выпущенный вручную на экране «Мои токены студии»:
-npx ui-capture platform-login http://localhost:8080 --token uicst_…
+npx ui-capture platform-login http://localhost:8090 --token uicst_…
 npx ui-capture publish spisok-zadach
 ```
 
@@ -192,7 +192,7 @@ npx ui-capture publish spisok-zadach
 
 ```bash
 # бэкенд запущен в профиле dev на :8080, порт студии 44731 свободен
-UI_CAPTURE_PLATFORM_URL=http://localhost:8080 UI_CAPTURE_SCREENS_DIR=docs/screens/m2 \
+UI_CAPTURE_PLATFORM_URL=http://localhost:8090 UI_CAPTURE_SCREENS_DIR=docs/screens/m2 \
   npx vitest run tools/studio/platform.e2e.test.ts
 ```
 

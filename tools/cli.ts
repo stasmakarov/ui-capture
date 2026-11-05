@@ -27,7 +27,7 @@ const HELP = `ui-capture — запись урока с живого сайта 
 
 Связь с платформой (M2):
   npx ui-capture open-url "uicapture://new?course=…&server=…&ticket=…"   обменять тикет из админки на токен
-  npx ui-capture platform-login http://localhost:8080 --token uicst_…   токен с экрана «Мои токены студии»
+  npx ui-capture platform-login http://localhost:8090 --token uicst_…   токен с экрана «Мои токены студии»
   npx ui-capture publish <id> [--out ./lessons]                          отправить урок черновиком на платформу
 
 Скачать офлайн-модель распознавания русской речи:
