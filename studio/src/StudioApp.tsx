@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import type { Lesson } from '../../shared/lesson.ts'
 import { sliceRecording, type StepMark } from './sliceAudio.ts'
 import { downloadLabel } from '../../tools/studio/downloadProgress.ts'
@@ -31,6 +32,7 @@ const GOST_HINT = 'Если сайт не открывается из-за се�
 
 export function StudioApp() {
   const [view, setView] = useState<View>('catalog')
+  const [bannerHost, setBannerHost] = useState<HTMLDivElement | null>(null)
   const [catalog, setCatalog] = useState<CatalogItem[]>([])
   const [error, setError] = useState<string | null>(null)
   const [whisper, setWhisper] = useState<Whisper | null>(null)
@@ -87,6 +89,7 @@ export function StudioApp() {
           <strong>Учебный тренажёр</strong>
           <span>Студия записи</span>
         </div>
+        <div className="banner-actions" ref={setBannerHost} />
       </header>
       <main className="studio">
         {error && <p className="error" role="alert">{error}</p>}
@@ -162,6 +165,7 @@ export function StudioApp() {
         )}
         {view === 'recording' && (
           <Recording
+            bannerHost={bannerHost}
             onError={setError}
             onStopped={async (id, marks, blob) => {
               if (blob && marks.length) {
@@ -559,12 +563,14 @@ function NewLesson({ whisper, onCancel, onError, onWhisper, onStarted }: {
   )
 }
 
-function Recording({ onError, onStopped }: {
+function Recording({ bannerHost, onError, onStopped }: {
+  bannerHost: HTMLElement | null
   onError: (message: string) => void
   onStopped: (id: string, marks: StepMark[], blob: Blob | null) => Promise<void>
 }) {
   const [steps, setSteps] = useState<LiveStep[]>([])
   const [paused, setPaused] = useState(false)
+  const [stopping, setStopping] = useState(false)
   const [seconds, setSeconds] = useState(0)
   const [level, setLevel] = useState(0)
   const [micOn, setMicOn] = useState(false)
@@ -622,6 +628,32 @@ function Recording({ onError, onStopped }: {
   }, [onError])
 
   const clock = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
+
+  async function stopRecording() {
+    if (stopping) return
+    setStopping(true)
+    try {
+      const blob = await stopRecorder(recorder.current, chunks.current)
+      const response = await fetch('/api/record/stop', { method: 'POST' })
+      const payload = await response.json() as { id?: string; steps?: Array<{ id: string }>; error?: string }
+      if (!response.ok || !payload.id) {
+        onError(payload.error ?? 'Не удалось остановить запись')
+        setStopping(false)
+        return
+      }
+      await onStopped(payload.id, marks.current.slice(0, payload.steps?.length ?? marks.current.length), blob)
+    } catch {
+      onError('Не удалось остановить запись')
+      setStopping(false)
+    }
+  }
+
+  const stopButton = (
+    <button type="button" className="primary" disabled={stopping} onClick={() => void stopRecording()}>
+      {stopping ? 'Собираю урок…' : 'Стоп'}
+    </button>
+  )
+
   return (
     <section>
       <div className="row">
@@ -637,19 +669,14 @@ function Recording({ onError, onStopped }: {
           <li key={`${step.id}-${index}`}>{index + 1}. {step.kind === 'fill' ? `Ввод «${step.value}»` : 'Нажатие'} — {step.label}</li>
         ))}
       </ol>
+      {bannerHost && createPortal(stopButton, bannerHost)}
       <div className="row">
-        <button type="button" className="tertiary" onClick={async () => {
+        <button type="button" className="tertiary" disabled={stopping} onClick={async () => {
           await fetch(paused ? '/api/record/resume' : '/api/record/pause', { method: 'POST' })
           if (paused) recorder.current?.resume()
           else recorder.current?.pause()
         }}>{paused ? 'Продолжить' : 'Пауза'}</button>
-        <button type="button" className="primary" onClick={async () => {
-          const blob = await stopRecorder(recorder.current, chunks.current)
-          const response = await fetch('/api/record/stop', { method: 'POST' })
-          const payload = await response.json() as { id?: string; steps?: Array<{ id: string }>; error?: string }
-          if (!response.ok || !payload.id) { onError(payload.error ?? 'Не удалось остановить запись'); return }
-          await onStopped(payload.id, marks.current.slice(0, payload.steps?.length ?? marks.current.length), blob)
-        }}>Стоп</button>
+        {!bannerHost && stopButton}
       </div>
     </section>
   )
