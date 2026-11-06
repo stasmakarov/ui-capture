@@ -29,3 +29,7 @@ artifacts/*.html
 
 # Токен студии для платформы (M2)
 .studio-platform.json
+
+# Локальный тестовый захват (не для репозитория)
+captures/multi-reestr-helper/
+lessons/multi-reestr-helper/
