@@ -50,15 +50,15 @@ docker compose up -d                                        # из корня р
   - `LifecycleTransition`: журнал переходов.
   - `StudioToken`: в базе хранится только SHA-256 токена.
   - `StudioTicket`: одноразовый тикет для «Записать в студии».
-  - `Course`, `CourseRevision`: заглушки под M3.
+  - `Course`: курс (название, код, описание, владелец) и состав уроков. `CourseRevision` — заглушка под следующие этапы.
 - `service/`:
   - `LessonPackageReader` проверяет `.lesson.zip` по тому же контракту, что `tools/package/lessonPackage.ts`.
   - `LessonImportService` создаёт черновик или новую версию.
   - `LessonLifecycleService` ведёт ЖЦ: draft → review → published → archived, а также review → draft с обязательным комментарием; автор-тренер может утвердить свой урок сам.
   - `StudioTokenService` выпускает токены и тикеты.
 - `api/StudioApiController`: REST `/api/lessons/import`, `/api/studio/exchange`, `/api/studio/whoami`. Работает без сессии и CSRF, вызывающий определяется по Bearer-токену.
-- `security/`: ресурсные роли `admin`, `reviewer`, `trainer`, `student` (плюс `ui-minimal`) и row-level роли `trainer-own-data` (свои уроки и токены) и `student-published` (только опубликованное).
-- `view/`: экраны «Уроки» (фильтр по статусу, «Записать в студии»), карточка урока (версии, журнал, шаги, кнопки переходов), предпросмотр (`trainer.html` в изолированном iframe), «Мои токены студии».
+- `security/`: ресурсные роли `admin`, `reviewer`, `trainer`, `student` (плюс `ui-minimal`) и row-level роли `trainer-own-data` (свои уроки, токены и курсы, где пользователь — владелец) и `student-published` (только опубликованное). Ученик экраны курсов не открывает.
+- `view/`: экраны «Курсы» (список и карточка с уроками курса, «Записать в студии» для этого курса), «Уроки» (фильтр по статусу, «Записать в студии»), карточка урока (версии, журнал, шаги, кнопки переходов), предпросмотр (`trainer.html` в изолированном iframe), «Мои токены студии».
 - `app/DemoDataInitializer`: демо-пользователи и демо-курс в профилях `dev` и `test`.
 - `dev/DevDatabaseEnvironmentPostProcessor`: в профиле `dev` создаёт роль/БД через admin JDBC до DataSource и Liquibase (регистрация в `META-INF/spring.factories`; Spring Boot 3.5 подхватывает EPP именно оттуда).
 

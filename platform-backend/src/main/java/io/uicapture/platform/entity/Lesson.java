@@ -1,7 +1,9 @@
 package io.uicapture.platform.entity;
 
+import io.jmix.core.DeletePolicy;
 import io.jmix.core.FileRef;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
+import io.jmix.core.entity.annotation.OnDeleteInverse;
 import io.jmix.core.metamodel.annotation.InstanceName;
 import io.jmix.core.metamodel.annotation.JmixEntity;
 import jakarta.persistence.*;
@@ -50,6 +52,7 @@ public class Lesson {
     @Column(name = "STATUS", nullable = false, length = 20)
     private String status = LessonStatus.DRAFT.getId();
 
+    @OnDeleteInverse(DeletePolicy.DENY)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "COURSE_ID")
     private Course course;

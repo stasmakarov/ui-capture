@@ -4,7 +4,7 @@ import io.jmix.security.role.annotation.JpqlRowLevelPolicy;
 import io.jmix.security.role.annotation.RowLevelRole;
 import io.uicapture.platform.entity.*;
 
-/** Тренер видит только свои уроки, их версии и журнал, свои токены и тикеты. */
+/** Тренер видит только свои уроки, их версии и журнал, свои токены, тикеты и курсы (владелец). */
 @RowLevelRole(name = "Тренер: только свои данные", code = TrainerOwnDataRole.CODE)
 public interface TrainerOwnDataRole {
     String CODE = "trainer-own-data";
@@ -23,4 +23,7 @@ public interface TrainerOwnDataRole {
 
     @JpqlRowLevelPolicy(entityClass = StudioTicket.class, where = "{E}.owner.username = :current_user_username")
     void ticket();
+
+    @JpqlRowLevelPolicy(entityClass = Course.class, where = "{E}.owner.username = :current_user_username")
+    void course();
 }

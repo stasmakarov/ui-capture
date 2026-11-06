@@ -9,12 +9,12 @@ import io.jmix.security.role.annotation.ResourceRole;
 import io.jmix.securityflowui.role.annotation.MenuPolicy;
 import io.jmix.securityflowui.role.annotation.ViewPolicy;
 
-/** Тренер: записывает уроки в студии, ведёт их ЖЦ, выпускает свои токены студии. */
+/** Тренер: ведёт свои курсы, записывает уроки в студии, ведёт их ЖЦ, выпускает свои токены студии. */
 @ResourceRole(name = "Тренер", code = TrainerRole.CODE)
 public interface TrainerRole {
     String CODE = "trainer";
 
-    @EntityPolicy(entityClass = Lesson.class, actions = {EntityPolicyAction.CREATE, EntityPolicyAction.READ, EntityPolicyAction.UPDATE})
+    @EntityPolicy(entityClass = Lesson.class, actions = {EntityPolicyAction.CREATE, EntityPolicyAction.READ, EntityPolicyAction.UPDATE, EntityPolicyAction.DELETE})
     @EntityAttributePolicy(entityClass = Lesson.class, attributes = "*", action = EntityAttributePolicyAction.MODIFY)
     void lesson();
 
@@ -42,15 +42,15 @@ public interface TrainerRole {
     @EntityAttributePolicy(entityClass = StudioTicket.class, attributes = "*", action = EntityAttributePolicyAction.MODIFY)
     void studioTicket();
 
-    @EntityPolicy(entityClass = Course.class, actions = EntityPolicyAction.READ)
-    @EntityAttributePolicy(entityClass = Course.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
+    @EntityPolicy(entityClass = Course.class, actions = {EntityPolicyAction.CREATE, EntityPolicyAction.READ, EntityPolicyAction.UPDATE, EntityPolicyAction.DELETE})
+    @EntityAttributePolicy(entityClass = Course.class, attributes = "*", action = EntityAttributePolicyAction.MODIFY)
     void course();
 
     @EntityPolicy(entityClass = User.class, actions = EntityPolicyAction.READ)
     @EntityAttributePolicy(entityClass = User.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
     void user();
 
-    @ViewPolicy(viewIds = {PlatformViews.LESSON_LIST, PlatformViews.LESSON_DETAIL, PlatformViews.LESSON_PREVIEW, PlatformViews.STUDIO_TOKENS})
-    @MenuPolicy(menuIds = {PlatformViews.LESSON_LIST, PlatformViews.STUDIO_TOKENS})
+    @ViewPolicy(viewIds = {PlatformViews.LESSON_LIST, PlatformViews.LESSON_DETAIL, PlatformViews.LESSON_EDIT, PlatformViews.LESSON_PREVIEW, PlatformViews.STUDIO_TOKENS, PlatformViews.COURSE_LIST, PlatformViews.COURSE_DETAIL})
+    @MenuPolicy(menuIds = {PlatformViews.LESSON_LIST, PlatformViews.STUDIO_TOKENS, PlatformViews.COURSE_LIST})
     void views();
 }
