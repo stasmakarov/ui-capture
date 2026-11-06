@@ -57,16 +57,28 @@ class RowLevelSecurityTest {
     void trainerSeesOwnReviewerSeesAllStudentSeesPublished() {
         String draftId = TestPackages.uniqueId("rls-draft");
         String publishedId = TestPackages.uniqueId("rls-pub");
+        String directId = TestPackages.uniqueId("rls-direct");
+        String reviewId = TestPackages.uniqueId("rls-review");
+        String returnedId = TestPackages.uniqueId("rls-returned");
         auth.withUser("trainer", () -> importService.importPackage(TestPackages.validZip(draftId, "Черновик"), null, null));
         UUID pub = auth.withUser("trainer", () -> importService.importPackage(TestPackages.validZip(publishedId, "Опубликован"), null, null)).lesson().getId();
         auth.withUser("trainer", () -> lifecycle.transition(pub, LessonStatus.REVIEW, null));
         auth.withUser("trainer", () -> lifecycle.transition(pub, LessonStatus.PUBLISHED, null));
+        UUID direct = auth.withUser("trainer", () -> importService.importPackage(TestPackages.validZip(directId, "Сразу"), null, null)).lesson().getId();
+        auth.withUser("trainer", () -> lifecycle.transition(direct, LessonStatus.PUBLISHED, null));
+        UUID review = auth.withUser("trainer", () -> importService.importPackage(TestPackages.validZip(reviewId, "На проверке"), null, null)).lesson().getId();
+        auth.withUser("trainer", () -> lifecycle.transition(review, LessonStatus.REVIEW, null));
+        UUID returned = auth.withUser("trainer", () -> importService.importPackage(TestPackages.validZip(returnedId, "Возврат"), null, null)).lesson().getId();
+        auth.withUser("trainer", () -> lifecycle.transition(returned, LessonStatus.REVIEW, null));
+        auth.withUser("reviewer", () -> lifecycle.transition(returned, LessonStatus.DRAFT, "Поправьте шаг"));
 
-        assertThat(visibleLessonIds("trainer")).contains(draftId, publishedId);
-        assertThat(visibleLessonIds("trainer2")).doesNotContain(draftId, publishedId);
-        assertThat(visibleLessonIds("reviewer")).contains(draftId, publishedId);
-        assertThat(visibleLessonIds("student")).contains(publishedId).doesNotContain(draftId);
-        assertThat(visibleLessonIds("admin")).contains(draftId, publishedId);
+        assertThat(visibleLessonIds("trainer")).contains(draftId, publishedId, directId, reviewId, returnedId);
+        assertThat(visibleLessonIds("trainer2")).doesNotContain(draftId, publishedId, directId, reviewId, returnedId);
+        assertThat(visibleLessonIds("reviewer")).contains(draftId, publishedId, directId, reviewId, returnedId);
+        assertThat(visibleLessonIds("student")).contains(publishedId, directId).doesNotContain(draftId, reviewId, returnedId);
+        assertThat(visibleLessonIds("admin")).contains(draftId, publishedId, directId, reviewId, returnedId);
+        assertThat(auth.withUser("student", () -> dataManager.load(Lesson.class).all().list()))
+                .allSatisfy(lesson -> assertThat(lesson.getStatus()).isEqualTo(LessonStatus.PUBLISHED));
     }
 
     @Test

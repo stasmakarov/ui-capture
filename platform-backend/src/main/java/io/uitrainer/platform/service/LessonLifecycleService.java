@@ -15,9 +15,9 @@ import java.util.List;
 import java.util.UUID;
 
 /**
- * ЖЦ урока: draft → review → published → archived; review → draft только с комментарием.
- * Самоутверждение: автор-тренер может сам перевести свой урок из review в published.
- * Каждый переход пишется в LifecycleTransition.
+ * ЖЦ урока. Основной путь: черновик → опубликован, без проверки.
+ * Проверка необязательна: черновик → на проверке → опубликован, либо возврат в черновик с комментарием.
+ * Опубликованный урок можно архивировать. Каждый переход пишется в LifecycleTransition.
  */
 @Service
 public class LessonLifecycleService {
@@ -32,9 +32,13 @@ public class LessonLifecycleService {
         this.timeSource = timeSource;
     }
 
+    /** Порядок кнопок: публикация — основное действие, проверка — рядом, по желанию. */
+    private static final List<LessonStatus> TRANSITION_ORDER = List.of(
+            LessonStatus.PUBLISHED, LessonStatus.REVIEW, LessonStatus.DRAFT, LessonStatus.ARCHIVED);
+
     public static boolean isAllowedEdge(LessonStatus from, LessonStatus to) {
         return switch (from) {
-            case DRAFT -> to == LessonStatus.REVIEW;
+            case DRAFT -> to == LessonStatus.PUBLISHED || to == LessonStatus.REVIEW;
             case REVIEW -> to == LessonStatus.PUBLISHED || to == LessonStatus.DRAFT;
             case PUBLISHED -> to == LessonStatus.ARCHIVED;
             case ARCHIVED -> false;
@@ -45,7 +49,7 @@ public class LessonLifecycleService {
     public List<LessonStatus> availableTransitions(Lesson lesson) {
         Lesson fresh = load(lesson.getId());
         List<LessonStatus> result = new ArrayList<>();
-        for (LessonStatus to : LessonStatus.values()) {
+        for (LessonStatus to : TRANSITION_ORDER) {
             if (isAllowedEdge(fresh.getStatus(), to) && denialReason(fresh, to) == null) result.add(to);
         }
         return result;
@@ -87,11 +91,14 @@ public class LessonLifecycleService {
         boolean trainerAuthor = author && access.isTrainer();
         boolean reviewer = access.isReviewer();
         LessonStatus from = lesson.getStatus();
+        if (from == LessonStatus.DRAFT && to == LessonStatus.PUBLISHED) {
+            return trainerAuthor ? null : "Опубликовать черновик может преподаватель — автор урока";
+        }
         if (from == LessonStatus.DRAFT && to == LessonStatus.REVIEW) {
             return trainerAuthor ? null : "Отправить на проверку может только автор урока";
         }
         if (from == LessonStatus.REVIEW && to == LessonStatus.PUBLISHED) {
-            return reviewer || trainerAuthor ? null : "Опубликовать может проверяющий или сам автор (самоутверждение)";
+            return reviewer || trainerAuthor ? null : "Опубликовать урок на проверке может проверяющий или сам автор";
         }
         if (from == LessonStatus.REVIEW && to == LessonStatus.DRAFT) {
             return reviewer || trainerAuthor ? null : "Вернуть на доработку может проверяющий или автор";
