@@ -1,5 +1,5 @@
 {
-  "name": "@ui-capture/studio",
+  "name": "@uitrainer/studio",
   "private": true,
   "version": "0.6.0",
   "type": "module",
@@ -8,8 +8,8 @@
     "./gate": "./src/StudioGate.tsx"
   },
   "dependencies": {
-    "@ui-capture/lesson-schema": "*",
-    "@ui-capture/player": "*",
+    "@uitrainer/lesson-schema": "*",
+    "@uitrainer/player": "*",
     "react": "^19.3.1"
   }
 }

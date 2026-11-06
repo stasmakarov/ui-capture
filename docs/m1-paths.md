@@ -4,13 +4,13 @@
 
 ## tools
 
-На месте и используются `package.json` / `bin/ui-capture.js`:
+На месте и используются `package.json` / `bin/uitrainer.js` (bin `ui-capture` указывает на тот же файл):
 
 - `tools/cli.ts` — команды `studio`, `package`, `import`, `pack`, `open-url`, запись по URL
 - `tools/capture/` — интерактивная запись, сценарии, разбор ошибок запуска
 - `tools/pack/` — сборка одного `trainer.html`
 - `tools/builder/`, `tools/pipeline/`, `tools/studio/`, `tools/package/` — сборка урока, студия, пакет `.lesson.zip`
-- `bin/ui-capture.js` — обёртка, которая запускает `tools/cli.ts`
+- `bin/uitrainer.js` — обёртка, которая запускает `tools/cli.ts`
 
 ## Пути внутри урока
 

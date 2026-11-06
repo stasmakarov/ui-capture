@@ -10,6 +10,7 @@ import { buildCapture, writeCatalog } from '../builder/build.ts'
 import { serveLessons } from '../builder/staticServer.ts'
 import { packHtml } from '../pack/packHtml.ts'
 import { exportLessonPackage, importLessonPackage } from '../package/lessonPackage.ts'
+import { productEnv } from '../productEnv.ts'
 import { detectBrowsers, gostBrowserHint, resolveBrowserLaunch, settingsFromSaved, type BrowserId, type StudioSettings } from './browsers.ts'
 import { exchangeTicket, forgetPlatformLink, normalizeServer, publicLink, publishLesson, readPlatformLink } from './platform.ts'
 import { downloadWhisper, onWhisperStatus, transcribeWav, whisperStatus } from './transcribe.ts'
@@ -180,7 +181,7 @@ export async function startStudio(options: StudioOptions): Promise<{ url: string
     server: {
       middlewareMode: true,
       watch: {
-        ignored: ['**/artifacts/**', '**/platform-backend/**', '**/dist-single/**', '**/captures/**', '**/lessons/**', '**/.ui-capture/**'],
+        ignored: ['**/artifacts/**', '**/platform-backend/**', '**/dist-single/**', '**/captures/**', '**/lessons/**', '**/.uitrainer/**', '**/.ui-capture/**'],
       },
     },
     appType: 'spa',
@@ -306,7 +307,7 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
     return
   }
   if (request.method === 'POST' && url.pathname === '/api/platform/link') {
-    // Задание из админки (запасной путь кнопки «Записать в студии») или из ссылки uicapture://new.
+    // Задание из админки (запасной путь кнопки «Записать в студии») или из ссылки uitrainer://new.
     // Тело — JSON, но приходит как text/plain из fetch(no-cors), поэтому тип не проверяем.
     const body = JSON.parse(await readBody(request)) as { server?: string; ticket?: string; course?: string }
     if (!body.server || !body.ticket) throw new Error('Нужны server и ticket')
@@ -431,7 +432,7 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
         lessonId,
         mode: body.mode ?? 'auto',
         capturesDir,
-        headless: process.env.UI_CAPTURE_HEADLESS === '1',
+        headless: productEnv('UITRAINER_HEADLESS', 'UI_CAPTURE_HEADLESS') === '1',
         channel: launch.channel,
         executablePath: launch.executablePath,
         onAction: (action) => {

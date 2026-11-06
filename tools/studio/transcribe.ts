@@ -1,6 +1,7 @@
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { productEnv } from '../productEnv.ts'
 import { summarizeDownload, type FileProgress } from './downloadProgress.ts'
 
 const MODEL = 'Xenova/whisper-small'
@@ -39,8 +40,20 @@ const listeners = new Set<(status: WhisperStatus) => void>()
 let live: Live = { phase: 'idle', percent: 0, loadedBytes: 0, totalBytes: 0, file: '', error: '' }
 let running: Promise<void> | null = null
 
+const MODEL_DIR = '.uitrainer/models'
+const LEGACY_MODEL_DIR = '.ui-capture/models'
+
+export function whisperModelDir(): string {
+  const fromEnv = productEnv('UITRAINER_MODEL_DIR', 'UI_CAPTURE_MODEL_DIR')
+  if (fromEnv !== undefined) return path.resolve(fromEnv)
+  const next = path.resolve(MODEL_DIR)
+  const legacy = path.resolve(LEGACY_MODEL_DIR)
+  if (!existsSync(next) && existsSync(legacy)) return legacy
+  return next
+}
+
 function modelCache(): string {
-  return path.resolve(process.env.UI_CAPTURE_MODEL_DIR ?? '.ui-capture/models')
+  return whisperModelDir()
 }
 
 function markerFile(): string {
@@ -57,7 +70,7 @@ export function whisperReady(): boolean {
 
 export function whisperHint(): string {
   if (whisperReady()) return 'Модель установлена'
-  return 'Модель речи не скачана. Запись и аудио работают без текста. Скачайте модель кнопкой «Скачать модель речи» или командой npx ui-capture whisper-download. Интернет нужен только на время загрузки.'
+  return 'Модель речи не скачана. Запись и аудио работают без текста. Скачайте модель кнопкой «Скачать модель речи» или командой npx uitrainer whisper-download. Интернет нужен только на время загрузки.'
 }
 
 export function whisperStatus(): WhisperStatus {
@@ -146,7 +159,7 @@ async function runDownload(): Promise<void> {
   publish({ phase: 'downloading', percent: 0, loadedBytes: 0, totalBytes: 0, file: '', error: '' })
   try {
     await mkdir(modelCache(), { recursive: true })
-    if (process.env.UI_CAPTURE_WHISPER_SIMULATE === '1') {
+    if (productEnv('UITRAINER_WHISPER_SIMULATE', 'UI_CAPTURE_WHISPER_SIMULATE') === '1') {
       await simulateDownload()
     } else {
       await fetchModel()
@@ -204,7 +217,7 @@ async function fetchModel(): Promise<void> {
 }
 
 export async function transcribeWav(wavPath: string): Promise<string> {
-  const fake = process.env.UI_CAPTURE_FAKE_TRANSCRIPT
+  const fake = productEnv('UITRAINER_FAKE_TRANSCRIPT', 'UI_CAPTURE_FAKE_TRANSCRIPT')
   if (fake !== undefined) return fake
   if (!existsSync(markerFile())) throw new Error(whisperHint())
   const marker = await readFile(markerFile(), 'utf8')

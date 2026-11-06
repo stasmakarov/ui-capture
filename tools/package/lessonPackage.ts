@@ -4,6 +4,7 @@ import path from 'node:path'
 import { migrateLesson, type Lesson } from '../../lesson-schema/src/lesson.ts'
 import { unzipStore, zipStore, type ZipEntry } from './zipStore.ts'
 
+/** Идентификатор архива .lesson.zip. Строка не меняется: уже собранные пакеты остаются читаемыми. */
 export const PACKAGE_FORMAT = 'ui-capture-lesson'
 export const PACKAGE_FORMAT_VERSION = 1
 

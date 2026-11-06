@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://lessonEditView.title"
+      focusComponent="form">
+    <data>
+        <instance id="lessonDc" class="io.uitrainer.platform.entity.Lesson">
+            <fetchPlan extends="_base">
+                <property name="author" fetchPlan="_instance_name"/>
+                <property name="course" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <loader id="lessonDl"/>
+        </instance>
+        <collection id="usersDc" class="io.uitrainer.platform.entity.User">
+            <fetchPlan extends="_instance_name">
+                <property name="username"/>
+                <property name="firstName"/>
+                <property name="lastName"/>
+            </fetchPlan>
+            <loader id="usersDl">
+                <query>
+                    <![CDATA[select u from User u order by u.username]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="saveCloseAction" type="detail_saveClose"/>
+        <action id="closeAction" type="detail_close"/>
+    </actions>
+    <layout>
+        <formLayout id="form" dataContainer="lessonDc">
+            <responsiveSteps>
+                <responsiveStep minWidth="0" columns="1"/>
+                <responsiveStep minWidth="40em" columns="2"/>
+            </responsiveSteps>
+            <textField id="titleField" property="title" required="true"/>
+            <textField id="externalIdField" property="externalId" required="true"/>
+            <textField id="sourceSiteField" property="sourceSite"/>
+            <comboBox id="statusField" property="status" readOnly="true"/>
+            <entityComboBox id="authorField" property="author" itemsContainer="usersDc" required="true"/>
+        </formLayout>
+        <hbox id="detailActions">
+            <button id="saveAndCloseButton" action="saveCloseAction"/>
+            <button id="closeButton" action="closeAction"/>
+        </hbox>
+    </layout>
+</view>

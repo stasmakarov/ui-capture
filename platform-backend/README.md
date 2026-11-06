@@ -1,4 +1,4 @@
-# Платформа ui-capture (Jmix 2.8, Vaadin Flow, PostgreSQL)
+# Платформа uitrainer (Jmix 2.8, Vaadin Flow, PostgreSQL)
 
 Бэкенд и админка платформы (этап M2, версия 0.6.0). Как поднять окружение, демо-логины и как связать студию с сервером, описано в корневом [README](../README.md#платформа-m2-админка-jmix-публикация-из-студии).
 
@@ -10,7 +10,7 @@
 (SUPERUSER или как минимум `CREATEDB` + `CREATEROLE`).
 
 Дальше достаточно запуска с профилем `dev` — роль `uicapture`, базы `uicapture` и `uicapture_test`
-создаются автоматически до инициализации DataSource/Liquibase:
+создаются автоматически до инициализации DataSource/Liquibase (имена БД не менялись):
 
 ```bash
 ./gradlew bootRun --args='--spring.profiles.active=dev'   # http://localhost:8090, trainer/trainer
@@ -22,15 +22,17 @@
 
 | Свойство | Env (пример) | По умолчанию |
 |---|---|---|
-| `uicapture.dev.db-admin.url` | `UICAPTURE_DEV_DBADMIN_URL` | `jdbc:postgresql://localhost:5432/postgres` |
-| `uicapture.dev.db-admin.username` | `UICAPTURE_DEV_DBADMIN_USERNAME` | `jmix` |
-| `uicapture.dev.db-admin.password` | `UICAPTURE_DEV_DBADMIN_PASSWORD` | `jmix` |
+| `uitrainer.dev.db-admin.url` | `UITRAINER_DEV_DBADMIN_URL` | `jdbc:postgresql://localhost:5432/postgres` |
+| `uitrainer.dev.db-admin.username` | `UITRAINER_DEV_DBADMIN_USERNAME` | `jmix` |
+| `uitrainer.dev.db-admin.password` | `UITRAINER_DEV_DBADMIN_PASSWORD` | `jmix` |
 
-URL/логин/пароль приложения по-прежнему: `main.datasource.*` / `UIC_DB_URL`, `UIC_DB_USER`, `UIC_DB_PASSWORD`
-(по умолчанию `uicapture` / `uicapture` на `localhost:5432/uicapture`).
+Если новое имя не задано, читаются `UICAPTURE_DEV_DBADMIN_*` и свойство `uicapture.dev.db-admin.*`.
+
+URL/логин/пароль приложения: `main.datasource.*` / `UITRAINER_DB_URL`, `UITRAINER_DB_USER`, `UITRAINER_DB_PASSWORD`
+(запасные `UIC_DB_*`; по умолчанию `uicapture` / `uicapture` на `localhost:5432/uicapture`).
 
 Если admin-подключение не удалось, в лог пишется предупреждение, и старт продолжается
-(нужно создать БД вручную или поправить `uicapture.dev.db-admin.*`).
+(нужно создать БД вручную или поправить `uitrainer.dev.db-admin.*`).
 
 ### Через Docker Compose
 
@@ -62,4 +64,4 @@ docker compose up -d                                        # из корня р
 - `app/DemoDataInitializer`: демо-пользователи и демо-курс в профилях `dev` и `test`.
 - `dev/DevDatabaseEnvironmentPostProcessor`: в профиле `dev` создаёт роль/БД через admin JDBC до DataSource и Liquibase (регистрация в `META-INF/spring.factories`; Spring Boot 3.5 подхватывает EPP именно оттуда).
 
-Схема БД задаётся Liquibase: `src/main/resources/io/uicapture/platform/liquibase/`.
+Схема БД задаётся Liquibase: `src/main/resources/io/uicapture/platform/liquibase/`. Путь не переносился: Liquibase узнаёт уже применённые изменения по пути файла. Java-пакет — `io.uitrainer.platform`.

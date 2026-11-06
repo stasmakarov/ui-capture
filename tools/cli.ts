@@ -1,5 +1,6 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
+import { productEnv } from './productEnv.ts'
 import { lessonIdFromName, recordInteractive } from './capture/interactive.ts'
 import { defaultHtml, publishCapture } from './pipeline/publish.ts'
 import { packHtml } from './pack/packHtml.ts'
@@ -7,31 +8,33 @@ import { exportLessonPackage, importLessonPackage } from './package/lessonPackag
 
 type Mode = 'dom' | 'screenshot' | 'auto'
 
-const HELP = `ui-capture — запись урока с живого сайта и сборка тренажёра
+const HELP = `uitrainer — запись урока с живого сайта и сборка тренажёра
+
+Команда npx ui-capture вызывает то же самое.
 
 Запись (откроется окно браузера; остановите закрытием окна или Ctrl+C):
-  npx ui-capture <url> [--lesson-name "Найти извещение"] [--mode auto|dom|screenshot] [--out ./lessons]
+  npx uitrainer <url> [--lesson-name "Найти извещение"] [--mode auto|dom|screenshot] [--out ./lessons]
   npm run capture -- <url> --lesson-name "Найти извещение"
 
 Студия в браузере (запись, голос, правки, скачивание trainer.html):
-  npx ui-capture studio
+  npx uitrainer studio
   npm start
   В студии список «Браузер для записи»: Chromium, Chrome, Яндекс Браузер или свой путь.
 
 Пересобрать один HTML из уже записанных уроков в каталоге:
-  npx ui-capture pack [--out ./lessons] [--html ./lessons/trainer.html]
+  npx uitrainer pack [--out ./lessons] [--html ./lessons/trainer.html]
 
 Пакет урока для платформы (.lesson.zip, манифест и SHA-256):
-  npx ui-capture package <id> [--out ./lessons] [--file ./id.lesson.zip]
-  npx ui-capture import <файл.lesson.zip> [--out ./lessons]
+  npx uitrainer package <id> [--out ./lessons] [--file ./id.lesson.zip]
+  npx uitrainer import <файл.lesson.zip> [--out ./lessons]
 
 Связь с платформой (M2):
-  npx ui-capture open-url "uicapture://new?course=…&server=…&ticket=…"   обменять тикет из админки на токен
-  npx ui-capture platform-login http://localhost:8090 --token uicst_…   токен с экрана «Мои токены студии»
-  npx ui-capture publish <id> [--out ./lessons]                          отправить урок черновиком на платформу
+  npx uitrainer open-url "uitrainer://new?course=…&server=…&ticket=…"   обменять тикет из админки на токен
+  npx uitrainer platform-login http://localhost:8090 --token uicst_…   токен с экрана «Мои токены студии»
+  npx uitrainer publish <id> [--out ./lessons]                          отправить урок черновиком на платформу
 
 Скачать офлайн-модель распознавания русской речи:
-  npx ui-capture whisper-download
+  npx uitrainer whisper-download
 
 Браузер:
   --headless              без окна (для проверки)
@@ -39,7 +42,7 @@ const HELP = `ui-capture — запись урока с живого сайта 
   --executable-path PATH  Яндекс Браузер или другой Chromium
 
 Пример zakupki.gov.ru:
-  npx ui-capture "https://zakupki.gov.ru/epz/main/public/home.html" --lesson-name "Найти извещение"
+  npx uitrainer "https://zakupki.gov.ru/epz/main/public/home.html" --lesson-name "Найти извещение"
 `
 
 function flag(argv: string[], name: string): string | undefined {
@@ -79,7 +82,7 @@ async function main() {
     return
   }
   if (argv[0] === 'whisper-download') {
-    const { downloadWhisper, onWhisperStatus } = await import('./studio/transcribe.ts')
+    const { downloadWhisper, onWhisperStatus, whisperModelDir } = await import('./studio/transcribe.ts')
     const { downloadLabel } = await import('./studio/downloadProgress.ts')
     console.log('Скачиваю whisper-small. Нужен интернет, дальше модель работает офлайн.')
     let last = -1
@@ -93,7 +96,7 @@ async function main() {
     } finally {
       stop()
     }
-    console.log('Модель установлена. Файлы: .ui-capture/models')
+    console.log(`Модель установлена. Файлы: ${whisperModelDir()}`)
     return
   }
   if (argv[0] === 'open-url') {
@@ -103,14 +106,14 @@ async function main() {
     const lessonsDir = path.resolve(flag(argv, '--out') ?? './lessons')
     const link = await exchangeTicket(lessonsDir, task.server, task.ticket, task.course)
     console.log(`Студия связана с ${link.server} как ${link.username}${link.courseTitle ? `, курс «${link.courseTitle}»` : ''}.`)
-    console.log('Запишите урок (npm start) и нажмите «Опубликовать на сервер» — или: npx ui-capture publish <id>')
+    console.log('Запишите урок (npm start) и нажмите «Опубликовать на сервер» — или: npx uitrainer publish <id>')
     return
   }
   if (argv[0] === 'platform-login') {
     const { loginWithToken } = await import('./studio/platform.ts')
     const server = argv[1]
-    const token = flag(argv, '--token') ?? process.env.UI_CAPTURE_STUDIO_TOKEN
-    if (!server || server.startsWith('--') || !token) throw new Error('Использование: npx ui-capture platform-login <server> --token <токен> [--course <id>]')
+    const token = flag(argv, '--token') ?? productEnv('UITRAINER_STUDIO_TOKEN', 'UI_CAPTURE_STUDIO_TOKEN')
+    if (!server || server.startsWith('--') || !token) throw new Error('Использование: npx uitrainer platform-login <server> --token <токен> [--course <id>]')
     const lessonsDir = path.resolve(flag(argv, '--out') ?? './lessons')
     const link = await loginWithToken(lessonsDir, server, token, flag(argv, '--course'))
     console.log(`Студия связана с ${link.server} как ${link.username}.`)
@@ -118,7 +121,7 @@ async function main() {
   }
   if (argv[0] === 'publish') {
     const id = argv[1]
-    if (!id || id.startsWith('--')) throw new Error('Укажите идентификатор урока: npx ui-capture publish <id>')
+    if (!id || id.startsWith('--')) throw new Error('Укажите идентификатор урока: npx uitrainer publish <id>')
     const { publishLesson } = await import('./studio/platform.ts')
     const lessonsDir = path.resolve(flag(argv, '--out') ?? './lessons')
     const result = await publishLesson(lessonsDir, id, { withTrainer: !has(argv, '--no-trainer') })
@@ -127,7 +130,7 @@ async function main() {
   }
   if (argv[0] === 'package') {
     const id = argv[1]
-    if (!id || id.startsWith('--')) throw new Error('Укажите идентификатор урока: npx ui-capture package <id>')
+    if (!id || id.startsWith('--')) throw new Error('Укажите идентификатор урока: npx uitrainer package <id>')
     const lessonsDir = path.resolve(flag(argv, '--out') ?? './lessons')
     const file = path.resolve(flag(argv, '--file') ?? path.join(lessonsDir, `${id}.lesson.zip`))
     const bytes = await exportLessonPackage(path.join(lessonsDir, id))
@@ -138,7 +141,7 @@ async function main() {
   }
   if (argv[0] === 'import') {
     const file = argv[1]
-    if (!file || file.startsWith('--')) throw new Error('Укажите файл пакета: npx ui-capture import <файл.lesson.zip>')
+    if (!file || file.startsWith('--')) throw new Error('Укажите файл пакета: npx uitrainer import <файл.lesson.zip>')
     const lessonsDir = path.resolve(flag(argv, '--out') ?? './lessons')
     const lesson = await importLessonPackage(new Uint8Array(await readFile(file)), lessonsDir)
     console.log(`Урок «${lesson.title}» записан в ${path.join(lessonsDir, lesson.id)}`)
@@ -153,7 +156,7 @@ async function main() {
     return
   }
   const url = argv.find((item) => !item.startsWith('--') && argv[argv.indexOf(item) - 1]?.startsWith('--') !== true)
-  if (!url || url === 'pack') throw new Error('Укажите адрес сайта. npx ui-capture --help')
+  if (!url || url === 'pack') throw new Error('Укажите адрес сайта. npx uitrainer --help')
   let parsed: URL
   try {
     parsed = new URL(url)

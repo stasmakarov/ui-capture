@@ -1,7 +1,9 @@
-# Задание для Cursor Agent: этап M2 — Jmix-бэкенд платформы ui-capture
+# Задание для Cursor Agent: этап M2 — Jmix-бэкенд платформы uitrainer
 
-Репозиторий: ui-capture (монорепо), ветка main, текущая версия 0.5.0.
-Перед началом прочитай docs/platform-plan.md и README, изучи структуру: lesson-schema/, player/, studio/ (Node, локальный сервер 127.0.0.1:44731), student-portal/ (заглушка), platform-backend/ (заглушка), studio/macos/ (каркас URL-схемы uicapture://).
+Историческое задание этапа M2. Репозиторий по-прежнему называется ui-capture. Команда CLI — `npx uitrainer`, схема запуска — `uitrainer://` (алиас `uicapture://`).
+
+Репозиторий: ui-capture (монорепо), ветка main, на момент задания версия 0.5.0.
+Перед началом прочитай docs/platform-plan.md и README, изучи структуру: lesson-schema/, player/, studio/ (Node, локальный сервер 127.0.0.1:44731), student-portal/ (заглушка), platform-backend/ (заглушка), studio/macos/ (каркас URL-схем `uitrainer://` и `uicapture://`).
 
 Коммить промежуточные результаты по ходу работы, чтобы при сбое ничего не потерялось.
 
@@ -29,7 +31,7 @@
    - предпросмотр — отдаёт trainer.html из пакета в iframe;
    - экран «Мои токены студии»: выпустить токен (показать один раз), отозвать.
 7. **Кнопка «Записать в студии»** на списке уроков.
-   - Открывает `uicapture://new?course=<id>&server=<baseUrl>&ticket=<одноразовый тикет>`.
+   - Открывает `uitrainer://new?course=<id>&server=<baseUrl>&ticket=<одноразовый тикет>` (алиас `uicapture://` студия тоже принимает).
    - Запасной путь: если схема не сработала, страница пингует http://127.0.0.1:44731 и открывает студию там, передав server и ticket.
    - Тикет одноразовый и короткоживущий; студия обменивает его на StudioToken.
 8. **Сторона студии (studio/)**:

@@ -7,7 +7,7 @@ import { chromium } from 'playwright'
 import { lessonIdFromName, recordInteractive } from '../capture/interactive.ts'
 import { publishCapture } from '../pipeline/publish.ts'
 
-const root = await mkdtemp(path.join(tmpdir(), 'ui-capture-'))
+const root = await mkdtemp(path.join(tmpdir(), 'uitrainer-'))
 
 function siteServer(dir: string): Promise<{ url: string; close: () => Promise<void> }> {
   const server = createServer(async (request, response) => {

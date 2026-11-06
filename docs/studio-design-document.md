@@ -12,7 +12,7 @@
 
 ## Имена
 
-Студия — часть продукта uitrainer. Команда запуска станет `npx uitrainer`, схема открытия — `uitrainer://`, на переходный период сохранится алиас `uicapture://`. Подробная таблица замен — в [design-document.md](design-document.md#имена-и-пакеты).
+Студия — часть продукта uitrainer. Команда запуска — `npx uitrainer` (прежняя `npx ui-capture` вызывает то же). Схема открытия — `uitrainer://`, алиас `uicapture://` студия тоже принимает. Репозиторий по-прежнему называется `ui-capture`. Таблица имён — в [design-document.md](design-document.md#имена-и-пакеты).
 
 ## Установка
 

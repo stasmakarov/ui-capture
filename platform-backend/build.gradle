@@ -11,7 +11,7 @@ jmix {
     projectId = 'uic'
 }
 
-group = 'io.uicapture'
+group = 'io.uitrainer'
 version = '0.6.0'
 
 java {

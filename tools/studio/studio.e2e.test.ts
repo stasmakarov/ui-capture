@@ -8,7 +8,7 @@ import { lessonIdFromName } from '../capture/interactive.ts'
 import { startStudio } from './server.ts'
 
 const root = await mkdtemp(path.join(tmpdir(), 'ui-studio-'))
-process.env.UI_CAPTURE_HEADLESS = '1'
+process.env.UITRAINER_HEADLESS = '1'
 
 function siteServer(dir: string): Promise<{ url: string; close: () => Promise<void> }> {
   const server = createServer(async (request, response) => {
@@ -35,6 +35,9 @@ function siteServer(dir: string): Promise<{ url: string; close: () => Promise<vo
 
 describe('студия', () => {
   afterAll(async () => {
+    delete process.env.UITRAINER_HEADLESS
+    delete process.env.UITRAINER_WHISPER_SIMULATE
+    delete process.env.UITRAINER_MODEL_DIR
     delete process.env.UI_CAPTURE_HEADLESS
     delete process.env.UI_CAPTURE_WHISPER_SIMULATE
     delete process.env.UI_CAPTURE_MODEL_DIR
@@ -42,8 +45,8 @@ describe('студия', () => {
   })
 
   it('записывает локальную страницу, правит шаг и отдаёт trainer.html', async () => {
-    process.env.UI_CAPTURE_WHISPER_SIMULATE = '1'
-    process.env.UI_CAPTURE_MODEL_DIR = path.join(root, 'models')
+    process.env.UITRAINER_WHISPER_SIMULATE = '1'
+    process.env.UITRAINER_MODEL_DIR = path.join(root, 'models')
     const siteDir = path.join(root, 'site')
     await mkdir(siteDir)
     await writeFile(path.join(siteDir, 'mark.svg'), '<svg xmlns="http://www.w3.org/2000/svg" id="trainer-mark-icon"><rect width="8" height="8"/></svg>')

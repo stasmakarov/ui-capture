@@ -1,4 +1,5 @@
-# Локальная база платформы (PostgreSQL 16). Бэкенд platform-backend/ (M2) подключается к ней: ./gradlew bootRun.
+# Локальная база платформы (PostgreSQL 16). Бэкенд platform-backend/ подключается к ней: ./gradlew bootRun.
+# Имя БД, роль и volume остаются uicapture: существующий volume не переименовывается.
 services:
   postgres:
     image: postgres:16
