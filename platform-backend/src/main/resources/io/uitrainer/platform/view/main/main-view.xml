@@ -32,8 +32,8 @@
         </drawerLayout>
         <initialLayout>
             <vbox padding="true">
-                <h3 text="Платформа уроков ui-capture"/>
-                <span text="Уроки записываются в студии и загружаются сюда черновиком. Откройте «Курсы» или «Уроки» в меню."/>
+                <h3 text="uitrainer"/>
+                <span text="Кабинет открывается после входа. Если роль не назначена, попросите администратора её выдать."/>
             </vbox>
         </initialLayout>
     </appLayout>

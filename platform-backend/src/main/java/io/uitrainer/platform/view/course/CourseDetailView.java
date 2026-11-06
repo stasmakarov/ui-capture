@@ -43,6 +43,8 @@ public class CourseDetailView extends StandardDetailView<Course> {
     @ViewComponent
     private JmixButton recordInStudioLocal;
     @ViewComponent
+    private JmixButton saveAndCloseButton;
+    @ViewComponent
     private DataGrid<Lesson> lessonsDataGrid;
     @ViewComponent
     private EntityComboBox<User> ownerField;
@@ -66,6 +68,7 @@ public class CourseDetailView extends StandardDetailView<Course> {
         boolean editor = access.isAdmin() || access.isTrainer();
         if (!editor) {
             setReadOnly(true);
+            saveAndCloseButton.setVisible(false);
             hideLessonMutations();
             return;
         }
@@ -77,7 +80,10 @@ public class CourseDetailView extends StandardDetailView<Course> {
     private void hideLessonMutations() {
         for (String id : new String[]{"createAction", "editAction", "removeAction"}) {
             Action action = lessonsDataGrid.getAction(id);
-            if (action != null) action.setVisible(false);
+            if (action != null) {
+                action.setVisible(false);
+                action.setEnabled(false);
+            }
         }
     }
 

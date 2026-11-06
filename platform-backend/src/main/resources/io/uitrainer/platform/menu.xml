@@ -1,11 +1,17 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <menu-config xmlns="http://jmix.io/schema/flowui/menu">
+    <item view="uic_TrainerHome" title="msg://io.uitrainer.platform/menu.home.trainer" icon="HOME"/>
+    <item view="uic_ReviewQueue" title="msg://io.uitrainer.platform/menu.home.review" icon="CHECK"/>
+    <item view="uic_AdminHome" title="msg://io.uitrainer.platform/menu.home.admin" icon="HOME"/>
+    <item view="uic_DirectorHome" title="msg://io.uitrainer.platform/menu.home.director" icon="USERS"/>
+    <item view="uic_StudentHome" title="msg://io.uitrainer.platform/menu.home.student" icon="ACADEMY_CAP"/>
     <item view="uic_Course.list" title="msg://io.uitrainer.platform.view.course/courseListView.title" icon="BOOK"/>
     <item view="uic_Lesson.list" title="msg://io.uitrainer.platform/menu.lessons" icon="ACADEMY_CAP"/>
     <menu id="administration" title="msg://io.uitrainer.platform/menu.administration" icon="COG">
         <item view="uic_StudioToken.list" title="msg://io.uitrainer.platform/menu.studioTokens" icon="KEY"/>
     </menu>
     <menu id="security" title="msg://io.uitrainer.platform/menu.security" icon="KEY_O">
+        <item view="uic_User.list" title="msg://io.uitrainer.platform/menu.users" icon="USERS"/>
         <item view="sec_ResourceRoleModel.list"
               title="msg://io.jmix.securityflowui.view.resourcerole/resourceRoleModelListView.menu"/>
         <item view="sec_RowLevelRoleModel.list"
