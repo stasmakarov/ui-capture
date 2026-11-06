@@ -1,4 +1,4 @@
-# ui-trainer-capture-poc
+# uitrainer
 
 Проверка гипотезы: из записи работы в живом веб-приложении можно автоматически собрать интерактивный урок, которому нужна только лёгкая ручная правка.
 
@@ -34,21 +34,21 @@ npm install
 npx playwright install chromium
 ```
 
-Проверка, что команда на месте: `npx ui-capture --help`.
+Проверка, что команда на месте: `npx uitrainer --help`. Прежняя команда `npx ui-capture` вызывает то же.
 
 Студия — локальная страница, с которой удобнее записывать, чем из терминала:
 
 ```bash
 npm start
 # или
-npx ui-capture studio
+npx uitrainer studio
 ```
 
-Откроется браузер на `http://127.0.0.1:44731/`. Дальше: «Новый урок», адрес портала, название, режим захвата. «Разрешить микрофон» запрашивает доступ и показывает настоящие названия устройств; полоска уровня должна двигаться, когда вы говорите. Выбранный микрофон запоминается. Список «Браузер для записи»: встроенный Chromium, Google Chrome, Яндекс Браузер или другой путь. Если сайт не открывается из-за сертификата (российские сертификаты ГОСТ), выберите Яндекс Браузер. «Начать запись» открывает сайт отдельным окном. Говорите комментарий вслух: аудио режется по шагам и играет в режиме «Покажи». Кнопка «Скачать модель речи» показывает проценты и мегабайты и после загрузки пишет «Модель установлена» — то же при следующем запуске, если модель уже на диске. Команда `npx ui-capture whisper-download` качает ту же модель. Без модели запись всё равно сохраняется.
+Откроется браузер на `http://127.0.0.1:44731/`. Дальше: «Новый урок», адрес портала, название, режим захвата. «Разрешить микрофон» запрашивает доступ и показывает настоящие названия устройств; полоска уровня должна двигаться, когда вы говорите. Выбранный микрофон запоминается. Список «Браузер для записи»: встроенный Chromium, Google Chrome, Яндекс Браузер или другой путь. Если сайт не открывается из-за сертификата (российские сертификаты ГОСТ), выберите Яндекс Браузер. «Начать запись» открывает сайт отдельным окном. Говорите комментарий вслух: аудио режется по шагам и играет в режиме «Покажи». Кнопка «Скачать модель речи» показывает проценты и мегабайты и после загрузки пишет «Модель установлена» — то же при следующем запуске, если модель уже на диске. Команда `npx uitrainer whisper-download` качает ту же модель. Без модели запись всё равно сохраняется.
 
 «Стоп» собирает урок и открывает просмотр. В «Править шаги» слева список шагов, справа поля выбранного шага. Порядок меняется стрелками и перетаскиванием. «Скачать trainer.html» собирает выбранные уроки (или все) в один файл, его открывают двойным щелчком. Аудио внутри файла. «Пакет» скачивает `.lesson.zip` для будущей публикации на платформу. «Импорт .lesson.zip» кладёт урок обратно в каталог.
 
-Команды терминала `npx ui-capture <url>` и `npx ui-capture pack` из версии 0.2.0 на месте.
+Команды терминала `npx uitrainer <url>` и `npx uitrainer pack` из версии 0.2.0 на месте.
 
 ## Каталоги
 
@@ -67,8 +67,8 @@ npx ui-capture studio
 Пакет урока:
 
 ```bash
-npx ui-capture package najti-statyu
-npx ui-capture import ./lessons/najti-statyu.lesson.zip --out ./lessons
+npx uitrainer package najti-statyu
+npx uitrainer import ./lessons/najti-statyu.lesson.zip --out ./lessons
 ```
 
 Внутри архива `manifest.json` (SHA-256 каждого файла), `lesson.json`, `screens/`, `original/`, `assets/`, `audio/`. Каталоги `compare/` и `replay/` в пакет не входят. План платформы — `docs/platform-plan.md`.
@@ -78,7 +78,7 @@ npx ui-capture import ./lessons/najti-statyu.lesson.zip --out ./lessons
 Сайт должен открываться с вашего российского IP, без VPN. Встроенный Chromium не умеет TLS по ГОСТ. Если окно браузера не открывает портал, а в терминале ошибка про SSL или сертификат, запустите запись через Яндекс Браузер или Chrome, где сайт у вас уже открывается:
 
 ```bash
-npx ui-capture "https://zakupki.gov.ru/epz/main/public/home.html" \
+npx uitrainer "https://zakupki.gov.ru/epz/main/public/home.html" \
   --lesson-name "Найти извещение" \
   --executable-path "/Applications/Yandex.app/Contents/MacOS/Yandex"
 ```
@@ -86,7 +86,7 @@ npx ui-capture "https://zakupki.gov.ru/epz/main/public/home.html" \
 Обычный запуск, если портал открывается в Chromium:
 
 ```bash
-npx ui-capture "https://zakupki.gov.ru/epz/main/public/home.html" \
+npx uitrainer "https://zakupki.gov.ru/epz/main/public/home.html" \
   --lesson-name "Найти извещение" \
   --out ./lessons
 ```
@@ -115,13 +115,13 @@ npx ui-capture "https://zakupki.gov.ru/epz/main/public/home.html" \
 Несколько записей собираются в один файл заново:
 
 ```bash
-npx ui-capture pack --out ./lessons --html ./lessons/trainer.html
+npx uitrainer pack --out ./lessons --html ./lessons/trainer.html
 ```
 
 Если страница на canvas или с электронной подписью и повтор разметки пустой, пишите сразу скриншотами:
 
 ```bash
-npx ui-capture "https://zakupki.gov.ru/epz/main/public/home.html" \
+npx uitrainer "https://zakupki.gov.ru/epz/main/public/home.html" \
   --lesson-name "Найти извещение" \
   --mode screenshot \
   --executable-path "/Applications/Yandex.app/Contents/MacOS/Yandex"
@@ -153,9 +153,9 @@ cd platform-backend
 | `trainer`, `trainer2` | trainer | видит только свои уроки и свои курсы (где он владелец). Может «Записать в студии» со списка уроков или с карточки курса, отправить урок на проверку, утвердить свой урок и вести токены студии |
 | `student` | student | видит только опубликованные уроки. Курсы в админке не ведёт (портал — M3) |
 
-Без Docker подойдёт любой PostgreSQL 16. Адрес задаётся переменными `UIC_DB_URL` (например `jdbc:postgresql://localhost:5432/uicapture?stringtype=unspecified`), `UIC_DB_USER` и `UIC_DB_PASSWORD`. Файлы пакетов хранятся в Jmix FileStorage, каталог задаёт `UIC_FILES_DIR` (по умолчанию `platform-backend/.jmix/files`). Если сервер стоит за прокси, укажите его внешний адрес в `UIC_PUBLIC_URL`: этот адрес попадает в ссылку для студии.
+Без Docker подойдёт любой PostgreSQL 16. Адрес задаётся переменными `UITRAINER_DB_URL` (например `jdbc:postgresql://localhost:5432/uicapture?stringtype=unspecified`), `UITRAINER_DB_USER` и `UITRAINER_DB_PASSWORD`. Если они не заданы, читаются прежние `UIC_DB_URL`, `UIC_DB_USER` и `UIC_DB_PASSWORD`. Имя базы по умолчанию остаётся `uicapture`. Файлы пакетов хранятся в Jmix FileStorage, каталог задаёт `UITRAINER_FILES_DIR` (запасной `UIC_FILES_DIR`, по умолчанию `platform-backend/.jmix/files`). Если сервер стоит за прокси, укажите его внешний адрес в `UITRAINER_PUBLIC_URL` (запасной `UIC_PUBLIC_URL`): этот адрес попадает в ссылку для студии.
 
-Сборка и тесты бэкенда (для тестов нужна база `uicapture_test` того же пользователя, её адрес задаёт `UIC_TEST_DB_URL`):
+Сборка и тесты бэкенда (для тестов нужна база `uicapture_test` того же пользователя, её адрес задаёт `UITRAINER_TEST_DB_URL`, запасной `UIC_TEST_DB_URL`):
 
 ```bash
 cd platform-backend && ./gradlew build
@@ -165,17 +165,17 @@ cd platform-backend && ./gradlew build
 
 1. Запустите студию: `npm start` (http://127.0.0.1:44731).
 2. Войдите в админку тренером. Откройте «Курсы», выберите курс (или на экране «Уроки» выберите курс в поле «Курс для записи») и нажмите **«Записать в студии»**.
-3. Админка выпускает одноразовый тикет. Он живёт 5 минут и годится для одного обмена. Затем админка открывает `uicapture://new?course=…&server=…&ticket=…`. Если схема не зарегистрирована (её регистрирует `studio/macos/`), админка пингует `http://127.0.0.1:44731` и передаёт то же задание запущенной студии. Если студия не отвечает, админка показывает инструкцию и ссылку.
+3. Админка выпускает одноразовый тикет. Он живёт 5 минут и годится для одного обмена. Затем админка открывает `uitrainer://new?course=…&server=…&ticket=…`. Студия принимает и прежнюю схему `uicapture://`. Если схема не зарегистрирована (обе описаны в `studio/macos/`), админка пингует `http://127.0.0.1:44731` и передаёт то же задание запущенной студии. Если студия не отвечает, админка показывает инструкцию и ссылку.
 4. Студия обменивает тикет на персональный токен студии (`POST /api/studio/exchange`). Токен хранится в `lessons/.studio-platform.json` с правами 0600, в git этот файл не попадает. В шапке студии появляется строка «Платформа: …».
 5. Запишите урок как обычно. Затем в карточке урока нажмите **«Опубликовать на сервер»**. Студия соберёт `.lesson.zip` (с `trainer.html` для предпросмотра) и отправит его в `POST /api/lessons/import`. В админке урок появится черновиком. Повторная публикация того же урока создаёт новую версию.
 
 Без админки (например, на другой машине):
 
 ```bash
-npx ui-capture open-url "uicapture://new?course=…&server=http://localhost:8090&ticket=uictk_…"
+npx uitrainer open-url "uitrainer://new?course=…&server=http://localhost:8090&ticket=uictk_…"
 # или токен, выпущенный вручную на экране «Мои токены студии»:
-npx ui-capture platform-login http://localhost:8090 --token uicst_…
-npx ui-capture publish spisok-zadach
+npx uitrainer platform-login http://localhost:8090 --token uicst_…
+npx uitrainer publish spisok-zadach
 ```
 
 Потерянный токен отзывается на экране «Мои токены студии». После отзыва студия с этим токеном получает 401.
@@ -192,11 +192,11 @@ npx ui-capture publish spisok-zadach
 
 ```bash
 # бэкенд запущен в профиле dev на :8090, порт студии 44731 свободен
-UI_CAPTURE_PLATFORM_URL=http://localhost:8090 UI_CAPTURE_SCREENS_DIR=docs/screens/m2 \
+UITRAINER_PLATFORM_URL=http://localhost:8090 UITRAINER_SCREENS_DIR=docs/screens/m2 \
   npx vitest run tools/studio/platform.e2e.test.ts
 ```
 
-Сценарий теста: тренер жмёт «Записать в студии», студия получает тикет по запасному пути, затем «Опубликовать на сервер» → урок в админке черновиком → на проверку → самоутверждение → «Опубликован» → предпросмотр `trainer.html` → выпуск токена. Без `UI_CAPTURE_PLATFORM_URL` тест пропускается, поэтому `npm test` не требует сервера. Скриншоты экранов M2 лежат в [`docs/screens/m2/`](docs/screens/m2/).
+Сценарий теста: тренер жмёт «Записать в студии», студия получает тикет по запасному пути, затем «Опубликовать на сервер» → урок в админке черновиком → на проверку → самоутверждение → «Опубликован» → предпросмотр `trainer.html` → выпуск токена. Без `UITRAINER_PLATFORM_URL` (или прежнего `UI_CAPTURE_PLATFORM_URL`) тест пропускается, поэтому `npm test` не требует сервера. Скриншоты экранов M2 лежат в [`docs/screens/m2/`](docs/screens/m2/).
 
 ## Частые проблемы
 

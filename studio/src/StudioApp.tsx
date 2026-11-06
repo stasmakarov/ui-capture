@@ -26,8 +26,14 @@ type Whisper = {
 type BrowserChoice = 'chromium' | 'chrome' | 'yandex' | 'custom'
 type BrowserOption = { id: BrowserChoice; label: string; available: boolean }
 
-const MIC_KEY = 'ui-capture-mic'
-const MIC_READY = 'ui-capture-mic-ready'
+const MIC_KEY = 'uitrainer-mic'
+const MIC_KEY_LEGACY = 'ui-capture-mic'
+const MIC_READY = 'uitrainer-mic-ready'
+const MIC_READY_LEGACY = 'ui-capture-mic-ready'
+
+function stored(key: string, legacy: string): string | null {
+  return localStorage.getItem(key) ?? localStorage.getItem(legacy)
+}
 const GOST_HINT = 'Если сайт не открывается из-за сертификата (российские сертификаты ГОСТ), выберите Яндекс Браузер.'
 
 export function StudioApp() {
@@ -60,7 +66,7 @@ export function StudioApp() {
   useEffect(() => {
     void reload()
     void (async () => {
-      // Ссылка из админки: ?server=…&ticket=…&course=… (схема uicapture:// или ручной переход)
+      // Ссылка из админки: ?server=…&ticket=…&course=… (схема uitrainer://, алиас uicapture:// или ручной переход)
       const params = new URLSearchParams(window.location.search)
       const server = params.get('server')
       const ticket = params.get('ticket')
@@ -373,7 +379,7 @@ function NewLesson({ whisper, onCancel, onError, onWhisper, onStarted }: {
     const devices = await navigator.mediaDevices.enumerateDevices()
     const audio = devices.filter((device) => device.kind === 'audioinput')
     setMics(audio)
-    const saved = prefer ?? localStorage.getItem(MIC_KEY) ?? ''
+    const saved = prefer ?? stored(MIC_KEY, MIC_KEY_LEGACY) ?? ''
     const next = audio.find((device) => device.deviceId === saved)?.deviceId ?? audio[0]?.deviceId ?? ''
     setMicId(next)
     if (next) localStorage.setItem(MIC_KEY, next)
@@ -382,7 +388,7 @@ function NewLesson({ whisper, onCancel, onError, onWhisper, onStarted }: {
 
   useEffect(() => {
     void refreshMics().then((audio) => {
-      const remembered = localStorage.getItem(MIC_READY) === '1'
+      const remembered = stored(MIC_READY, MIC_READY_LEGACY) === '1'
       if (remembered && audio.some((device) => device.label)) setMicGranted(true)
     }).catch(() => undefined)
     const onChange = () => { void refreshMics().catch(() => undefined) }
@@ -596,7 +602,7 @@ function Recording({ bannerHost, onError, onStopped }: {
       if (payload.type === 'paused') setPaused(true)
       if (payload.type === 'resumed') setPaused(false)
     }
-    const micId = localStorage.getItem(MIC_KEY) ?? ''
+    const micId = stored(MIC_KEY, MIC_KEY_LEGACY) ?? ''
     void navigator.mediaDevices.getUserMedia({ audio: micId ? { deviceId: { exact: micId } } : true }).then(async (stream) => {
       setMicOn(true)
       const context = new AudioContext()

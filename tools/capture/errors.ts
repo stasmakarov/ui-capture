@@ -13,8 +13,8 @@ export function explainOpenError(error: unknown, url: string): string {
       gostBrowserHint,
       'В студии откройте «Браузер для записи», выберите Яндекс Браузер и начните запись снова.',
       'Из терминала:',
-      '  npx ui-capture <url> --channel chrome',
-      '  npx ui-capture <url> --executable-path "/Applications/Yandex.app/Contents/MacOS/Yandex"',
+      '  npx uitrainer <url> --channel chrome',
+      '  npx uitrainer <url> --executable-path "/Applications/Yandex.app/Contents/MacOS/Yandex"',
     );
   } else {
     lines.push('Проверьте адрес и сеть. Если сайт не открывается из-за сертификата, в студии выберите Яндекс Браузер в списке «Браузер для записи».');
@@ -29,7 +29,7 @@ export function explainLaunchError(error: unknown): string {
     message,
     'Поставьте Chromium командой npx playwright install chromium.',
     'Либо укажите уже установленный Chrome или Яндекс Браузер:',
-    '  npx ui-capture <url> --channel chrome',
-    '  npx ui-capture <url> --executable-path "/Applications/Yandex.app/Contents/MacOS/Yandex"',
+    '  npx uitrainer <url> --channel chrome',
+    '  npx uitrainer <url> --executable-path "/Applications/Yandex.app/Contents/MacOS/Yandex"',
   ].join('\n');
 }

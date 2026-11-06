@@ -3,17 +3,18 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { chromium, type Page } from 'playwright'
+import { productEnv } from '../productEnv.ts'
 import { startStudio } from './server.ts'
 
 /**
  * Сквозной сценарий M2: тренер в админке жмёт «Записать в студии» → студия получает тикет (запасной путь
  * через 127.0.0.1:44731) → в студии «Опубликовать на сервер» → урок черновиком в админке → на проверку →
  * самоутверждение → «Опубликован».
- * Нужен запущенный бэкенд: UI_CAPTURE_PLATFORM_URL=http://localhost:8090 (профиль dev). Без него тест пропускается.
- * UI_CAPTURE_SCREENS_DIR — куда сохранить скриншоты экранов.
+ * Нужен запущенный бэкенд: UITRAINER_PLATFORM_URL=http://localhost:8090 (профиль dev). Без него тест пропускается.
+ * UITRAINER_SCREENS_DIR — куда сохранить скриншоты экранов. Прежние UI_CAPTURE_PLATFORM_URL и UI_CAPTURE_SCREENS_DIR ещё читаются.
  */
-const platformUrl = process.env.UI_CAPTURE_PLATFORM_URL?.replace(/\/+$/, '')
-const screensDir = process.env.UI_CAPTURE_SCREENS_DIR
+const platformUrl = productEnv('UITRAINER_PLATFORM_URL', 'UI_CAPTURE_PLATFORM_URL')?.replace(/\/+$/, '')
+const screensDir = productEnv('UITRAINER_SCREENS_DIR', 'UI_CAPTURE_SCREENS_DIR')
 const LESSON_ID = 'spisok-zadach'
 
 async function shot(page: Page, name: string) {

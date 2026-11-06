@@ -1,2 +1,2 @@
 org.springframework.boot.env.EnvironmentPostProcessor=\
-io.uicapture.platform.dev.DevDatabaseEnvironmentPostProcessor
+io.uitrainer.platform.dev.DevDatabaseEnvironmentPostProcessor

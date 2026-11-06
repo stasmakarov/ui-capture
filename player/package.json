@@ -1,5 +1,5 @@
 {
-  "name": "@ui-capture/player",
+  "name": "@uitrainer/player",
   "private": true,
   "version": "0.6.0",
   "type": "module",
@@ -9,7 +9,7 @@
     "./stage": "./src/Stage.tsx"
   },
   "dependencies": {
-    "@ui-capture/lesson-schema": "*",
+    "@uitrainer/lesson-schema": "*",
     "react": "^19.3.1",
     "react-dom": "^19.3.1"
   }

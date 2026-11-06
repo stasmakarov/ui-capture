@@ -12,7 +12,7 @@ const REQUIRED = [
   'tools/pack/packHtml.ts',
   'tools/pack/singlefile.ts',
   'tools/pack/inlineAssets.ts',
-  'bin/ui-capture.js',
+  'bin/uitrainer.js',
 ]
 
 describe('сверка путей урока и tools', () => {

@@ -4,10 +4,12 @@ export type LaunchTask = {
   ticket: string
 }
 
+const LAUNCH_PROTOCOLS = new Set(['uitrainer:', 'uicapture:'])
+
 export function parseLaunchUrl(value: string): LaunchTask {
   const url = new URL(value)
-  if (url.protocol !== 'uicapture:') throw new Error('Ожидается ссылка uicapture://')
-  if (url.hostname !== 'new') throw new Error('Неизвестная команда ссылки. Ожидается uicapture://new')
+  if (!LAUNCH_PROTOCOLS.has(url.protocol)) throw new Error('Ожидается ссылка uitrainer://')
+  if (url.hostname !== 'new') throw new Error('Неизвестная команда ссылки. Ожидается uitrainer://new')
   const course = url.searchParams.get('course')?.trim() ?? ''
   const server = url.searchParams.get('server')?.trim() ?? ''
   const ticket = url.searchParams.get('ticket')?.trim() ?? ''

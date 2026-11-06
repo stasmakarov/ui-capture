@@ -82,7 +82,7 @@ async function errorText(response: Response): Promise<string> {
   return text.slice(0, 300) || `HTTP ${response.status}`
 }
 
-/** Обменять одноразовый тикет из ссылки uicapture://new на токен студии и запомнить его. */
+/** Обменять одноразовый тикет из ссылки uitrainer://new (или прежней uicapture://new) на токен студии и запомнить его. */
 export async function exchangeTicket(lessonsDir: string, serverValue: string, ticket: string, course?: string | null): Promise<PlatformLink> {
   const server = normalizeServer(serverValue)
   if (!ticket.trim()) throw new Error('Нет тикета')
@@ -129,7 +129,7 @@ export async function loginWithToken(lessonsDir: string, serverValue: string, to
 export async function buildPublishPackage(lessonsDir: string, id: string, options: { withTrainer?: boolean } = {}): Promise<Uint8Array> {
   const files = await collectLessonFiles(path.join(lessonsDir, id))
   if (options.withTrainer !== false) {
-    const dir = await mkdtemp(path.join(tmpdir(), 'ui-capture-publish-'))
+    const dir = await mkdtemp(path.join(tmpdir(), 'uitrainer-publish-'))
     try {
       const outFile = path.join(dir, 'trainer.html')
       await packHtml({ lessonsDir, outFile, ids: [id] })
@@ -146,7 +146,7 @@ export async function buildPublishPackage(lessonsDir: string, id: string, option
 /** «Опубликовать на сервер»: .lesson.zip → POST /api/lessons/import, на платформе появляется черновик. */
 export async function publishLesson(lessonsDir: string, id: string, options: { withTrainer?: boolean; studioVersion?: string } = {}): Promise<PublishResult> {
   const link = await readPlatformLink(lessonsDir)
-  if (!link) throw new Error('Студия не связана с платформой. Нажмите «Записать в студии» в админке или выполните npx ui-capture platform-login')
+  if (!link) throw new Error('Студия не связана с платформой. Нажмите «Записать в студии» в админке или выполните npx uitrainer platform-login')
   const bytes = await buildPublishPackage(lessonsDir, id, options)
   const headers: Record<string, string> = {
     'Content-Type': 'application/zip',
