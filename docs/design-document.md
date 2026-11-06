@@ -12,6 +12,35 @@
 
 Зачем это нужно: научить людей сложному интерфейсу без доступа к боевой среде, без риска испортить данные и без ожидания отдельной учебной площадки. Преподаватель ведёт свои курсы и группы, проверяющий по желанию принимает уроки, директор видит работу преподавателей, администратор настраивает платформу.
 
+## Имена и пакеты
+
+Продукт называется uitrainer, а не uicapture: это тренажёр, а не только съёмка экрана. Имена строим вокруг продукта. Репозиторий и приложения остаются в личном аккаунте, не в организации digitilius.
+
+| Что | Сейчас | Должно стать |
+| --- | --- | --- |
+| Репозиторий | `stasmakarov/ui-capture` и Origin `stanislav-makarov/ui-capture` | `stasmakarov/uitrainer` и `stanislav-makarov/uitrainer`; GitHub сохранит редирект |
+| npm CLI | пакет `ui-capture`, вызов `npx ui-capture` | пакет `uitrainer`, вызов `npx uitrainer` |
+| Пакеты монорепо | `@ui-capture/studio`, `player`, `lesson-schema`, `student-portal` | `@uitrainer/studio`, `@uitrainer/player`, `@uitrainer/lesson-schema`, `@uitrainer/student-portal`; папки не переименовывать |
+| Java | group `io.uicapture`, пакет `io.uicapture.platform`, артефакт `ui-capture-platform` | `io.uitrainer`, `io.uitrainer.platform`, `uitrainer-platform` |
+| Схема запуска студии | `uicapture://` | `uitrainer://`, на переходный период алиас `uicapture://` |
+| Переменные окружения | `UIC_DB_URL`, `UIC_PUBLIC_URL` и другие `UIC_*` | `UITRAINER_DB_URL`, `UITRAINER_PUBLIC_URL`; старые `UIC_*` какое-то время принимать как запасные |
+
+Короткий префикс `UIT_*` не используем. Имя `uitrainer` на npm сейчас свободно. Jmix `projectId` `uic` пока не трогаем: он завязан на служебные префиксы, это отдельное решение.
+
+### Что менять в коде
+
+Само переименование репозиториев на GitHub и Origin — вручную. В коде:
+
+| Где менять | Что сделать |
+| --- | --- |
+| Корень | `name` и `bin` в `package.json`, файл `bin/ui-capture.js`, вызовы в README и скриптах |
+| `studio`, `player`, `lesson-schema`, `student-portal` | поле `name` и зависимости `@ui-capture/...` в `package.json` |
+| `platform-backend` | `settings.gradle`, `group` в `build.gradle`, каталог и пакет `io.uicapture.platform`, класс `UiCapturePlatformApplication`, ресурсы messages и menu |
+| Студия и админка | разбор ссылки в `launchUrl`, диалоги запуска, `studio/macos`, запасной алиас `uicapture://` |
+| Конфиг | `UIC_*` в `docker-compose`, `application.properties` и доках; добавить чтение `UITRAINER_*` и оставить `UIC_*` как запасные |
+| Документы | README и `docs`: заменить примеры команд и старые имена |
+| GitHub и Origin | переименовать репозитории вручную, локально сменить remote |
+
 ## Роли
 
 Роли назначаются пользователю. Отдельных сущностей «преподаватель», «проверяющий» и «директор» нет.
