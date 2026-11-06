@@ -133,8 +133,9 @@ public class LessonDetailView extends StandardView {
             for (LessonStatus to : available) {
                 Button button = new Button(StatusBadges.action(lesson.getStatus(), to), e -> doTransition(to));
                 button.setId("transition-" + to.getId().toLowerCase());
-                if (to == LessonStatus.PUBLISHED || to == LessonStatus.REVIEW) button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-                if (to == LessonStatus.DRAFT || to == LessonStatus.ARCHIVED) button.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
+                if (to == LessonStatus.PUBLISHED) button.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+                else if (to == LessonStatus.REVIEW) button.addThemeVariants(ButtonVariant.LUMO_TERTIARY);
+                else button.addThemeVariants(ButtonVariant.LUMO_CONTRAST);
                 actions.add(button);
             }
         }

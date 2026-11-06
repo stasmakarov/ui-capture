@@ -8,8 +8,8 @@ import { startStudio } from './server.ts'
 
 /**
  * Сквозной сценарий M2: тренер в админке жмёт «Записать в студии» → студия получает тикет (запасной путь
- * через 127.0.0.1:44731) → в студии «Опубликовать на сервер» → урок черновиком в админке → на проверку →
- * самоутверждение → «Опубликован».
+ * через 127.0.0.1:44731) → в студии «Опубликовать на сервер» → урок черновиком в админке →
+ * «Опубликовать» без проверки (кнопка «Отправить на проверку» рядом, но не обязательна) → «Опубликован».
  * Нужен запущенный бэкенд: UITRAINER_PLATFORM_URL=http://localhost:8090 (профиль dev). Без него тест пропускается.
  * UITRAINER_SCREENS_DIR — куда сохранить скриншоты экранов. Прежние UI_CAPTURE_PLATFORM_URL и UI_CAPTURE_SCREENS_DIR ещё читаются.
  */
@@ -94,12 +94,9 @@ describe.skipIf(!platformUrl)('платформа: студия публикуе
     await shot(page, '06-lessons-draft')
 
     await row.click()
+    await page.locator('#transition-published').waitFor()
     await page.locator('#transition-review').waitFor()
     await shot(page, '07-lesson-card-draft')
-    await page.locator('#transition-review').click()
-    await page.locator('#transition-published').waitFor()
-    await page.locator('#transitionComment textarea').fill('Самоутверждение: проверил сам')
-    await shot(page, '08-lesson-card-review')
     await page.locator('#transition-published').click()
     await page.locator('#transition-archived').waitFor()
     await page.getByText('Журнал переходов').click()

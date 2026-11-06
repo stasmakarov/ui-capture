@@ -53,6 +53,41 @@ class LessonLifecycleTest {
     }
 
     @Test
+    void trainerPublishesDraftWithoutReview() {
+        UUID lessonId = importAs("trainer", TestPackages.uniqueId("lc-direct"));
+        Lesson published = move("trainer", lessonId, LessonStatus.PUBLISHED, null);
+        assertThat(published.getStatus()).isEqualTo(LessonStatus.PUBLISHED);
+        assertThat(published.getPublishedVersion()).isNotNull();
+        assertThat(published.getPublishedVersion().getId()).isEqualTo(published.getCurrentVersion().getId());
+
+        List<LifecycleTransition> entries = journal(lessonId);
+        assertThat(entries).extracting(LifecycleTransition::getToStatus)
+                .containsExactly(LessonStatus.DRAFT, LessonStatus.PUBLISHED);
+        assertThat(entries.get(1).getFromStatus()).isEqualTo(LessonStatus.DRAFT);
+        assertThat(entries.get(1).getActor()).isEqualTo("trainer");
+        assertThat(entries.get(1).getComment()).isNull();
+    }
+
+    @Test
+    void republishAddsVersionAndNextPublishPointsAtIt() {
+        String externalId = TestPackages.uniqueId("lc-repub");
+        UUID lessonId = importAs("trainer", externalId);
+        Lesson first = move("trainer", lessonId, LessonStatus.PUBLISHED, null);
+        assertThat(first.getPublishedVersion().getVersionNo()).isEqualTo(1);
+
+        auth.withUser("trainer", () -> importService.importPackage(TestPackages.validZip(externalId, "Версия 2"), null, "test"));
+        Lesson draft = auth.withSystem(() -> dataManager.load(Lesson.class).id(lessonId)
+                .fetchPlan(fp -> fp.addFetchPlan("_base").add("currentVersion", "_base").add("publishedVersion", "_base")).one());
+        assertThat(draft.getStatus()).isEqualTo(LessonStatus.DRAFT);
+        assertThat(draft.getCurrentVersion().getVersionNo()).isEqualTo(2);
+
+        Lesson again = move("trainer", lessonId, LessonStatus.PUBLISHED, null);
+        assertThat(again.getStatus()).isEqualTo(LessonStatus.PUBLISHED);
+        assertThat(again.getPublishedVersion().getVersionNo()).isEqualTo(2);
+        assertThat(again.getCurrentVersion().getId()).isEqualTo(again.getPublishedVersion().getId());
+    }
+
+    @Test
     void trainerSelfApprovesOwnLessonAndJournalRecordsEveryStep() {
         UUID lessonId = importAs("trainer", TestPackages.uniqueId("lc-self"));
         move("trainer", lessonId, LessonStatus.REVIEW, null);
@@ -87,24 +122,35 @@ class LessonLifecycleTest {
     @Test
     void forbiddenEdgesAndRoles() {
         UUID lessonId = importAs("trainer", TestPackages.uniqueId("lc-deny"));
-        assertThatThrownBy(() -> move("trainer", lessonId, LessonStatus.PUBLISHED, null))
+        assertThatThrownBy(() -> move("trainer", lessonId, LessonStatus.ARCHIVED, null))
                 .isInstanceOf(IllegalStateException.class);
+        assertThatThrownBy(() -> move("trainer2", lessonId, LessonStatus.PUBLISHED, null))
+                .isInstanceOf(AccessException.class).hasMessageContaining("автор");
         assertThatThrownBy(() -> move("trainer2", lessonId, LessonStatus.REVIEW, null)).isInstanceOf(AccessException.class);
-        assertThatThrownBy(() -> move("student", lessonId, LessonStatus.REVIEW, null)).isInstanceOf(AccessException.class);
-        assertThatThrownBy(() -> move("reviewer", lessonId, LessonStatus.REVIEW, null)).isInstanceOf(AccessException.class);
-        move("trainer", lessonId, LessonStatus.REVIEW, null);
-        assertThatThrownBy(() -> move("trainer2", lessonId, LessonStatus.PUBLISHED, null)).isInstanceOf(AccessException.class);
         assertThatThrownBy(() -> move("student", lessonId, LessonStatus.PUBLISHED, null)).isInstanceOf(AccessException.class);
+        assertThatThrownBy(() -> move("student", lessonId, LessonStatus.REVIEW, null)).isInstanceOf(AccessException.class);
+        assertThatThrownBy(() -> move("reviewer", lessonId, LessonStatus.PUBLISHED, null)).isInstanceOf(AccessException.class);
+        assertThatThrownBy(() -> move("reviewer", lessonId, LessonStatus.REVIEW, null)).isInstanceOf(AccessException.class);
         assertThat(move("admin", lessonId, LessonStatus.PUBLISHED, null).getStatus()).isEqualTo(LessonStatus.PUBLISHED);
+        UUID inReview = importAs("trainer", TestPackages.uniqueId("lc-deny-review"));
+        move("trainer", inReview, LessonStatus.REVIEW, null);
+        assertThatThrownBy(() -> move("trainer2", inReview, LessonStatus.PUBLISHED, null)).isInstanceOf(AccessException.class);
+        assertThatThrownBy(() -> move("student", inReview, LessonStatus.PUBLISHED, null)).isInstanceOf(AccessException.class);
+        assertThat(move("admin", inReview, LessonStatus.PUBLISHED, null).getStatus()).isEqualTo(LessonStatus.PUBLISHED);
     }
 
     @Test
     void availableTransitionsDependOnRole() {
         UUID lessonId = importAs("trainer", TestPackages.uniqueId("lc-available"));
         Lesson lesson = auth.withSystem(() -> dataManager.load(Lesson.class).id(lessonId).one());
-        assertThat(auth.withUser("trainer", () -> lifecycle.availableTransitions(lesson))).containsExactly(LessonStatus.REVIEW);
+        assertThat(auth.withUser("trainer", () -> lifecycle.availableTransitions(lesson)))
+                .containsExactly(LessonStatus.PUBLISHED, LessonStatus.REVIEW);
         assertThat(auth.withUser("reviewer", () -> lifecycle.availableTransitions(lesson))).isEmpty();
+        assertThat(auth.withUser("admin", () -> lifecycle.availableTransitions(lesson)))
+                .containsExactly(LessonStatus.PUBLISHED, LessonStatus.REVIEW);
         move("trainer", lessonId, LessonStatus.REVIEW, null);
+        assertThat(auth.withUser("trainer", () -> lifecycle.availableTransitions(lesson)))
+                .containsExactly(LessonStatus.PUBLISHED, LessonStatus.DRAFT);
         assertThat(auth.withUser("reviewer", () -> lifecycle.availableTransitions(lesson)))
                 .containsExactlyInAnyOrder(LessonStatus.PUBLISHED, LessonStatus.DRAFT);
         assertThat(auth.withUser("student", () -> lifecycle.availableTransitions(lesson))).isEmpty();
