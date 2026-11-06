@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <menu-config xmlns="http://jmix.io/schema/flowui/menu">
+    <item view="uic_Course.list" title="msg://io.uicapture.platform.view.course/courseListView.title" icon="BOOK"/>
     <item view="uic_Lesson.list" title="msg://io.uicapture.platform/menu.lessons" icon="ACADEMY_CAP"/>
     <item view="uic_StudioToken.list" title="msg://io.uicapture.platform/menu.studioTokens" icon="KEY"/>
     <menu id="security" title="msg://io.uicapture.platform/menu.security" icon="KEY_O">

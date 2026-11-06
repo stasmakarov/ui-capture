@@ -1,7 +1,10 @@
 package io.uicapture.platform.entity;
 
+import io.jmix.core.DeletePolicy;
 import io.jmix.core.FileRef;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
+import io.jmix.core.entity.annotation.OnDelete;
+import io.jmix.core.metamodel.annotation.Composition;
 import io.jmix.core.metamodel.annotation.InstanceName;
 import io.jmix.core.metamodel.annotation.JmixEntity;
 import jakarta.persistence.*;
@@ -9,6 +12,7 @@ import org.springframework.data.annotation.CreatedBy;
 import org.springframework.data.annotation.CreatedDate;
 
 import java.time.OffsetDateTime;
+import java.util.List;
 import java.util.UUID;
 
 @JmixEntity
@@ -46,6 +50,14 @@ public class Course {
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "OWNER_ID")
     private User owner;
+
+    @Composition
+    @OnDelete(DeletePolicy.DENY)
+    @OneToMany(mappedBy = "course")
+    private List<Lesson> lessons;
+
+    public List<Lesson> getLessons() { return lessons; }
+    public void setLessons(List<Lesson> lessons) { this.lessons = lessons; }
 
     public String getTitle() { return title; }
     public void setTitle(String title) { this.title = title; }

@@ -48,7 +48,7 @@ public class DemoDataInitializer {
                 Course course = dataManager.create(Course.class);
                 course.setCode(DEMO_COURSE_CODE);
                 course.setTitle("Демо-курс: работа на zakupki.gov.ru");
-                course.setDescription("Заглушка курса до M3: уроки, записанные кнопкой «Записать в студии», привязываются к нему.");
+                course.setDescription("Демо-курс: уроки, записанные кнопкой «Записать в студии», привязываются к нему.");
                 course.setOwner(trainer);
                 dataManager.save(course);
             }

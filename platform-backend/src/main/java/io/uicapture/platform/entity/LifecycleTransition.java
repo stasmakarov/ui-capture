@@ -1,7 +1,9 @@
 package io.uicapture.platform.entity;
 
+import io.jmix.core.DeletePolicy;
 import io.jmix.core.FileRef;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
+import io.jmix.core.entity.annotation.OnDeleteInverse;
 import io.jmix.core.metamodel.annotation.InstanceName;
 import io.jmix.core.metamodel.annotation.JmixEntity;
 import jakarta.persistence.*;
@@ -32,6 +34,7 @@ public class LifecycleTransition {
     @Column(name = "CREATED_DATE")
     private OffsetDateTime createdDate;
 
+    @OnDeleteInverse(DeletePolicy.DENY)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "LESSON_ID", nullable = false)
     private Lesson lesson;
