@@ -9,7 +9,7 @@
         <item view="sec_RowLevelRoleModel.list"
               title="msg://io.jmix.securityflowui.view.rowlevelrole/rowLevelRoleModelListView.menu"/>
     </menu>
-    <menu id="datatools" title="msg://io.uicapture.platform/menu.datatools" icon="DATABASE">
+    <menu id="datatools" title="msg://io.uicapture.platform/menu.datatools" icon="DATABASE" visible="false">
         <item view="datatl_entityInspectorListView"
               title="msg://io.jmix.datatoolsflowui.view.entityinspector/listTitle"/>
     </menu>
