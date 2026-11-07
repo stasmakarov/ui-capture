@@ -38,9 +38,6 @@ describe('студия', () => {
     delete process.env.UITRAINER_HEADLESS
     delete process.env.UITRAINER_WHISPER_SIMULATE
     delete process.env.UITRAINER_MODEL_DIR
-    delete process.env.UI_CAPTURE_HEADLESS
-    delete process.env.UI_CAPTURE_WHISPER_SIMULATE
-    delete process.env.UI_CAPTURE_MODEL_DIR
     await rm(root, { recursive: true, force: true })
   })
 

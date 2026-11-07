@@ -9,14 +9,19 @@
 На машине должен быть PostgreSQL (например 16) на `localhost:5432` и admin-роль `jmix` / `jmix`
 (SUPERUSER или как минимум `CREATEDB` + `CREATEROLE`).
 
-Дальше достаточно запуска с профилем `dev` — роль `uicapture`, базы `uicapture` и `uicapture_test`
-создаются автоматически до инициализации DataSource/Liquibase (имена БД не менялись):
+Дальше достаточно запуска с профилями `dev,local` — роль `uicapture`, базы `uicapture` и `uicapture_test`
+создаются автоматически до инициализации DataSource/Liquibase (имена БД не менялись).
+Профиль `dev` — демо-данные, автосоздание БД, подсказка логина; `local` — личные переопределения из
+`src/main/resources/application-local.properties` (файл в `.gitignore`, образец — `application-local.properties.example`).
 
 ```bash
-./gradlew bootRun --args='--spring.profiles.active=dev'   # http://localhost:8090, trainer/trainer
+./gradlew bootRun --args='--spring.profiles.active=dev,local'   # http://localhost:8090, trainer/trainer
+# или
+SPRING_PROFILES_ACTIVE=dev,local ./gradlew bootRun
 ```
 
-В IntelliJ IDEA: Active profiles = `dev` (или VM/Program arguments `--spring.profiles.active=dev`).
+В IntelliJ IDEA / Jmix Studio: Run configuration «Jmix Application» (или Spring Boot) → Active profiles: `dev,local`
+(или VM option `-Dspring.profiles.active=dev,local`).
 
 Параметры admin-подключения (по умолчанию уже в `application-dev.properties`):
 
@@ -26,10 +31,11 @@
 | `uitrainer.dev.db-admin.username` | `UITRAINER_DEV_DBADMIN_USERNAME` | `jmix` |
 | `uitrainer.dev.db-admin.password` | `UITRAINER_DEV_DBADMIN_PASSWORD` | `jmix` |
 
-Если новое имя не задано, читаются `UICAPTURE_DEV_DBADMIN_*` и свойство `uicapture.dev.db-admin.*`.
-
 URL/логин/пароль приложения: `main.datasource.*` / `UITRAINER_DB_URL`, `UITRAINER_DB_USER`, `UITRAINER_DB_PASSWORD`
-(запасные `UIC_DB_*`; по умолчанию `uicapture` / `uicapture` на `localhost:5432/uicapture`).
+(по умолчанию `uicapture` / `uicapture` на `localhost:5432/uicapture`). На сервере профили `dev`/`local` не включают;
+настройка только переменными `UITRAINER_DB_URL`, `UITRAINER_DB_USER`, `UITRAINER_DB_PASSWORD`, `UITRAINER_FILES_DIR`,
+`UITRAINER_PUBLIC_URL`, `UITRAINER_STUDIO_*`, `PORT`. Тесты читают `application-test.properties` (`UITRAINER_TEST_DB_URL`),
+не `application-local.properties`. Другой логин/пароль для тестов — через `UITRAINER_DB_USER` / `UITRAINER_DB_PASSWORD`.
 
 Если admin-подключение не удалось, в лог пишется предупреждение, и старт продолжается
 (нужно создать БД вручную или поправить `uitrainer.dev.db-admin.*`).
@@ -38,7 +44,7 @@ URL/логин/пароль приложения: `main.datasource.*` / `UITRAIN
 
 ```bash
 docker compose up -d                                        # из корня репозитория (Postgres 16, уже с БД uicapture)
-./gradlew bootRun --args='--spring.profiles.active=dev'     # http://localhost:8090, trainer/trainer
+./gradlew bootRun --args='--spring.profiles.active=dev,local'     # http://localhost:8090, trainer/trainer
 ./gradlew build                                             # сборка и тесты (база uicapture_test)
 ```
 

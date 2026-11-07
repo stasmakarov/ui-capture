@@ -6,8 +6,6 @@ import { downloadWhisper, onWhisperStatus, transcribeWav, whisperStatus } from '
 
 const previousModel = process.env.UITRAINER_MODEL_DIR
 const previousSimulate = process.env.UITRAINER_WHISPER_SIMULATE
-const previousLegacyModel = process.env.UI_CAPTURE_MODEL_DIR
-const previousLegacySimulate = process.env.UI_CAPTURE_WHISPER_SIMULATE
 
 describe('downloadWhisper', () => {
   afterEach(() => {
@@ -15,16 +13,10 @@ describe('downloadWhisper', () => {
     else process.env.UITRAINER_MODEL_DIR = previousModel
     if (previousSimulate === undefined) delete process.env.UITRAINER_WHISPER_SIMULATE
     else process.env.UITRAINER_WHISPER_SIMULATE = previousSimulate
-    if (previousLegacyModel === undefined) delete process.env.UI_CAPTURE_MODEL_DIR
-    else process.env.UI_CAPTURE_MODEL_DIR = previousLegacyModel
-    if (previousLegacySimulate === undefined) delete process.env.UI_CAPTURE_WHISPER_SIMULATE
-    else process.env.UI_CAPTURE_WHISPER_SIMULATE = previousLegacySimulate
   })
 
   it('в имитации сообщает проценты и отмечает модель установленной', async () => {
     const dir = await mkdtemp(path.join(tmpdir(), 'ui-whisper-'))
-    delete process.env.UI_CAPTURE_MODEL_DIR
-    delete process.env.UI_CAPTURE_WHISPER_SIMULATE
     process.env.UITRAINER_MODEL_DIR = dir
     process.env.UITRAINER_WHISPER_SIMULATE = '1'
     const percents: number[] = []

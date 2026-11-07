@@ -13,9 +13,9 @@ dist-single
 dist-ssr
 src/generated
 .uitrainer
-.ui-capture
 artifacts/*.html
 *.local
+platform-backend/src/main/resources/application-local.properties
 
 # Editor directories and files
 .vscode/*

@@ -19,7 +19,7 @@ import java.util.UUID;
 
 /**
  * Кнопка «Записать в студии»: одноразовый тикет, ссылка {@code uitrainer://}
- * (алиас {@code uicapture://} студия тоже принимает) и запасной пинг локальной студии
+ * и запасной пинг локальной студии
  * на {@code http://127.0.0.1:44731}. Тикет привязан к курсу ({@code X-Course-Id} после обмена).
  */
 @org.springframework.stereotype.Component
@@ -102,8 +102,8 @@ public class StudioLaunch {
             linkField.setWidthFull();
             dialog.add(new Paragraph("Не удалось открыть uitrainer:// и не отвечает локальная студия на 127.0.0.1:44731."),
                     new Html("<ol><li>Установите студию: <code>git clone</code> репозитория ui-capture, <code>npm install</code>.</li>"
-                            + "<li>Запустите: <code>npm start</code> (откроется http://127.0.0.1:44731).</li>"
-                            + "<li>Нажмите «Записать в студии» ещё раз — или выполните <code>npx uitrainer open-url \"…\"</code> со ссылкой ниже. Старая команда <code>npx ui-capture</code> тоже работает.</li></ol>"),
+                            + "<li>Запустите: <code>npx uitrainer</code> (откроется http://127.0.0.1:44731).</li>"
+                            + "<li>Нажмите «Записать в студии» ещё раз — или выполните <code>npx uitrainer open-url \"…\"</code> со ссылкой ниже.</li></ol>"),
                     linkField);
             dialog.setWidth("40em");
             dialog.getFooter().add(new Button("Закрыть", e -> dialog.close()));

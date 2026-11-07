@@ -34,7 +34,7 @@ npm install
 npx playwright install chromium
 ```
 
-Проверка, что команда на месте: `npx uitrainer --help`. Прежняя команда `npx ui-capture` вызывает то же.
+Проверка, что команда на месте: `npx uitrainer --help`.
 
 Студия — локальная страница, с которой удобнее записывать, чем из терминала:
 
@@ -140,7 +140,7 @@ npx uitrainer "https://zakupki.gov.ru/epz/main/public/home.html" \
 ```bash
 docker compose up -d                 # PostgreSQL 16 на localhost:5432, база/логин/пароль uicapture
 cd platform-backend
-./gradlew bootRun --args='--spring.profiles.active=dev'
+./gradlew bootRun --args='--spring.profiles.active=dev,local'
 # админка: http://localhost:8090 (первый запуск собирает фронтенд Vaadin, это 1–2 минуты)
 ```
 
@@ -157,9 +157,11 @@ cd platform-backend
 
 У `trainer` в демо-курсе уже есть черновик, опубликованный урок, урок на проверке и возвращённый черновик. Это строки без файла студии, поэтому предпросмотр пустой.
 
-Без Docker подойдёт любой PostgreSQL 16. Адрес задаётся переменными `UITRAINER_DB_URL` (например `jdbc:postgresql://localhost:5432/uicapture?stringtype=unspecified`), `UITRAINER_DB_USER` и `UITRAINER_DB_PASSWORD`. Если они не заданы, читаются прежние `UIC_DB_URL`, `UIC_DB_USER` и `UIC_DB_PASSWORD`. Имя базы по умолчанию остаётся `uicapture`. Файлы пакетов хранятся в Jmix FileStorage, каталог задаёт `UITRAINER_FILES_DIR` (запасной `UIC_FILES_DIR`, по умолчанию `platform-backend/.jmix/files`). Если сервер стоит за прокси, укажите его внешний адрес в `UITRAINER_PUBLIC_URL` (запасной `UIC_PUBLIC_URL`): этот адрес попадает в ссылку для студии.
+Профили: `dev` — демо-данные, автосоздание БД, подсказка логина; `local` — личные переопределения из `application-local.properties` (файл в `.gitignore`, образец — `application-local.properties.example`). Для IDE включайте `dev,local`. На сервере профили `dev`/`local` не включают: только переменные `UITRAINER_DB_URL`, `UITRAINER_DB_USER`, `UITRAINER_DB_PASSWORD`, `UITRAINER_FILES_DIR`, `UITRAINER_PUBLIC_URL`, `UITRAINER_STUDIO_*`, `PORT`.
 
-Сборка и тесты бэкенда (для тестов нужна база `uicapture_test` того же пользователя, её адрес задаёт `UITRAINER_TEST_DB_URL`, запасной `UIC_TEST_DB_URL`):
+Без Docker подойдёт любой PostgreSQL 16. Адрес задаётся переменными `UITRAINER_DB_URL` (например `jdbc:postgresql://localhost:5432/uicapture?stringtype=unspecified`), `UITRAINER_DB_USER` и `UITRAINER_DB_PASSWORD`. Имя базы по умолчанию остаётся `uicapture`. Файлы пакетов хранятся в Jmix FileStorage, каталог задаёт `UITRAINER_FILES_DIR` (по умолчанию `platform-backend/.jmix/files`). Если сервер стоит за прокси, укажите его внешний адрес в `UITRAINER_PUBLIC_URL`: этот адрес попадает в ссылку для студии.
+
+Сборка и тесты бэкенда (для тестов нужна база `uicapture_test` того же пользователя, её адрес задаёт `UITRAINER_TEST_DB_URL`; тесты не читают `application-local.properties`. Другой логин/пароль для тестов — через `UITRAINER_DB_USER` / `UITRAINER_DB_PASSWORD`):
 
 ```bash
 cd platform-backend && ./gradlew build
@@ -169,7 +171,7 @@ cd platform-backend && ./gradlew build
 
 1. Запустите студию: `npm start` (http://127.0.0.1:44731).
 2. Войдите в админку преподавателем (`trainer` / `trainer`). Откройте курс в кабинете или в «Курсах» и нажмите **«Записать в студии»**. Общего списка уроков у преподавателя нет.
-3. Админка выпускает одноразовый тикет. Он живёт 5 минут и годится для одного обмена. Затем админка открывает `uitrainer://new?course=…&server=…&ticket=…`. Студия принимает и прежнюю схему `uicapture://`. Если схема не зарегистрирована (обе описаны в `studio/macos/`), админка пингует `http://127.0.0.1:44731` и передаёт то же задание запущенной студии. Если студия не отвечает, админка показывает инструкцию и ссылку.
+3. Админка выпускает одноразовый тикет. Он живёт 5 минут и годится для одного обмена. Затем админка открывает `uitrainer://new?course=…&server=…&ticket=…`. Если схема не зарегистрирована (описана в `studio/macos/`), админка пингует `http://127.0.0.1:44731` и передаёт то же задание запущенной студии. Если студия не отвечает, админка показывает инструкцию и ссылку.
 4. Студия обменивает тикет на персональный токен студии (`POST /api/studio/exchange`). Токен хранится в `lessons/.studio-platform.json` с правами 0600, в git этот файл не попадает. В шапке студии появляется строка «Платформа: …».
 5. Запишите урок как обычно. Затем в карточке урока нажмите **«Опубликовать на сервер»**. Студия соберёт `.lesson.zip` (с `trainer.html` для предпросмотра) и отправит его в `POST /api/lessons/import`. В админке урок появится черновиком. Повторная публикация того же урока создаёт новую версию.
 
@@ -200,7 +202,7 @@ UITRAINER_PLATFORM_URL=http://localhost:8090 UITRAINER_SCREENS_DIR=docs/screens/
   npx vitest run tools/studio/platform.e2e.test.ts
 ```
 
-Сценарий теста: тренер жмёт «Записать в студии», студия получает тикет по запасному пути, затем «Опубликовать на сервер» → урок в админке черновиком → «Опубликовать» без проверки → «Опубликован» → предпросмотр `trainer.html` → выпуск токена. Кнопка «Отправить на проверку» на карточке черновика остаётся. Без `UITRAINER_PLATFORM_URL` (или прежнего `UI_CAPTURE_PLATFORM_URL`) тест пропускается, поэтому `npm test` не требует сервера. Скриншоты экранов M2 лежат в [`docs/screens/m2/`](docs/screens/m2/).
+Сценарий теста: тренер жмёт «Записать в студии», студия получает тикет по запасному пути, затем «Опубликовать на сервер» → урок в админке черновиком → «Опубликовать» без проверки → «Опубликован» → предпросмотр `trainer.html` → выпуск токена. Кнопка «Отправить на проверку» на карточке черновика остаётся. Без `UITRAINER_PLATFORM_URL` тест пропускается, поэтому `npm test` не требует сервера. Скриншоты экранов M2 лежат в [`docs/screens/m2/`](docs/screens/m2/).
 
 ## Частые проблемы
 

@@ -4,8 +4,7 @@
   "version": "0.6.0",
   "type": "module",
   "bin": {
-    "uitrainer": "./bin/uitrainer.js",
-    "ui-capture": "./bin/uitrainer.js"
+    "uitrainer": "./bin/uitrainer.js"
   },
   "engines": {
     "node": ">=22"

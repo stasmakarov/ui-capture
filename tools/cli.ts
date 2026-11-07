@@ -1,6 +1,5 @@
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { productEnv } from './productEnv.ts'
 import { lessonIdFromName, recordInteractive } from './capture/interactive.ts'
 import { defaultHtml, publishCapture } from './pipeline/publish.ts'
 import { packHtml } from './pack/packHtml.ts'
@@ -9,8 +8,6 @@ import { exportLessonPackage, importLessonPackage } from './package/lessonPackag
 type Mode = 'dom' | 'screenshot' | 'auto'
 
 const HELP = `uitrainer — запись урока с живого сайта и сборка тренажёра
-
-Команда npx ui-capture вызывает то же самое.
 
 Запись (откроется окно браузера; остановите закрытием окна или Ctrl+C):
   npx uitrainer <url> [--lesson-name "Найти извещение"] [--mode auto|dom|screenshot] [--out ./lessons]
@@ -112,7 +109,7 @@ async function main() {
   if (argv[0] === 'platform-login') {
     const { loginWithToken } = await import('./studio/platform.ts')
     const server = argv[1]
-    const token = flag(argv, '--token') ?? productEnv('UITRAINER_STUDIO_TOKEN', 'UI_CAPTURE_STUDIO_TOKEN')
+    const token = flag(argv, '--token') ?? process.env.UITRAINER_STUDIO_TOKEN
     if (!server || server.startsWith('--') || !token) throw new Error('Использование: npx uitrainer platform-login <server> --token <токен> [--course <id>]')
     const lessonsDir = path.resolve(flag(argv, '--out') ?? './lessons')
     const link = await loginWithToken(lessonsDir, server, token, flag(argv, '--course'))

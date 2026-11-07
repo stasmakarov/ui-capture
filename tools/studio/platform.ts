@@ -82,7 +82,7 @@ async function errorText(response: Response): Promise<string> {
   return text.slice(0, 300) || `HTTP ${response.status}`
 }
 
-/** Обменять одноразовый тикет из ссылки uitrainer://new (или прежней uicapture://new) на токен студии и запомнить его. */
+/** Обменять одноразовый тикет из ссылки uitrainer://new на токен студии и запомнить его. */
 export async function exchangeTicket(lessonsDir: string, serverValue: string, ticket: string, course?: string | null): Promise<PlatformLink> {
   const server = normalizeServer(serverValue)
   if (!ticket.trim()) throw new Error('Нет тикета')

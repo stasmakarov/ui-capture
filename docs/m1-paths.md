@@ -4,7 +4,7 @@
 
 ## tools
 
-На месте и используются `package.json` / `bin/uitrainer.js` (bin `ui-capture` указывает на тот же файл):
+На месте и используются `package.json` / `bin/uitrainer.js`:
 
 - `tools/cli.ts` — команды `studio`, `package`, `import`, `pack`, `open-url`, запись по URL
 - `tools/capture/` — интерактивная запись, сценарии, разбор ошибок запуска

@@ -79,9 +79,9 @@ public class DevDatabaseEnvironmentPostProcessor implements EnvironmentPostProce
             return;
         }
 
-        String adminUrl = property(environment, "uitrainer.dev.db-admin.url", "uicapture.dev.db-admin.url", DEFAULT_ADMIN_URL);
-        String adminUser = property(environment, "uitrainer.dev.db-admin.username", "uicapture.dev.db-admin.username", DEFAULT_ADMIN_USER);
-        String adminPassword = property(environment, "uitrainer.dev.db-admin.password", "uicapture.dev.db-admin.password", DEFAULT_ADMIN_PASSWORD);
+        String adminUrl = property(environment, "uitrainer.dev.db-admin.url", DEFAULT_ADMIN_URL);
+        String adminUser = property(environment, "uitrainer.dev.db-admin.username", DEFAULT_ADMIN_USER);
+        String adminPassword = property(environment, "uitrainer.dev.db-admin.password", DEFAULT_ADMIN_PASSWORD);
 
         log.info("Dev DB bootstrap: ensuring role/database via " + adminUser + " @ " + adminUrl
                 + " for " + appUser + "/" + dbName + " (main host " + host + ":" + port + ")");
@@ -133,11 +133,9 @@ public class DevDatabaseEnvironmentPostProcessor implements EnvironmentPostProce
         }
     }
 
-    private static String property(ConfigurableEnvironment environment, String key, String legacyKey, String defaultValue) {
-        String primary = environment.getProperty(key);
-        if (StringUtils.hasText(primary)) return primary;
-        String legacy = environment.getProperty(legacyKey);
-        if (StringUtils.hasText(legacy)) return legacy;
+    private static String property(ConfigurableEnvironment environment, String key, String defaultValue) {
+        String value = environment.getProperty(key);
+        if (StringUtils.hasText(value)) return value;
         return defaultValue;
     }
 

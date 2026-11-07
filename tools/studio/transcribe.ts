@@ -1,7 +1,6 @@
 import { existsSync } from 'node:fs'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import path from 'node:path'
-import { productEnv } from '../productEnv.ts'
 import { summarizeDownload, type FileProgress } from './downloadProgress.ts'
 
 const MODEL = 'Xenova/whisper-small'
@@ -41,15 +40,11 @@ let live: Live = { phase: 'idle', percent: 0, loadedBytes: 0, totalBytes: 0, fil
 let running: Promise<void> | null = null
 
 const MODEL_DIR = '.uitrainer/models'
-const LEGACY_MODEL_DIR = '.ui-capture/models'
 
 export function whisperModelDir(): string {
-  const fromEnv = productEnv('UITRAINER_MODEL_DIR', 'UI_CAPTURE_MODEL_DIR')
+  const fromEnv = process.env.UITRAINER_MODEL_DIR
   if (fromEnv !== undefined) return path.resolve(fromEnv)
-  const next = path.resolve(MODEL_DIR)
-  const legacy = path.resolve(LEGACY_MODEL_DIR)
-  if (!existsSync(next) && existsSync(legacy)) return legacy
-  return next
+  return path.resolve(MODEL_DIR)
 }
 
 function modelCache(): string {
@@ -159,7 +154,7 @@ async function runDownload(): Promise<void> {
   publish({ phase: 'downloading', percent: 0, loadedBytes: 0, totalBytes: 0, file: '', error: '' })
   try {
     await mkdir(modelCache(), { recursive: true })
-    if (productEnv('UITRAINER_WHISPER_SIMULATE', 'UI_CAPTURE_WHISPER_SIMULATE') === '1') {
+    if (process.env.UITRAINER_WHISPER_SIMULATE === '1') {
       await simulateDownload()
     } else {
       await fetchModel()
@@ -217,7 +212,7 @@ async function fetchModel(): Promise<void> {
 }
 
 export async function transcribeWav(wavPath: string): Promise<string> {
-  const fake = productEnv('UITRAINER_FAKE_TRANSCRIPT', 'UI_CAPTURE_FAKE_TRANSCRIPT')
+  const fake = process.env.UITRAINER_FAKE_TRANSCRIPT
   if (fake !== undefined) return fake
   if (!existsSync(markerFile())) throw new Error(whisperHint())
   const marker = await readFile(markerFile(), 'utf8')

@@ -4,7 +4,7 @@ export type LaunchTask = {
   ticket: string
 }
 
-const LAUNCH_PROTOCOLS = new Set(['uitrainer:', 'uicapture:'])
+const LAUNCH_PROTOCOLS = new Set(['uitrainer:'])
 
 export function parseLaunchUrl(value: string): LaunchTask {
   const url = new URL(value)

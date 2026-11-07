@@ -1,0 +1,5 @@
+# Скопируйте в application-local.properties (файл в .gitignore) и подставьте свои значения.
+#main.datasource.url=jdbc:postgresql://localhost:5432/uicapture?stringtype=unspecified
+#main.datasource.username=jmix
+#main.datasource.password=jmix
+#uitrainer.dev.db-admin.password=...

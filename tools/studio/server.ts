@@ -10,7 +10,6 @@ import { buildCapture, writeCatalog } from '../builder/build.ts'
 import { serveLessons } from '../builder/staticServer.ts'
 import { packHtml } from '../pack/packHtml.ts'
 import { exportLessonPackage, importLessonPackage } from '../package/lessonPackage.ts'
-import { productEnv } from '../productEnv.ts'
 import { detectBrowsers, gostBrowserHint, resolveBrowserLaunch, settingsFromSaved, type BrowserId, type StudioSettings } from './browsers.ts'
 import { exchangeTicket, forgetPlatformLink, normalizeServer, publicLink, publishLesson, readPlatformLink } from './platform.ts'
 import { downloadWhisper, onWhisperStatus, transcribeWav, whisperStatus } from './transcribe.ts'
@@ -181,7 +180,7 @@ export async function startStudio(options: StudioOptions): Promise<{ url: string
     server: {
       middlewareMode: true,
       watch: {
-        ignored: ['**/artifacts/**', '**/platform-backend/**', '**/dist-single/**', '**/captures/**', '**/lessons/**', '**/.uitrainer/**', '**/.ui-capture/**'],
+        ignored: ['**/artifacts/**', '**/platform-backend/**', '**/dist-single/**', '**/captures/**', '**/lessons/**', '**/.uitrainer/**'],
       },
     },
     appType: 'spa',
@@ -432,7 +431,7 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
         lessonId,
         mode: body.mode ?? 'auto',
         capturesDir,
-        headless: productEnv('UITRAINER_HEADLESS', 'UI_CAPTURE_HEADLESS') === '1',
+        headless: process.env.UITRAINER_HEADLESS === '1',
         channel: launch.channel,
         executablePath: launch.executablePath,
         onAction: (action) => {

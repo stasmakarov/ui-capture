@@ -16,21 +16,21 @@
 
 Продукт называется uitrainer: это тренажёр, а не только съёмка экрана. Имена в коде построены вокруг продукта. Репозиторий и приложения остаются в личном аккаунте, не в организации digitilius. Репозиторий на GitHub и Origin пока называется `ui-capture`; это отдельное ручное переименование, в этом изменении его нет.
 
-| Что | В коде | Алиас или без изменений |
+| Что | В коде | Без изменений |
 | --- | --- | --- |
 | Репозиторий | `stasmakarov/ui-capture` и Origin `stanislav-makarov/ui-capture` | не переименован |
-| npm CLI | пакет `uitrainer`, вызов `npx uitrainer`, файл `bin/uitrainer.js` | bin `ui-capture` указывает на тот же файл |
+| npm CLI | пакет `uitrainer`, вызов `npx uitrainer`, файл `bin/uitrainer.js` | |
 | Пакеты монорепо | `@uitrainer/studio`, `@uitrainer/player`, `@uitrainer/lesson-schema`, `@uitrainer/student-portal` | папки `studio`, `player`, `lesson-schema`, `student-portal` те же |
 | Java | group `io.uitrainer`, пакет `io.uitrainer.platform`, артефакт `uitrainer-platform`, класс `UiTrainerPlatformApplication`, тема Vaadin `uitrainer` | |
-| Схема запуска студии | `uitrainer://`; кнопка «Записать в студии» открывает её | `uicapture://` принимается студией и описана в `studio/macos/` |
-| Переменные окружения | `UITRAINER_DB_URL`, `UITRAINER_PUBLIC_URL`, `UITRAINER_FILES_DIR`, `UITRAINER_TEST_DB_URL`, `UITRAINER_DEV_DBADMIN_*`, `UITRAINER_MODEL_DIR`, `UITRAINER_STUDIO_TOKEN`, `UITRAINER_PLATFORM_URL`, `UITRAINER_HEADLESS` и остальные `UITRAINER_*` | если новое имя не задано, читаются `UIC_*`, `UICAPTURE_DEV_DBADMIN_*` и `UI_CAPTURE_*`. Короткого `UIT_*` нет |
+| Схема запуска студии | `uitrainer://`; кнопка «Записать в студии» открывает её | описана в `studio/macos/` |
+| Переменные окружения | `UITRAINER_DB_URL`, `UITRAINER_PUBLIC_URL`, `UITRAINER_FILES_DIR`, `UITRAINER_TEST_DB_URL`, `UITRAINER_DEV_DBADMIN_*`, `UITRAINER_MODEL_DIR`, `UITRAINER_STUDIO_TOKEN`, `UITRAINER_PLATFORM_URL`, `UITRAINER_HEADLESS` и остальные `UITRAINER_*` | короткого `UIT_*` нет |
 | Jmix `projectId` | `uic` | не меняется: от него зависят префиксы таблиц `UIC_*` и id экранов `uic_` |
 | Формат `.lesson.zip` | `ui-capture-lesson` | строка в манифесте не меняется, уже собранные пакеты читаются |
 | Локальная БД dev | роль, базы `uicapture` и `uicapture_test`, volume `uicapture-pg` | не меняются, чтобы существующий Docker volume продолжал работать |
 | Liquibase | каталог `io/uicapture/platform/liquibase`, author изменений `ui-capture` | путь и author не меняются: по ним Liquibase узнаёт уже применённые изменения |
 | Префиксы токена и тикета | `uicst_`, `uictk_` | не меняются: уже выданные токены и тикеты остаются действительными |
-| Каталог модели речи | `.uitrainer/models` | если нового каталога нет, а `.ui-capture/models` есть, берётся он |
-| Микрофон в браузере | ключи `uitrainer-mic` и `uitrainer-mic-ready` | если новых нет, читаются `ui-capture-mic` и `ui-capture-mic-ready` |
+| Каталог модели речи | `.uitrainer/models` | |
+| Микрофон в браузере | ключи `uitrainer-mic` и `uitrainer-mic-ready` | |
 | `$id` JSON Schema | `https://cursor.com/codebase/stanislav-makarov/ui-capture/lesson.schema.json` | в адресе остаётся имя репозитория |
 
 Короткий префикс `UIT_*` не используем.

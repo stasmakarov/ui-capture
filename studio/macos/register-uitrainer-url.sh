@@ -1,8 +1,8 @@
 #!/bin/sh
-# Скелет регистрации uitrainer:// на macOS. uicapture:// остаётся алиасом.
+# Скелет регистрации uitrainer:// на macOS.
 # Ссылка из админки Jmix: uitrainer://new?course=…&server=…&ticket=…
 set -eu
-echo "Схемы: uitrainer (основная), uicapture (алиас)"
+echo "Схема: uitrainer"
 echo "Команда: uitrainer://new?course=…&server=…&ticket=…"
 echo "Шаблон обработчика: $(CDPATH= cd -- "$(dirname "$0")" && pwd)/Info.plist"
 echo "Разобрать ссылку без регистрации схемы:"
