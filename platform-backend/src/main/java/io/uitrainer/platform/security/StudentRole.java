@@ -9,7 +9,7 @@ import io.jmix.security.role.annotation.ResourceRole;
 import io.jmix.securityflowui.role.annotation.MenuPolicy;
 import io.jmix.securityflowui.role.annotation.ViewPolicy;
 
-/** Ученик: в M2 только просмотр опубликованных уроков (портал — M3). */
+/** Ученик: пока нет портала — только опубликованные уроки, без черновиков и проверки. */
 @ResourceRole(name = "Ученик", code = StudentRole.CODE)
 public interface StudentRole {
     String CODE = "student";
@@ -26,7 +26,7 @@ public interface StudentRole {
     @EntityAttributePolicy(entityClass = User.class, attributes = {"id", "username", "firstName", "lastName"}, action = EntityAttributePolicyAction.VIEW)
     void user();
 
-    @ViewPolicy(viewIds = {PlatformViews.LESSON_LIST, PlatformViews.LESSON_PREVIEW})
-    @MenuPolicy(menuIds = PlatformViews.LESSON_LIST)
+    @ViewPolicy(viewIds = {PlatformViews.STUDENT_HOME, PlatformViews.LESSON_PREVIEW})
+    @MenuPolicy(menuIds = PlatformViews.STUDENT_HOME)
     void views();
 }

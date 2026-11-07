@@ -9,7 +9,7 @@ import io.jmix.security.role.annotation.ResourceRole;
 import io.jmix.securityflowui.role.annotation.MenuPolicy;
 import io.jmix.securityflowui.role.annotation.ViewPolicy;
 
-/** Тренер: ведёт свои курсы, записывает уроки в студии, ведёт их ЖЦ, выпускает свои токены студии. */
+/** Преподаватель: свои курсы, запись в студии и ЖЦ уроков. Экран токенов — у администратора. */
 @ResourceRole(name = "Тренер", code = TrainerRole.CODE)
 public interface TrainerRole {
     String CODE = "trainer";
@@ -50,7 +50,7 @@ public interface TrainerRole {
     @EntityAttributePolicy(entityClass = User.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
     void user();
 
-    @ViewPolicy(viewIds = {PlatformViews.LESSON_LIST, PlatformViews.LESSON_DETAIL, PlatformViews.LESSON_EDIT, PlatformViews.LESSON_PREVIEW, PlatformViews.STUDIO_TOKENS, PlatformViews.COURSE_LIST, PlatformViews.COURSE_DETAIL})
-    @MenuPolicy(menuIds = {PlatformViews.LESSON_LIST, PlatformViews.STUDIO_TOKENS, PlatformViews.COURSE_LIST})
+    @ViewPolicy(viewIds = {PlatformViews.TRAINER_HOME, PlatformViews.LESSON_QUEUE, PlatformViews.LESSON_DETAIL, PlatformViews.LESSON_EDIT, PlatformViews.LESSON_PREVIEW, PlatformViews.COURSE_LIST, PlatformViews.COURSE_DETAIL})
+    @MenuPolicy(menuIds = {PlatformViews.TRAINER_HOME, PlatformViews.COURSE_LIST})
     void views();
 }

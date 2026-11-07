@@ -2,6 +2,7 @@ package io.uitrainer.platform.service;
 
 import io.jmix.core.security.CurrentAuthentication;
 import io.uitrainer.platform.security.AdminRole;
+import io.uitrainer.platform.security.DirectorRole;
 import io.uitrainer.platform.security.ReviewerRole;
 import io.uitrainer.platform.security.StudentRole;
 import io.uitrainer.platform.security.TrainerRole;
@@ -41,6 +42,10 @@ public class CurrentUserAccess {
 
     public boolean isTrainer() {
         return hasRole(TrainerRole.CODE);
+    }
+
+    public boolean isDirector() {
+        return hasRole(DirectorRole.CODE);
     }
 
     public boolean isStudent() {

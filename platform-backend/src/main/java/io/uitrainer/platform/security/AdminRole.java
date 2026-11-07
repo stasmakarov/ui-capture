@@ -17,7 +17,20 @@ public interface AdminRole {
     @EntityPolicy(entityName = "*", actions = {EntityPolicyAction.ALL})
     @EntityAttributePolicy(entityName = "*", attributes = "*", action = EntityAttributePolicyAction.MODIFY)
     @ViewPolicy(viewIds = "*")
-    @MenuPolicy(menuIds = "*")
+    @MenuPolicy(menuIds = {
+            PlatformViews.ADMIN_HOME,
+            PlatformViews.REVIEW_QUEUE,
+            PlatformViews.COURSE_LIST,
+            PlatformViews.LESSON_LIST,
+            PlatformViews.STUDIO_TOKENS,
+            PlatformViews.USER_LIST,
+            "administration",
+            "security",
+            "sec_ResourceRoleModel.list",
+            "sec_RowLevelRoleModel.list",
+            "datatools",
+            "datatl_entityInspectorListView"
+    })
     @SpecificPolicy(resources = "*")
     void fullAccess();
 }

@@ -56,12 +56,12 @@ docker compose up -d                                        # из корня р
 - `service/`:
   - `LessonPackageReader` проверяет `.lesson.zip` по тому же контракту, что `tools/package/lessonPackage.ts`.
   - `LessonImportService` создаёт черновик или новую версию.
-  - `LessonLifecycleService` ведёт ЖЦ: draft → review → published → archived, а также review → draft с обязательным комментарием; автор-тренер может утвердить свой урок сам.
+  - `LessonLifecycleService` ведёт ЖЦ: из черновика можно опубликовать сразу или отправить на проверку; с проверки — публикация или возврат в черновик с комментарием.
   - `StudioTokenService` выпускает токены и тикеты.
 - `api/StudioApiController`: REST `/api/lessons/import`, `/api/studio/exchange`, `/api/studio/whoami`. Работает без сессии и CSRF, вызывающий определяется по Bearer-токену.
-- `security/`: ресурсные роли `admin`, `reviewer`, `trainer`, `student` (плюс `ui-minimal`) и row-level роли `trainer-own-data` (свои уроки, токены и курсы, где пользователь — владелец) и `student-published` (только опубликованное). Ученик экраны курсов не открывает.
-- `view/`: экраны «Курсы» (список и карточка с уроками курса, «Записать в студии» для этого курса), «Уроки» (фильтр по статусу, «Записать в студии»), карточка урока (версии, журнал, шаги, кнопки переходов), предпросмотр (`trainer.html` в изолированном iframe), «Мои токены студии».
-- `app/DemoDataInitializer`: демо-пользователи и демо-курс в профилях `dev` и `test`.
+- `security/`: ресурсные роли `admin`, `director`, `reviewer`, `trainer`, `student` (плюс `ui-minimal`) и row-level роли `trainer-own-data` (свои уроки, токены и курсы, где пользователь — владелец) и `student-published` (только опубликованное). Ученик экраны курсов не открывает. У преподавателя в меню нет общего списка уроков и токенов.
+- `view/`: кабинеты по ролям (`view/home/`), «Курсы» (у проверяющего — только чтение), карточка курса с «Записать в студии», карточка урока, предпросмотр, «Мои токены студии» в администрировании, пользователи и назначение ролей.
+- `app/DemoDataInitializer`: демо-пользователи (пароль совпадает с логином: `admin`, `trainer`, `trainer2`, `reviewer`, `student`, `director`), демо-курс и несколько уроков для кабинетов в профилях `dev` и `test`.
 - `dev/DevDatabaseEnvironmentPostProcessor`: в профиле `dev` создаёт роль/БД через admin JDBC до DataSource и Liquibase (регистрация в `META-INF/spring.factories`; Spring Boot 3.5 подхватывает EPP именно оттуда).
 
 Схема БД задаётся Liquibase: `src/main/resources/io/uicapture/platform/liquibase/`. Путь не переносился: Liquibase узнаёт уже применённые изменения по пути файла. Java-пакет — `io.uitrainer.platform`.

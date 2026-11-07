@@ -42,7 +42,7 @@ public interface ReviewerRole {
     @EntityAttributePolicy(entityClass = User.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
     void user();
 
-    @ViewPolicy(viewIds = {PlatformViews.LESSON_LIST, PlatformViews.LESSON_DETAIL, PlatformViews.LESSON_PREVIEW, PlatformViews.COURSE_LIST, PlatformViews.COURSE_DETAIL})
-    @MenuPolicy(menuIds = {PlatformViews.LESSON_LIST, PlatformViews.COURSE_LIST})
+    @ViewPolicy(viewIds = {PlatformViews.REVIEW_QUEUE, PlatformViews.LESSON_DETAIL, PlatformViews.LESSON_PREVIEW, PlatformViews.COURSE_LIST, PlatformViews.COURSE_DETAIL})
+    @MenuPolicy(menuIds = {PlatformViews.REVIEW_QUEUE, PlatformViews.COURSE_LIST})
     void views();
 }

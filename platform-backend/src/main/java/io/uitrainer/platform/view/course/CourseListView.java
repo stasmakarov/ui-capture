@@ -1,8 +1,10 @@
 package io.uitrainer.platform.view.course;
 
+import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.router.Route;
 import io.jmix.flowui.component.grid.DataGrid;
+import io.jmix.flowui.kit.action.Action;
 import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.view.DialogMode;
 import io.jmix.flowui.view.LookupComponent;
@@ -35,17 +37,39 @@ public class CourseListView extends StandardListView<Course> {
     @ViewComponent
     private DataGrid<Course> coursesDataGrid;
     @ViewComponent
+    private JmixButton createButton;
+    @ViewComponent
+    private JmixButton editButton;
+    @ViewComponent
+    private JmixButton removeButton;
+    @ViewComponent
     private JmixButton recordInStudio;
     @ViewComponent
     private JmixButton recordInStudioLocal;
 
+    private boolean readOnlyHintAdded;
+
     @Subscribe
     public void onInit(InitEvent event) {
-        boolean canRecord = access.isTrainer() || access.isAdmin();
-        recordInStudio.setVisible(canRecord);
-        recordInStudioLocal.setVisible(canRecord);
+        boolean editor = access.isTrainer() || access.isAdmin();
+        recordInStudio.setVisible(editor);
+        recordInStudioLocal.setVisible(editor);
         recordInStudio.addClickListener(e -> record(false));
         recordInStudioLocal.addClickListener(e -> record(true));
+        createButton.setVisible(editor);
+        removeButton.setVisible(editor);
+        Action create = coursesDataGrid.getAction("createAction");
+        Action remove = coursesDataGrid.getAction("removeAction");
+        if (create != null) create.setVisible(editor);
+        if (remove != null) remove.setVisible(editor);
+        if (!editor && !readOnlyHintAdded) {
+            readOnlyHintAdded = true;
+            editButton.setText("Открыть");
+            Span hint = new Span("Справочник курсов. Изменять курсы и записывать уроки нельзя.");
+            hint.setId("coursesReadonlyHint");
+            hint.getStyle().set("color", "var(--lumo-secondary-text-color)");
+            getContent().addComponentAtIndex(0, hint);
+        }
     }
 
     private void record(boolean forceFallback) {
