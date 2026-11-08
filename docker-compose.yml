@@ -1,11 +1,11 @@
 # Локальная база платформы (PostgreSQL 16). Бэкенд platform-backend/ подключается к ней: ./gradlew bootRun.
-# Имя БД, роль и volume остаются uicapture: существующий volume не переименовывается.
+# Роль jmix/jmix. Имя БД и volume остаются uicapture (volume не переименовывается; роль в уже созданном volume не меняется).
 services:
   postgres:
     image: postgres:16
     environment:
-      POSTGRES_USER: uicapture
-      POSTGRES_PASSWORD: uicapture
+      POSTGRES_USER: jmix
+      POSTGRES_PASSWORD: jmix
       POSTGRES_DB: uicapture
     ports:
       - "5432:5432"

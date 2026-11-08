@@ -56,8 +56,8 @@ public class DevDatabaseEnvironmentPostProcessor implements EnvironmentPostProce
         }
 
         String mainUrl = environment.getProperty("main.datasource.url");
-        String appUser = environment.getProperty("main.datasource.username", "uicapture");
-        String appPassword = environment.getProperty("main.datasource.password", "uicapture");
+        String appUser = environment.getProperty("main.datasource.username", "jmix");
+        String appPassword = environment.getProperty("main.datasource.password", "jmix");
 
         if (!StringUtils.hasText(mainUrl)) {
             log.warn("Dev DB bootstrap skipped: main.datasource.url is empty");
@@ -98,7 +98,7 @@ public class DevDatabaseEnvironmentPostProcessor implements EnvironmentPostProce
             ensureRole(statement, appUser, appPassword);
             ensureDatabase(statement, dbName, appUser);
             // Тестовая БД для ./gradlew test (application-test.properties)
-            if ("uicapture".equals(appUser) && !"uicapture_test".equals(dbName)) {
+            if (!"uicapture_test".equals(dbName)) {
                 ensureDatabase(statement, "uicapture_test", appUser);
             }
         } catch (SQLException e) {
