@@ -10,6 +10,7 @@ import com.vaadin.flow.component.orderedlayout.FlexComponent;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.component.textfield.TextField;
+import io.jmix.core.security.UserManager;
 import io.uitrainer.platform.security.AdminRole;
 import io.uitrainer.platform.security.DirectorRole;
 import io.uitrainer.platform.security.ReviewerRole;
@@ -119,5 +120,45 @@ public final class TeacherDialogs {
             case "student-published" -> "Только опубликованное";
             default -> code;
         };
+    }
+
+    /** Администратор задаёт новый пароль пользователю (старый не спрашивается). */
+    public static void changePassword(UserManager userManager, String username, String name) {
+        Dialog dialog = new Dialog();
+        dialog.setHeaderTitle("Сменить пароль: " + name);
+        dialog.setWidth("28em");
+        PasswordField password = new PasswordField("Новый пароль");
+        password.setId("newPassword");
+        password.setWidthFull();
+        PasswordField confirm = new PasswordField("Повторите пароль");
+        confirm.setId("confirmPassword");
+        confirm.setWidthFull();
+        dialog.add(password, confirm);
+        Button save = new Button("Сохранить", e -> {
+            String value = password.getValue();
+            if (value == null || value.isBlank()) {
+                Notification.show("Введите пароль", 3000, Notification.Position.MIDDLE);
+                return;
+            }
+            if (!value.equals(confirm.getValue())) {
+                Notification.show("Пароли не совпадают", 3000, Notification.Position.MIDDLE)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return;
+            }
+            try {
+                userManager.changePassword(username, null, value);
+                dialog.close();
+                Notification.show("Пароль изменён", 3000, Notification.Position.BOTTOM_END)
+                        .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            } catch (RuntimeException ex) {
+                Notification.show(ex.getMessage() == null ? "Не удалось сменить пароль" : ex.getMessage(),
+                        5000, Notification.Position.MIDDLE).addThemeVariants(NotificationVariant.LUMO_ERROR);
+            }
+        });
+        save.setId("savePassword");
+        save.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        Button cancel = new Button("Отмена", e -> dialog.close());
+        dialog.getFooter().add(cancel, save);
+        dialog.open();
     }
 }

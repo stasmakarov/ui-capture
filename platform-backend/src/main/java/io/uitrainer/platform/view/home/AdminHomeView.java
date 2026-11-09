@@ -129,6 +129,9 @@ public class AdminHomeView extends StandardView {
             StudioRelease release = current.get();
             Anchor download = new Anchor("/api/studio/releases/win/" + release.getFileName(), "Скачать студию");
             download.setId("downloadStudio");
+            // Ссылка на REST, а не на view: без этого роутер Vaadin пытается открыть её как маршрут.
+            download.setRouterIgnore(true);
+            download.getElement().setAttribute("download", true);
             box.add(new Span("Студия " + release.getVersionName()), download);
         }
         box.add(uploadForm());

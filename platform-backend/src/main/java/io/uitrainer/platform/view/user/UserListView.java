@@ -9,6 +9,7 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.router.Route;
 import io.jmix.core.DataManager;
+import io.jmix.core.security.UserManager;
 import io.jmix.flowui.view.StandardView;
 import io.jmix.flowui.view.ViewController;
 import io.jmix.securitydata.entity.RoleAssignmentEntity;
@@ -37,6 +38,8 @@ public class UserListView extends StandardView {
     private UserProvisioning provisioning;
     @Autowired
     private CurrentUserAccess access;
+    @Autowired
+    private UserManager userManager;
 
     private final Grid<Row> grid = new Grid<>();
 
@@ -63,6 +66,8 @@ public class UserListView extends StandardView {
         create.setId("createTeacher");
         Button assign = new Button("Назначить роли", e -> assignSelected());
         assign.setId("assignRoles");
+        Button password = new Button("Сменить пароль", e -> changePasswordSelected());
+        password.setId("changePassword");
         Button refresh = new Button("Обновить", e -> reload());
         refresh.setId("refreshUsers");
 
@@ -74,7 +79,7 @@ public class UserListView extends StandardView {
         grid.addColumn(Row::roles).setHeader("Роли").setFlexGrow(3);
         grid.addColumn(row -> row.active() ? "да" : "нет").setHeader("Активен").setWidth("8em").setFlexGrow(0);
 
-        getContent().add(title, lead, new HorizontalLayout(create, assign, refresh), grid);
+        getContent().add(title, lead, new HorizontalLayout(create, assign, password, refresh), grid);
         getContent().expand(grid);
         reload();
     }
@@ -86,6 +91,15 @@ public class UserListView extends StandardView {
             return;
         }
         TeacherDialogs.assignRoles(provisioning, access, row.username(), row.name(), this::reload);
+    }
+
+    private void changePasswordSelected() {
+        Row row = grid.getSelectedItems().stream().findFirst().orElse(null);
+        if (row == null) {
+            Notification.show("Выберите пользователя", 3000, Notification.Position.MIDDLE);
+            return;
+        }
+        TeacherDialogs.changePassword(userManager, row.username(), row.name());
     }
 
     private void reload() {
