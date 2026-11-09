@@ -51,10 +51,16 @@ export default defineConfig(({ mode }) => ({
   ],
   resolve: {
     alias: {
-      '@embedded': path.resolve(mode === 'singlefile' ? 'src/generated/pack.ts' : 'src/embedded-stub.ts'),
+      '@embedded': path.resolve(mode === 'singlefile' ? 'src/embedded-from-script.ts' : 'src/embedded-stub.ts'),
     },
   },
-  build: mode === 'singlefile' ? { outDir: 'dist-single', emptyOutDir: true } : undefined,
+  build: mode === 'singlefile'
+    ? {
+        outDir: 'dist-template',
+        emptyOutDir: true,
+        rollupOptions: { input: path.resolve('player.html') },
+      }
+    : undefined,
   server: { host: '127.0.0.1', port: 43127, strictPort: true },
   preview: { host: '127.0.0.1', port: 43127, strictPort: true },
 }))

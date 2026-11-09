@@ -27,6 +27,7 @@
     "capture:scenario": "tsx tools/capture/run.ts",
     "build:lessons": "tsx tools/builder/run.ts",
     "pipeline": "tsx tools/capture/run.ts && tsx tools/builder/run.ts",
+    "build:template": "node tools/pack/buildTemplate.mjs",
     "pack:html": "tsx tools/pack/singlefile.ts",
     "schema": "tsx lesson-schema/scripts/generate-schema.ts"
   },

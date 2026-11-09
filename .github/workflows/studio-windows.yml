@@ -2,6 +2,8 @@ name: studio-windows
 on:
   push:
     tags: ['studio-v*']
+  pull_request:
+    branches: [main]
   workflow_dispatch:
 jobs:
   build:
@@ -10,11 +12,14 @@ jobs:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version: 24
           cache: npm
       - run: npm ci
       - run: npx playwright install chromium
+      - run: npm run build:template
       - run: npm test
+      - name: Smoke packHtml
+        run: npx tsx tools/pack/smoke.ts
       - name: Check tag version
         if: startsWith(github.ref, 'refs/tags/')
         shell: bash

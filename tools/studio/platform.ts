@@ -64,8 +64,12 @@ export function publicLink(link: PlatformLink | null): PublicPlatformLink | { co
 export async function savePlatformLink(lessonsDir: string, link: PlatformLink): Promise<void> {
   await mkdir(lessonsDir, { recursive: true })
   const file = platformFile(lessonsDir)
-  await writeFile(file, JSON.stringify(link, null, 2), { mode: 0o600 })
-  await chmod(file, 0o600).catch(() => undefined)
+  if (process.platform === 'win32') {
+    await writeFile(file, JSON.stringify(link, null, 2))
+  } else {
+    await writeFile(file, JSON.stringify(link, null, 2), { mode: 0o600 })
+    await chmod(file, 0o600).catch(() => undefined)
+  }
 }
 
 export async function forgetPlatformLink(lessonsDir: string): Promise<void> {

@@ -12,6 +12,9 @@ if (!watch) {
   if (vite.status !== 0) process.exit(vite.status ?? 1)
 }
 
+const template = spawnSync(process.execPath, [path.join(root, 'tools/pack/buildTemplate.mjs')], { cwd: root, stdio: 'inherit' })
+if (template.status !== 0) process.exit(template.status ?? 1)
+
 const common = {
   bundle: true,
   platform: 'node',

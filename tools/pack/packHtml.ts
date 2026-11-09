@@ -1,6 +1,7 @@
 import { mkdir, readdir, readFile, stat, writeFile } from 'node:fs/promises'
-import { spawn } from 'node:child_process'
+import { existsSync } from 'node:fs'
 import path from 'node:path'
+import { fileURLToPath } from 'node:url'
 import type { Lesson } from '../../shared/lesson.ts'
 import { fileDataUri, inlineScreenHtml } from './inlineAssets.ts'
 
@@ -9,6 +10,27 @@ export type PackOptions = {
   outFile: string
   ids?: string[]
   copyTo?: string[]
+  templatePath?: string
+}
+
+const PACK_SCRIPT = /(<script type="application\/json" id="uitrainer-pack">)([\s\S]*?)(<\/script>)/
+
+export function resolveTrainerTemplate(templatePath?: string): string {
+  const envPath = process.env.UITRAINER_TEMPLATE
+  const resources = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath
+  const here = path.dirname(fileURLToPath(import.meta.url))
+  const candidates = [
+    templatePath,
+    envPath,
+    resources ? path.join(resources, 'trainer-template.html') : undefined,
+    path.join(here, '..', '..', 'dist-template', 'trainer-template.html'),
+    path.resolve('dist-template/trainer-template.html'),
+  ].filter((item): item is string => Boolean(item))
+  const found = candidates.find((item) => existsSync(item))
+  if (!found) {
+    throw new Error('Нет шаблона плеера (dist-template/trainer-template.html). Пересоберите студию / npm run build:template')
+  }
+  return found
 }
 
 export async function packHtml(options: PackOptions): Promise<{ outFile: string; bytes: number; ids: string[] }> {
@@ -55,15 +77,15 @@ export async function packHtml(options: PackOptions): Promise<{ outFile: string;
     steps: lesson.steps.length,
     autoStepRatio: lesson.meta.autoStepRatio,
   }))
-  const packPath = path.resolve('src/generated/pack.ts')
-  await mkdir(path.dirname(packPath), { recursive: true })
   const json = JSON.stringify({ catalog, lessons })
     .replace(/</g, '\\u003c')
     .replace(/\u2028/g, '\\u2028')
     .replace(/\u2029/g, '\\u2029')
-  await writeFile(packPath, `export const embeddedPack = ${json}\n`)
-  await viteBuild()
-  const html = await readFile(path.resolve('dist-single/index.html'))
+  const template = await readFile(resolveTrainerTemplate(options.templatePath), 'utf8')
+  if (!PACK_SCRIPT.test(template)) {
+    throw new Error('Шаблон плеера без script#uitrainer-pack. Пересоберите студию / npm run build:template')
+  }
+  const html = template.replace(PACK_SCRIPT, (_all, open: string, _body: string, close: string) => `${open}${json}${close}`)
   await mkdir(path.dirname(options.outFile), { recursive: true })
   await writeFile(options.outFile, html)
   for (const extra of options.copyTo ?? []) {
@@ -72,14 +94,4 @@ export async function packHtml(options: PackOptions): Promise<{ outFile: string;
   }
   const bytes = (await stat(options.outFile)).size
   return { outFile: options.outFile, bytes, ids: lessons.map((item) => item.lesson.id) }
-}
-
-function viteBuild(): Promise<void> {
-  return new Promise((resolve, reject) => {
-    const child = spawn('npx', ['vite', 'build', '--mode', 'singlefile'], { stdio: 'inherit' })
-    child.on('exit', (code) => {
-      if (code === 0) resolve()
-      else reject(new Error(`vite build завершился с кодом ${code ?? 'нет'}`))
-    })
-  })
 }
