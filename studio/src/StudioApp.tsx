@@ -45,7 +45,11 @@ export function StudioApp() {
   const [platform, setPlatform] = useState<PlatformState>({ connected: false })
   const [notice, setNotice] = useState<string | null>(null)
   const [publishing, setPublishing] = useState<string | null>(null)
+  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [aboutOpen, setAboutOpen] = useState(false)
+  const [studioInfo, setStudioInfo] = useState<StudioInfo | null>(null)
   const dirty = !!editor && JSON.stringify(editor) !== baseline
+  const desktop = window.uitrainerDesktop
 
   async function reloadPlatform() {
     const response = await fetch('/api/platform')
@@ -75,6 +79,8 @@ export function StudioApp() {
         window.history.replaceState(null, '', '/')
       }
       await reloadPlatform()
+      const infoResponse = await fetch('/api/studio-info')
+      if (infoResponse.ok) setStudioInfo(await infoResponse.json() as StudioInfo)
     })()
     const source = new EventSource('/api/whisper/events')
     source.onmessage = (event) => setWhisper(JSON.parse(event.data) as Whisper)
@@ -89,10 +95,20 @@ export function StudioApp() {
           <strong>Учебный тренажёр</strong>
           <span>Студия записи</span>
         </div>
+        <button type="button" className="tertiary" onClick={() => setSettingsOpen(true)}>Настройки</button>
+        <button type="button" className="tertiary" onClick={() => setAboutOpen(true)}>О программе</button>
         <div className="banner-actions" ref={setBannerHost} />
       </header>
       <main className="studio">
         {error && <p className="error" role="alert">{error}</p>}
+        {studioInfo?.platform.connected && studioInfo.platform.compatible === false && (
+          <p className="error" role="alert">
+            Платформа требует более новую студию, обновитесь
+            {desktop && (
+              <button type="button" className="tertiary" onClick={() => { void desktop.checkUpdates() }}>Проверить обновления</button>
+            )}
+          </p>
+        )}
         {notice && <p className="installed" role="status" data-testid="platform-notice">{notice}</p>}
         <PlatformBar platform={platform} onForget={async () => {
           await fetch('/api/platform', { method: 'DELETE' })
@@ -272,6 +288,20 @@ export function StudioApp() {
               setPreviewId(editor.id)
               setView('preview')
             }}
+          />
+        )}
+        {settingsOpen && (
+          <SettingsDialog
+            desktop={desktop}
+            info={studioInfo}
+            onClose={() => setSettingsOpen(false)}
+          />
+        )}
+        {aboutOpen && (
+          <AboutDialog
+            info={studioInfo ?? { studioVersion: '0.6.0', studioApiVersion: 1, port: 44731, dataDir: '', platform: { connected: false } }}
+            desktop={desktop}
+            onClose={() => setAboutOpen(false)}
           />
         )}
       </main>
@@ -539,6 +569,9 @@ function NewLesson({ whisper, onCancel, onError, onWhisper, onStarted }: {
           </label>
         )}
         <p className="hint">{browserHint}</p>
+        <button type="button" className="tertiary" onClick={() => { void fetch('/api/browsers/install-chromium', { method: 'POST' }) }}>
+          Скачать Chromium
+        </button>
         {whisper?.ready && <p className="installed">Модель установлена</p>}
         {whisper && !whisper.ready && <p className="whisper">{whisper.hint}</p>}
         {whisper?.error && <p className="error" role="alert">{whisper.error}</p>}
@@ -690,6 +723,107 @@ function stopRecorder(media: MediaRecorder | null, chunks: Blob[]): Promise<Blob
   })
 }
 
+
+type StudioInfo = {
+  studioVersion: string
+  studioApiVersion: number
+  port: number
+  dataDir: string
+  platform: { connected: false } | { connected: true; server: string; platformVersion: string | null; apiVersion: number | null; compatible: boolean }
+}
+
+function SettingsDialog({ desktop, info, onClose }: {
+  desktop?: Window['uitrainerDesktop']
+  info: StudioInfo | null
+  onClose: () => void
+}) {
+  const [dataDir, setDataDir] = useState(info?.dataDir ?? '')
+  const [port, setPort] = useState(String(info?.port ?? 44731))
+  const [error, setError] = useState<string | null>(null)
+  const [pendingMigrate, setPendingMigrate] = useState(false)
+
+  async function apply(migrate: 'move' | 'switch' | null) {
+    if (!desktop) return
+    const nextPort = Number(port)
+    if (!Number.isInteger(nextPort) || nextPort < 1024 || nextPort > 65535) {
+      setError('Порт должен быть от 1024 до 65535')
+      return
+    }
+    const result = await desktop.saveSettings({ dataDir, port: nextPort, migrate })
+    if ('error' in result) {
+      setError(result.error)
+      return
+    }
+    onClose()
+  }
+
+  return (
+    <div className="dialog-backdrop" onMouseDown={onClose}>
+      <div className="dialog form" role="dialog" aria-modal="true" aria-labelledby="settings-title" onMouseDown={(event) => event.stopPropagation()}>
+        <h2 id="settings-title">Настройки</h2>
+        {error && <p className="error" role="alert">{error}</p>}
+        <label>Папка данных
+          <input value={dataDir} onChange={(event) => setDataDir(event.target.value)} readOnly={!desktop} />
+        </label>
+        {desktop && (
+          <button type="button" className="tertiary" onClick={async () => {
+            const picked = await desktop.pickDataDir()
+            if (picked) setDataDir(picked)
+          }}>Выбрать…</button>
+        )}
+        <label>Порт студии
+          <input type="number" min={1024} max={65535} value={port} onChange={(event) => setPort(event.target.value)} />
+        </label>
+        <p className="hint">Изменения применятся после перезапуска студии.</p>
+        {pendingMigrate ? (
+          <div className="dialog-actions">
+            <button type="button" className="tertiary" onClick={() => void apply('switch')}>Просто переключиться</button>
+            <button type="button" className="primary" onClick={() => void apply('move')}>Перенести данные</button>
+          </div>
+        ) : (
+          <div className="dialog-actions">
+            <button type="button" className="tertiary" onClick={onClose}>Закрыть</button>
+            {desktop && (
+              <button type="button" className="primary" onClick={() => {
+                if (dataDir && info && dataDir !== info.dataDir) setPendingMigrate(true)
+                else void apply(null)
+              }}>Сохранить</button>
+            )}
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+function AboutDialog({ info, desktop, onClose }: { info: StudioInfo; desktop?: Window['uitrainerDesktop']; onClose: () => void }) {
+  const [appVersion, setAppVersion] = useState(info.studioVersion)
+  useEffect(() => {
+    if (!desktop) return
+    void desktop.getAppVersion().then(setAppVersion)
+  }, [desktop])
+  return (
+    <div className="dialog-backdrop" onMouseDown={onClose}>
+      <div className="dialog" role="dialog" aria-modal="true" aria-labelledby="about-title" onMouseDown={(event) => event.stopPropagation()}>
+        <h2 id="about-title">О программе</h2>
+        <p>Студия {appVersion}</p>
+        <p>API студии {info.studioApiVersion}</p>
+        {info.platform.connected ? (
+          <p>
+            Платформа {info.platform.server}
+            {info.platform.platformVersion ? ` · ${info.platform.platformVersion}` : ''}
+            {info.platform.apiVersion != null ? ` · API ${info.platform.apiVersion}` : ''}
+          </p>
+        ) : (
+          <p>Платформа не подключена</p>
+        )}
+        <div className="dialog-actions">
+          <button type="button" className="primary" onClick={onClose}>Закрыть</button>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 type PlatformState =
   | { connected: false }

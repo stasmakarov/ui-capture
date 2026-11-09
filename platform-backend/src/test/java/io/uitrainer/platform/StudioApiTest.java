@@ -160,6 +160,9 @@ class StudioApiTest {
                 .andExpect(jsonPath("$.courseId").value(course.getId().toString()))
                 .andReturn();
         String token = mapper.readTree(result.getResponse().getContentAsByteArray()).path("token").asText();
+        User owner = systemAuthenticator.withSystem(() -> dataManager.load(User.class)
+                .query("select u from User u where u.username = :u").parameter("u", "trainer").one());
+        assertThat(owner.getStudioLocalPort()).isNull();
         assertThat(token).startsWith("uicst_");
         mvc.perform(get("/api/studio/whoami").header("Authorization", "Bearer " + token))
                 .andExpect(status().isOk()).andExpect(jsonPath("$.username").value("trainer"));
@@ -176,5 +179,17 @@ class StudioApiTest {
                 .query("select l from uic_Lesson l where l.externalId = :id").parameter("id", id)
                 .fetchPlan(fp -> fp.addFetchPlan("_base").add("course", "_base")).one());
         assertThat(lesson.getCourse().getId()).isEqualTo(course.getId());
+    }
+
+    @Test
+    void exchangeStoresStudioPortOnUser() throws Exception {
+        demoData.init();
+        String ticket = systemAuthenticator.withUser("trainer", () -> tokenService.issueTicket(null));
+        mvc.perform(post("/api/studio/exchange").contentType("application/json")
+                        .content("{\"ticket\":\"" + ticket + "\",\"port\":45001}"))
+                .andExpect(status().isOk());
+        User owner = systemAuthenticator.withSystem(() -> dataManager.load(User.class)
+                .query("select u from User u where u.username = :u").parameter("u", "trainer").one());
+        assertThat(owner.getStudioLocalPort()).isEqualTo(45001);
     }
 }

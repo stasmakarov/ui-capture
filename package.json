@@ -13,7 +13,8 @@
     "lesson-schema",
     "player",
     "studio",
-    "student-portal"
+    "student-portal",
+    "desktop"
   ],
   "scripts": {
     "start": "tsx tools/cli.ts studio",

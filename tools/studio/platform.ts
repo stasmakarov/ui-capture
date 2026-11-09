@@ -3,6 +3,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { buildPackageBytes, collectLessonFiles } from '../package/lessonPackage.ts'
 import { packHtml } from '../pack/packHtml.ts'
+import { assertApiCompatible, fetchPlatformVersion, type PlatformVersionInfo } from './apiVersion.ts'
 
 /** Связь студии с платформой (M2): токен студии, сервер и курс, выданные по тикету из админки. */
 export type PlatformLink = {
@@ -82,14 +83,28 @@ async function errorText(response: Response): Promise<string> {
   return text.slice(0, 300) || `HTTP ${response.status}`
 }
 
+export async function checkPlatformApi(server: string): Promise<PlatformVersionInfo | null> {
+  const info = await fetchPlatformVersion(server)
+  assertApiCompatible(info)
+  return info
+}
+
 /** Обменять одноразовый тикет из ссылки uitrainer://new на токен студии и запомнить его. */
-export async function exchangeTicket(lessonsDir: string, serverValue: string, ticket: string, course?: string | null): Promise<PlatformLink> {
+export async function exchangeTicket(
+  lessonsDir: string,
+  serverValue: string,
+  ticket: string,
+  course?: string | null,
+  studioPort?: number,
+): Promise<PlatformLink> {
   const server = normalizeServer(serverValue)
   if (!ticket.trim()) throw new Error('Нет тикета')
+  const body: { ticket: string; port?: number } = { ticket: ticket.trim() }
+  if (studioPort != null) body.port = studioPort
   const response = await fetch(`${server}/api/studio/exchange`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ ticket: ticket.trim() }),
+    body: JSON.stringify(body),
   })
   if (!response.ok) throw new Error(`Платформа не приняла тикет: ${await errorText(response)}`)
   const payload = await response.json() as { token: string; username: string; courseId: string | null; courseTitle: string | null; expiresAt: string | null }
@@ -103,6 +118,7 @@ export async function exchangeTicket(lessonsDir: string, serverValue: string, ti
     linkedAt: new Date().toISOString(),
   }
   await savePlatformLink(lessonsDir, link)
+  await checkPlatformApi(server)
   return link
 }
 
@@ -122,6 +138,7 @@ export async function loginWithToken(lessonsDir: string, serverValue: string, to
     linkedAt: new Date().toISOString(),
   }
   await savePlatformLink(lessonsDir, link)
+  await checkPlatformApi(server)
   return link
 }
 

@@ -74,13 +74,14 @@ public class StudioApiController {
         }
     }
 
-    public record ExchangeRequest(String ticket) {
+    public record ExchangeRequest(String ticket, Integer port) {
     }
 
     @PostMapping("/studio/exchange")
     public ResponseEntity<Map<String, Object>> exchange(@RequestBody ExchangeRequest body) {
         try {
-            StudioTokenService.Exchange exchange = systemAuthenticator.withSystem(() -> tokenService.exchangeTicket(body == null ? null : body.ticket()));
+            StudioTokenService.Exchange exchange = systemAuthenticator.withSystem(() ->
+                    tokenService.exchangeTicket(body == null ? null : body.ticket(), body == null ? null : body.port()));
             Map<String, Object> out = new LinkedHashMap<>();
             out.put("token", exchange.token());
             out.put("username", exchange.username());

@@ -422,7 +422,9 @@
 
 .dialog p { margin: 0 0 24px; color: var(--lumo-secondary-text-color); }
 
-.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; }
+.dialog-actions { display: flex; justify-content: flex-end; gap: 8px; margin-top: 16px; }
+
+.dialog.form label { display: flex; flex-direction: column; gap: 4px; margin-bottom: 12px; }
 
 @media (max-width: 800px) {
   .editor { grid-template-columns: 1fr; }

@@ -24,6 +24,9 @@ export const browserCandidates: Array<{ id: Exclude<BrowserId, 'chromium' | 'cus
       path.join(home, 'Applications/Google Chrome.app/Contents/MacOS/Google Chrome'),
       '/usr/bin/google-chrome',
       '/usr/bin/google-chrome-stable',
+      'C:\\Program Files\\Google\\Chrome\\Application\\chrome.exe',
+      'C:\\Program Files (x86)\\Google\\Chrome\\Application\\chrome.exe',
+      path.join(home, 'AppData/Local/Google/Chrome/Application/chrome.exe'),
     ],
   },
   {
@@ -36,6 +39,7 @@ export const browserCandidates: Array<{ id: Exclude<BrowserId, 'chromium' | 'cus
       '/Applications/Yandex Browser.app/Contents/MacOS/Yandex',
       path.join(home, 'Applications/Yandex.app/Contents/MacOS/Yandex'),
       '/usr/bin/yandex-browser',
+      path.join(home, 'AppData/Local/Yandex/YandexBrowser/Application/browser.exe'),
     ],
   },
 ]

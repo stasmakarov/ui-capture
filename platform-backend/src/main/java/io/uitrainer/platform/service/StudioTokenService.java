@@ -116,6 +116,11 @@ public class StudioTokenService {
     /** Обмен тикета на токен студии. Второй обмен и просроченный тикет — отказ. */
     @Transactional
     public Exchange exchangeTicket(@Nullable String plainTicket) {
+        return exchangeTicket(plainTicket, null);
+    }
+
+    @Transactional
+    public Exchange exchangeTicket(@Nullable String plainTicket, @Nullable Integer studioPort) {
         if (plainTicket == null || !plainTicket.startsWith(TICKET_PREFIX)) throw new AccessException("Неверный тикет");
         String hash = LessonPackageReader.sha256(plainTicket.getBytes(StandardCharsets.UTF_8));
         StudioTicket ticket = dataManager.unconstrained().load(StudioTicket.class)
@@ -126,6 +131,11 @@ public class StudioTokenService {
         if (ticket.getExpiresAt().isBefore(now())) throw new AccessException("Тикет просрочен. Нажмите «Записать в студии» ещё раз");
         ticket.setUsedAt(now());
         dataManager.unconstrained().save(ticket);
+        if (studioPort != null && studioPort >= 1024 && studioPort <= 65535) {
+            User owner = ticket.getOwner();
+            owner.setStudioLocalPort(studioPort);
+            dataManager.unconstrained().save(owner);
+        }
         IssuedToken issued = issueFor(ticket.getOwner(), "Студия (по ссылке из админки)", exchangedTokenTtl);
         Course course = ticket.getCourse();
         return new Exchange(issued.plainText(), ticket.getOwner().getUsername(),

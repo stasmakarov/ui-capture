@@ -2,10 +2,17 @@ package io.uitrainer.platform.view.home;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
+import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
+import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.upload.Upload;
+import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteParameters;
 import io.jmix.core.DataManager;
@@ -13,13 +20,21 @@ import io.jmix.core.TimeSource;
 import io.jmix.flowui.ViewNavigators;
 import io.jmix.flowui.view.StandardView;
 import io.jmix.flowui.view.ViewController;
+import io.uitrainer.platform.api.ApiVersion;
+import io.uitrainer.platform.entity.StudioRelease;
 import io.uitrainer.platform.security.PlatformViews;
+import io.uitrainer.platform.service.ConflictException;
+import io.uitrainer.platform.service.CurrentUserAccess;
 import io.uitrainer.platform.service.LessonLifecycleService;
+import io.uitrainer.platform.service.PackageException;
+import io.uitrainer.platform.service.StudioReleaseService;
 import io.uitrainer.platform.service.UserProvisioning;
 import io.uitrainer.platform.view.main.MainView;
 import io.uitrainer.platform.view.user.TeacherDialogs;
 import io.uitrainer.platform.view.user.UserListView;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.info.BuildProperties;
+import org.springframework.lang.Nullable;
 
 /** Кабинет платформы: преподаватели, пользователи, роли и очередь проверки. Токены — в меню администрирования. */
 @Route(value = "cabinet/admin", layout = MainView.class)
@@ -36,6 +51,13 @@ public class AdminHomeView extends StandardView {
     private UserProvisioning provisioning;
     @Autowired
     private ViewNavigators viewNavigators;
+    @Autowired
+    private StudioReleaseService releases;
+    @Autowired
+    private CurrentUserAccess access;
+    @Autowired(required = false)
+    @Nullable
+    private BuildProperties buildProperties;
 
     private TeacherList teachers;
 
@@ -78,8 +100,72 @@ public class AdminHomeView extends StandardView {
         teachersTitle.getStyle().set("margin", "0");
         H3 queueTitle = new H3("Очередь проверки");
         queueTitle.getStyle().set("margin", "0");
-        getContent().add(title, lead, links, teachersTitle, teachers, queueTitle,
+        getContent().add(title, lead, links, versionsBlock(), teachersTitle, teachers, queueTitle,
                 new ReviewQueuePanel(dataManager, lifecycle, timeSource));
+    }
+
+    private VerticalLayout versionsBlock() {
+        VerticalLayout box = new VerticalLayout();
+        box.setPadding(false);
+        box.setSpacing(true);
+        H3 heading = new H3("Версии");
+        heading.getStyle().set("margin", "0");
+        String platformVersion = buildProperties == null ? "0.6.0" : buildProperties.getVersion();
+        box.add(heading, new Span("Платформа " + platformVersion + " · API " + ApiVersion.CURRENT));
+        var current = releases.current(StudioReleaseService.WIN);
+        if (current.isEmpty()) {
+            Button download = new Button("Скачать студию");
+            download.setId("downloadStudio");
+            download.setEnabled(false);
+            download.getElement().setAttribute("title", "Релиз студии ещё не загружен");
+            box.add(new Span("Релиз студии ещё не загружен"), download);
+        } else {
+            StudioRelease release = current.get();
+            Anchor download = new Anchor("/api/studio/releases/win/" + release.getFileName(), "Скачать студию");
+            download.setId("downloadStudio");
+            box.add(new Span("Студия " + release.getVersionName()), download);
+        }
+        box.add(uploadForm());
+        return box;
+    }
+
+    private VerticalLayout uploadForm() {
+        VerticalLayout form = new VerticalLayout();
+        form.setPadding(false);
+        form.setSpacing(true);
+        form.add(new Span("Загрузить релиз"));
+        TextField version = new TextField("version");
+        version.setId("studioReleaseVersion");
+        version.setWidth("16em");
+        MemoryBuffer exeBuffer = new MemoryBuffer();
+        Upload exe = new Upload(exeBuffer);
+        exe.setAcceptedFileTypes(".exe");
+        exe.setMaxFiles(1);
+        MemoryBuffer ymlBuffer = new MemoryBuffer();
+        Upload yml = new Upload(ymlBuffer);
+        yml.setAcceptedFileTypes(".yml", ".yaml");
+        yml.setMaxFiles(1);
+        Button send = new Button("Загрузить", e -> {
+            try {
+                releases.uploadWin(version.getValue(), exeBuffer.getFileName(),
+                        exeBuffer.getInputStream().readAllBytes(),
+                        ymlBuffer.getInputStream().readAllBytes(),
+                        access.username());
+                Notification.show("Релиз загружен", 4000, Notification.Position.TOP_CENTER)
+                        .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+                getUI().ifPresent(ui -> ui.getPage().reload());
+            } catch (ConflictException ex) {
+                Notification.show(ex.getMessage(), 5000, Notification.Position.TOP_CENTER)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            } catch (PackageException | java.io.IOException ex) {
+                Notification.show(ex.getMessage() == null ? "Не удалось загрузить" : ex.getMessage(), 5000, Notification.Position.TOP_CENTER)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            }
+        });
+        send.setId("uploadStudioRelease");
+        send.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        form.add(version, exe, yml, send);
+        return form;
     }
 
     private void reloadTeachers() {

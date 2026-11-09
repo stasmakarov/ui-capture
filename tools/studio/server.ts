@@ -1,9 +1,10 @@
 import { createReadStream, existsSync, statSync } from 'node:fs'
 import { mkdir, readFile, rm, writeFile } from 'node:fs/promises'
 import http from 'node:http'
+import { createRequire } from 'node:module'
 import path from 'node:path'
 import { spawn } from 'node:child_process'
-import { createServer as createViteServer } from 'vite'
+import { STUDIO_API_VERSION, fetchPlatformVersion, isApiCompatible } from './apiVersion.ts'
 import { parseLesson, type Lesson, type LessonStep } from '../../shared/lesson.ts'
 import { lessonIdFromName, recordInteractive, type RecordingControls } from '../capture/interactive.ts'
 import { buildCapture, writeCatalog } from '../builder/build.ts'
@@ -14,11 +15,13 @@ import { detectBrowsers, gostBrowserHint, resolveBrowserLaunch, settingsFromSave
 import { exchangeTicket, forgetPlatformLink, normalizeServer, publicLink, publishLesson, readPlatformLink } from './platform.ts'
 import { downloadWhisper, onWhisperStatus, transcribeWav, whisperStatus } from './transcribe.ts'
 
-type StudioOptions = {
+export type StudioOptions = {
   port: number
   open: boolean
   lessonsDir: string
   capturesDir: string
+  staticDir?: string
+  studioVersion?: string
 }
 
 type LiveStep = {
@@ -175,16 +178,57 @@ async function attachAudio(lessonsDir: string, id: string, clips: Array<{ stepId
   return { lesson, warnings: [...new Set(warnings)] }
 }
 
+const STATIC_TYPES: Record<string, string> = {
+  '.html': 'text/html; charset=utf-8',
+  '.js': 'text/javascript; charset=utf-8',
+  '.mjs': 'text/javascript; charset=utf-8',
+  '.css': 'text/css; charset=utf-8',
+  '.json': 'application/json; charset=utf-8',
+  '.png': 'image/png',
+  '.wav': 'audio/wav',
+  '.svg': 'image/svg+xml',
+  '.jpg': 'image/jpeg',
+  '.jpeg': 'image/jpeg',
+  '.webp': 'image/webp',
+  '.woff': 'font/woff',
+  '.woff2': 'font/woff2',
+  '.map': 'application/json',
+  '.ico': 'image/x-icon',
+}
+
+function sendFile(response: http.ServerResponse, file: string) {
+  response.writeHead(200, { 'Content-Type': STATIC_TYPES[path.extname(file)] ?? 'application/octet-stream' })
+  createReadStream(file).pipe(response)
+}
+
+function serveStatic(staticDir: string, pathname: string, response: http.ServerResponse): boolean {
+  const decoded = decodeURIComponent(pathname.split('?')[0] ?? '/')
+  const target = path.resolve(staticDir, '.' + (decoded === '/' ? '/index.html' : decoded))
+  if (!target.startsWith(path.resolve(staticDir))) return false
+  if (existsSync(target) && statSync(target).isFile()) {
+    sendFile(response, target)
+    return true
+  }
+  const index = path.join(staticDir, 'index.html')
+  if (existsSync(index)) {
+    sendFile(response, index)
+    return true
+  }
+  return false
+}
+
 export async function startStudio(options: StudioOptions): Promise<{ url: string; close: () => Promise<void> }> {
-  const vite = await createViteServer({
-    server: {
-      middlewareMode: true,
-      watch: {
-        ignored: ['**/artifacts/**', '**/platform-backend/**', '**/dist-single/**', '**/captures/**', '**/lessons/**', '**/.uitrainer/**'],
-      },
-    },
-    appType: 'spa',
-  })
+  const vite = options.staticDir
+    ? null
+    : await (await import('vite')).createServer({
+        server: {
+          middlewareMode: true,
+          watch: {
+            ignored: ['**/artifacts/**', '**/platform-backend/**', '**/dist-single/**', '**/captures/**', '**/lessons/**', '**/.uitrainer/**'],
+          },
+        },
+        appType: 'spa',
+      })
   const lessonsDir = options.lessonsDir
   await mkdir(lessonsDir, { recursive: true })
 
@@ -203,22 +247,17 @@ export async function startStudio(options: StudioOptions): Promise<{ url: string
           response.end('not found')
           return
         }
-        const types: Record<string, string> = {
-          '.html': 'text/html; charset=utf-8',
-          '.json': 'application/json; charset=utf-8',
-          '.png': 'image/png',
-          '.wav': 'audio/wav',
-          '.css': 'text/css; charset=utf-8',
-          '.svg': 'image/svg+xml',
-          '.jpg': 'image/jpeg',
-          '.webp': 'image/webp',
-          '.woff2': 'font/woff2',
-        }
-        response.writeHead(200, { 'Content-Type': types[path.extname(file)] ?? 'application/octet-stream' })
-        createReadStream(file).pipe(response)
+        sendFile(response, file)
         return
       }
-      vite.middlewares(request, response, () => {
+      if (options.staticDir) {
+        if (!serveStatic(options.staticDir, url.pathname, response)) {
+          response.writeHead(404)
+          response.end('not found')
+        }
+        return
+      }
+      vite!.middlewares(request, response, () => {
         response.writeHead(404)
         response.end('not found')
       })
@@ -227,7 +266,8 @@ export async function startStudio(options: StudioOptions): Promise<{ url: string
     }
   })
 
-  await new Promise<void>((resolve) => {
+  await new Promise<void>((resolve, reject) => {
+    server.once('error', reject)
     server.listen(options.port, '127.0.0.1', () => resolve())
   })
   const address = server.address()
@@ -239,7 +279,7 @@ export async function startStudio(options: StudioOptions): Promise<{ url: string
     close: async () => {
       if (session) await session.controls.stop().catch(() => undefined)
       await new Promise<void>((resolve) => server.close(() => resolve()))
-      await vite.close()
+      await vite?.close()
     },
   }
 }
@@ -254,6 +294,26 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
   const { lessonsDir, capturesDir } = options
   if (request.method === 'GET' && url.pathname === '/api/health') {
     sendJson(response, 200, { ok: true })
+    return
+  }
+  if (request.method === 'GET' && url.pathname === '/api/studio-info') {
+    const link = await readPlatformLink(lessonsDir)
+    const platform = link ? await fetchPlatformVersion(link.server) : null
+    sendJson(response, 200, {
+      studioVersion: options.studioVersion ?? process.env.UITRAINER_STUDIO_VERSION ?? '0.6.0',
+      studioApiVersion: STUDIO_API_VERSION,
+      port: options.port,
+      dataDir: path.dirname(lessonsDir),
+      platform: link
+        ? {
+            connected: true,
+            server: link.server,
+            platformVersion: platform?.platformVersion ?? null,
+            apiVersion: platform?.apiVersion ?? null,
+            compatible: isApiCompatible(platform?.apiVersion),
+          }
+        : { connected: false },
+    })
     return
   }
   if (request.method === 'GET' && url.pathname === '/api/settings') {
@@ -272,6 +332,11 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
   }
   if (request.method === 'GET' && url.pathname === '/api/browsers') {
     sendJson(response, 200, { options: detectBrowsers(), hint: gostBrowserHint })
+    return
+  }
+  if (request.method === 'POST' && url.pathname === '/api/browsers/install-chromium') {
+    void installPlaywrightChromium().catch(() => undefined)
+    sendJson(response, 200, { ok: true })
     return
   }
   if (request.method === 'GET' && url.pathname === '/api/whisper') {
@@ -316,7 +381,7 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
       sendJson(response, 403, { error: `Задание пришло со страницы ${origin}, а сервер в нём ${server}` })
       return
     }
-    const link = await exchangeTicket(lessonsDir, server, body.ticket, body.course)
+    const link = await exchangeTicket(lessonsDir, server, body.ticket, body.course, options.port)
     sendJson(response, 200, publicLink(link))
     return
   }
@@ -503,4 +568,19 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
 
 function summarizeStep(step: LessonStep) {
   return { id: step.id, instruction: step.instruction, action: step.action }
+}
+
+function installPlaywrightChromium(): Promise<void> {
+  const require = createRequire(typeof __filename === 'string' ? __filename : import.meta.url)
+  const cli = path.join(path.dirname(require.resolve('playwright/package.json')), 'cli.js')
+  const node = process.env.ELECTRON_RUN_AS_NODE === '1' ? process.execPath : process.execPath
+  const env = { ...process.env, ELECTRON_RUN_AS_NODE: process.versions.electron ? '1' : process.env.ELECTRON_RUN_AS_NODE ?? '' }
+  return new Promise((resolve, reject) => {
+    const child = spawn(node, [cli, 'install', 'chromium'], { env, stdio: 'ignore' })
+    child.on('error', reject)
+    child.on('exit', (code) => {
+      if (code === 0) resolve()
+      else reject(new Error('Не удалось скачать Chromium'))
+    })
+  })
 }

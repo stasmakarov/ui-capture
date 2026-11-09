@@ -8,6 +8,10 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.server.VaadinServletRequest;
+import io.jmix.core.DataManager;
+import io.uitrainer.platform.entity.User;
+import io.uitrainer.platform.service.CurrentUserAccess;
+import io.uitrainer.platform.service.StudioReleaseService;
 import io.uitrainer.platform.service.StudioTokenService;
 import jakarta.servlet.http.HttpServletRequest;
 import org.springframework.beans.factory.annotation.Value;
@@ -62,13 +66,22 @@ public class StudioLaunch {
             """;
 
     private final StudioTokenService tokenService;
+    private final DataManager dataManager;
+    private final CurrentUserAccess access;
+    private final StudioReleaseService releases;
     private final String publicUrl;
     private final String studioUrl;
 
     public StudioLaunch(StudioTokenService tokenService,
+                        DataManager dataManager,
+                        CurrentUserAccess access,
+                        StudioReleaseService releases,
                         @Value("${uitrainer.public-url:}") String publicUrl,
                         @Value("${uitrainer.studio.local-url:http://127.0.0.1:44731}") String studioUrl) {
         this.tokenService = tokenService;
+        this.dataManager = dataManager;
+        this.access = access;
+        this.releases = releases;
         this.publicUrl = publicUrl;
         this.studioUrl = studioUrl;
     }
@@ -82,16 +95,30 @@ public class StudioLaunch {
         String server = serverUrl();
         String course = courseId == null ? "" : courseId.toString();
         String link = studioLink(server, ticket, course);
-        source.getUI().ifPresent(ui -> ui.getPage().executeJs(LAUNCH_JS, link, server, ticket, course, studioUrl, forceFallback)
-                .then(String.class, result -> onLaunchResult(result, link)));
+        String local = localStudioUrl();
+        source.getUI().ifPresent(ui -> ui.getPage().executeJs(LAUNCH_JS, link, server, ticket, course, local, forceFallback)
+                .then(String.class, result -> onLaunchResult(result, link, local)));
     }
 
-    private void onLaunchResult(String result, String link) {
+    String localStudioUrl() {
+        try {
+            User user = dataManager.unconstrained().load(User.class)
+                    .query("select u from User u where u.username = :u")
+                    .parameter("u", access.username())
+                    .one();
+            if (user.getStudioLocalPort() != null) return "http://127.0.0.1:" + user.getStudioLocalPort();
+        } catch (RuntimeException ignored) {
+            /* нет пользователя в контексте — дефолт */
+        }
+        return studioUrl;
+    }
+
+    private void onLaunchResult(String result, String link, String local) {
         if ("scheme".equals(result)) {
             Notification.show("Студия открыта по ссылке uitrainer://. Запишите урок и нажмите «Опубликовать на сервер».", 6000, Notification.Position.TOP_CENTER)
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
         } else if ("local".equals(result)) {
-            Notification.show("Локальная студия (127.0.0.1:44731) получила задание и открыта в новой вкладке.", 6000, Notification.Position.TOP_CENTER)
+            Notification.show("Локальная студия получила задание и открыта в новой вкладке.", 6000, Notification.Position.TOP_CENTER)
                     .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
         } else {
             Dialog dialog = new Dialog();
@@ -100,11 +127,18 @@ public class StudioLaunch {
             linkField.setValue(link);
             linkField.setReadOnly(true);
             linkField.setWidthFull();
-            dialog.add(new Paragraph("Не удалось открыть uitrainer:// и не отвечает локальная студия на 127.0.0.1:44731."),
-                    new Html("<ol><li>Установите студию: <code>git clone</code> репозитория ui-capture, <code>npm install</code>.</li>"
-                            + "<li>Запустите: <code>npx uitrainer</code> (откроется http://127.0.0.1:44731).</li>"
-                            + "<li>Нажмите «Записать в студии» ещё раз — или выполните <code>npx uitrainer open-url \"…\"</code> со ссылкой ниже.</li></ol>"),
+            String host = local.replace("http://", "");
+            dialog.add(new Paragraph("Не удалось открыть uitrainer:// и не отвечает локальная студия на " + host + "."),
+                    new Html("<ol><li>Скачайте студию для Windows кнопкой ниже или для разработки: <code>npx uitrainer studio</code>.</li>"
+                            + "<li>Установите и откройте студию, затем нажмите «Записать в студии» ещё раз.</li>"
+                            + "<li>Или выполните <code>npx uitrainer open-url \"…\"</code> со ссылкой ниже.</li></ol>"),
                     linkField);
+            releases.current(StudioReleaseService.WIN).ifPresent(release -> {
+                com.vaadin.flow.component.html.Anchor download = new com.vaadin.flow.component.html.Anchor(
+                        "/api/studio/releases/win/" + release.getFileName(), "Скачать студию");
+                download.setId("downloadStudio");
+                dialog.add(download);
+            });
             dialog.setWidth("40em");
             dialog.getFooter().add(new Button("Закрыть", e -> dialog.close()));
             dialog.open();

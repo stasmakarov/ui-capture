@@ -22,7 +22,7 @@
 | npm CLI | пакет `uitrainer`, вызов `npx uitrainer`, файл `bin/uitrainer.js` | |
 | Пакеты монорепо | `@uitrainer/studio`, `@uitrainer/player`, `@uitrainer/lesson-schema`, `@uitrainer/student-portal` | папки `studio`, `player`, `lesson-schema`, `student-portal` те же |
 | Java | group `io.uitrainer`, пакет `io.uitrainer.platform`, артефакт `uitrainer-platform`, класс `UiTrainerPlatformApplication`, тема Vaadin `uitrainer` | |
-| Схема запуска студии | `uitrainer://`; кнопка «Записать в студии» открывает её | описана в `studio/macos/` |
+| Схема запуска студии | `uitrainer://`; кнопка «Записать в студии» открывает её | NSIS регистрирует протокол; на Mac каркас в `studio/macos/` |
 | Переменные окружения | `UITRAINER_DB_URL`, `UITRAINER_PUBLIC_URL`, `UITRAINER_FILES_DIR`, `UITRAINER_TEST_DB_URL`, `UITRAINER_DEV_DBADMIN_*`, `UITRAINER_MODEL_DIR`, `UITRAINER_STUDIO_TOKEN`, `UITRAINER_PLATFORM_URL`, `UITRAINER_HEADLESS` и остальные `UITRAINER_*` | короткого `UIT_*` нет |
 | Jmix `projectId` | `uic` | не меняется: от него зависят префиксы таблиц `UIC_*` и id экранов `uic_` |
 | Формат `.lesson.zip` | `ui-capture-lesson` | строка в манифесте не меняется, уже собранные пакеты читаются |
@@ -208,6 +208,12 @@ flowchart LR
 | Кто владеет группой | Предложение: преподаватель, который её создал; совладельцев пока нет |
 | Видит ли директор закрытые группы | Открытый вопрос: только активные или ещё историю |
 | Может ли два преподавателя вести одну группу | Открытый вопрос |
+
+## Установщик студии и версии API
+
+Windows: Electron + NSIS, пакет `@uitrainer/desktop`. Папка данных и порт задаются в мастере установки (по умолчанию `Документы\uitrainer` и `44731`), хранятся в `%APPDATA%\uitrainer Studio\config.json`. При первом запуске значения берутся из `HKCU\Software\uitrainer Studio`, если `config.json` ещё нет. Обновление и удаление не трогают папку данных. Chromium в установщик не вкладывается: системный Chrome или Яндекс Браузер и кнопка «Скачать Chromium».
+
+Релизы раздаёт платформа (`UIC_STUDIO_RELEASE`), не GitHub Releases: только текущая версия для `win`. `GET /api/version` отдаёт `platformVersion` (build info), `apiVersion` (константа `ApiVersion.CURRENT = 1`) и ссылку на текущий установщик. Студия при обмене тикета передаёт свой порт; платформа пишет его в `User.studioLocalPort` для запасного пинга `127.0.0.1`. Совместимость API пока — равенство major (`isApiCompatible`).
 
 ## Границы продуктов
 

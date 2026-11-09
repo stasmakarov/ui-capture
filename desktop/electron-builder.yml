@@ -1,0 +1,44 @@
+appId: io.uitrainer.studio
+productName: uitrainer Studio
+directories:
+  output: release
+files:
+  - dist/main.cjs
+  - dist/main.cjs.map
+  - dist/preload.cjs
+  - dist/preload.cjs.map
+  - dist/server.cjs
+  - dist/server.cjs.map
+  - package.json
+extraResources:
+  - from: ../dist
+    to: studio-ui
+    filter:
+      - "**/*"
+      - "!lessons/**"
+asarUnpack:
+  - "**/node_modules/onnxruntime-node/**"
+  - "**/node_modules/sharp/**"
+  - "**/node_modules/playwright-core/**"
+win:
+  target:
+    - target: nsis
+      arch:
+        - x64
+nsis:
+  oneClick: false
+  perMachine: false
+  allowElevation: false
+  allowToChangeInstallationDirectory: false
+  deleteAppDataOnUninstall: false
+  include: build/installer.nsh
+protocols:
+  - name: uitrainer
+    schemes:
+      - uitrainer
+publish:
+  provider: generic
+  url: ${env.UITRAINER_UPDATE_URL}
+electronLanguages:
+  - ru
+  - en-US

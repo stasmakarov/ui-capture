@@ -63,6 +63,10 @@ public class User implements JmixUserDetails, HasTimeZone {
     @Column(name = "TIME_ZONE_ID")
     protected String timeZoneId;
 
+    /** Порт локальной студии с последнего обмена тикета. */
+    @Column(name = "STUDIO_LOCAL_PORT")
+    protected Integer studioLocalPort;
+
     @CreatedBy
     @Column(name = "CREATED_BY")
     private String createdBy;
@@ -247,5 +251,13 @@ public class User implements JmixUserDetails, HasTimeZone {
 
     public void setTimeZoneId(final String timeZoneId) {
         this.timeZoneId = timeZoneId;
+    }
+
+    public Integer getStudioLocalPort() {
+        return studioLocalPort;
+    }
+
+    public void setStudioLocalPort(Integer studioLocalPort) {
+        this.studioLocalPort = studioLocalPort;
     }
 }

@@ -1,0 +1,49 @@
+name: studio-windows
+on:
+  push:
+    tags: ['studio-v*']
+  workflow_dispatch:
+jobs:
+  build:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npx playwright install chromium
+      - run: npm test
+      - name: Check tag version
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        run: |
+          VERSION=${GITHUB_REF_NAME#studio-v}
+          PKG=$(node -p "require('./desktop/package.json').version")
+          test "$VERSION" = "$PKG"
+      - run: npm run build --workspace @uitrainer/desktop
+      - name: electron-builder
+        working-directory: desktop
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          UITRAINER_UPDATE_URL: ${{ vars.UITRAINER_PLATFORM_URL }}/api/studio/releases/win
+        run: npx electron-builder --win nsis --x64 --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: uitrainer-studio-windows
+          path: |
+            desktop/release/*.exe
+            desktop/release/latest.yml
+      - name: Upload to platform
+        if: startsWith(github.ref, 'refs/tags/')
+        shell: bash
+        env:
+          PLATFORM_URL: ${{ vars.UITRAINER_PLATFORM_URL }}
+          TOKEN: ${{ secrets.UITRAINER_ADMIN_STUDIO_TOKEN }}
+        run: |
+          EXE=$(ls desktop/release/*.exe | head -1)
+          VERSION=${GITHUB_REF_NAME#studio-v}
+          curl --fail -X POST "$PLATFORM_URL/api/studio/releases/win" \
+            -H "Authorization: Bearer $TOKEN" \
+            -F "version=$VERSION" -F "exe=@$EXE" -F "latestYml=@desktop/release/latest.yml"

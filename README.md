@@ -186,13 +186,31 @@ npx uitrainer publish spisok-zadach
 
 Потерянный токен отзывается на экране «Мои токены студии». После отзыва студия с этим токеном получает 401.
 
+### Студия для Windows
+
+Преподаватель ставит `uitrainer Studio` с кнопки **«Скачать студию»** в кабинете администратора (файл отдаёт сама платформа, не GitHub Releases). Установщик без прав администратора: папка данных по умолчанию `Документы\uitrainer`, порт `44731`. Windows SmartScreen для неподписанного файла: «Подробнее» → «Выполнить в любом случае».
+
+Релиз: тег `studio-vX.Y.Z` (версия совпадает с `desktop/package.json`), GitHub Actions собирает `.exe` и `latest.yml` и загружает их на платформу (`POST /api/studio/releases/win`). Если раннер не достучится до сервера, возьмите артефакт `uitrainer-studio-windows` и загрузите формой в админке или:
+
+```bash
+curl --fail -X POST "$PLATFORM_URL/api/studio/releases/win" \
+  -H "Authorization: Bearer $UITRAINER_ADMIN_STUDIO_TOKEN" \
+  -F "version=0.6.0" -F "exe=@uitrainer-Studio-Setup-0.6.0.exe" -F "latestYml=@latest.yml"
+```
+
+Платформа хранит только текущий релиз. Повтор той же версии — 409. Обновления студии качает electron-updater с `/api/studio/releases/win`.
+
 ### REST для студии
 
 | Запрос | Что делает |
 |---|---|
 | `POST /api/lessons/import` | `.lesson.zip` в теле (`application/zip`) или в multipart-поле `file`. Заголовки: `Authorization: Bearer uicst_…` и необязательный `X-Course-Id`. Ответ 201 с `lessonId` и `versionNo`. Ответ 400, если хэш или размер не совпадает с `manifest.json`, в архиве есть лишний файл или нет файла, на который ссылается урок. Ответ 401 без токена или с отозванным токеном, 403 при попытке загрузить чужой урок |
-| `POST /api/studio/exchange` | `{"ticket":"uictk_…"}` → `{token, username, courseId, courseTitle}`. Второй обмен того же тикета и просроченный тикет → 403 |
+| `POST /api/studio/exchange` | `{"ticket":"uictk_…","port":44731}` → `{token, username, courseId, courseTitle}`. Порт запоминается у пользователя для запасного пинга. Второй обмен того же тикета и просроченный тикет → 403 |
 | `GET /api/studio/whoami` | проверка токена |
+| `GET /api/version` | `{ platformVersion, apiVersion, studioLatestRelease }` без авторизации |
+| `POST /api/studio/releases/win` | multipart `version`, `exe`, `latestYml`; Bearer админского токена студии. Та же версия — 409 |
+| `GET /api/studio/releases/win/latest.yml` | фид electron-updater, без авторизации |
+| `GET /api/studio/releases/win/{fileName}` | текущий `.exe`, без авторизации |
 
 ### Сквозной тест и скриншоты
 
