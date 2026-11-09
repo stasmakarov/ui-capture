@@ -7,6 +7,10 @@ Var PortCtl
 Var DataDir
 Var Port
 
+; electron-builder (assistedInstaller.nsh) вставляет customPageAfterChangeDir вне блока
+; allowToChangeInstallationDirectory, сразу перед MUI_PAGE_INSTFILES, поэтому страница
+; показывается и при allowToChangeInstallationDirectory: false. При обновлении её пропускает
+; Abort ниже: DataDir уже есть в реестре.
 !macro customPageAfterChangeDir
   Page custom StudioSettingsPageCreate StudioSettingsPageLeave
 !macroend
