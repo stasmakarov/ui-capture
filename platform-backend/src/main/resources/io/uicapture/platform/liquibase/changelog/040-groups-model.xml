@@ -1,0 +1,91 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
+  <changeSet id="1" author="ui-capture">
+    <createTable tableName="UIC_STUDY_GROUP">
+      <column name="ID" type="UUID"><constraints primaryKey="true" nullable="false"/></column>
+      <column name="VERSION" type="INT"><constraints nullable="false"/></column>
+      <column name="CREATED_BY" type="VARCHAR(255)"/>
+      <column name="CREATED_DATE" type="TIMESTAMP WITH TIME ZONE"/>
+      <column name="NAME" type="VARCHAR(255)"><constraints nullable="false"/></column>
+      <column name="OWNER_ID" type="UUID"><constraints nullable="false"/></column>
+      <column name="STATUS" type="VARCHAR(20)"><constraints nullable="false"/></column>
+      <column name="ACCESS_MODE" type="VARCHAR(20)"><constraints nullable="false"/></column>
+    </createTable>
+  </changeSet>
+  <changeSet id="2" author="ui-capture">
+    <createTable tableName="UIC_GROUP_COURSE">
+      <column name="ID" type="UUID"><constraints primaryKey="true" nullable="false"/></column>
+      <column name="VERSION" type="INT"><constraints nullable="false"/></column>
+      <column name="GROUP_ID" type="UUID"><constraints nullable="false"/></column>
+      <column name="COURSE_ID" type="UUID"><constraints nullable="false"/></column>
+      <column name="SORT_ORDER" type="INT"><constraints nullable="false"/></column>
+    </createTable>
+  </changeSet>
+  <changeSet id="3" author="ui-capture">
+    <createTable tableName="UIC_GROUP_MEMBER">
+      <column name="ID" type="UUID"><constraints primaryKey="true" nullable="false"/></column>
+      <column name="VERSION" type="INT"><constraints nullable="false"/></column>
+      <column name="GROUP_ID" type="UUID"><constraints nullable="false"/></column>
+      <column name="STUDENT_ID" type="UUID"><constraints nullable="false"/></column>
+    </createTable>
+  </changeSet>
+  <changeSet id="4" author="ui-capture">
+    <createTable tableName="UIC_GROUP_COURSE_PROGRESS">
+      <column name="ID" type="UUID"><constraints primaryKey="true" nullable="false"/></column>
+      <column name="VERSION" type="INT"><constraints nullable="false"/></column>
+      <column name="GROUP_ID" type="UUID"><constraints nullable="false"/></column>
+      <column name="STUDENT_ID" type="UUID"><constraints nullable="false"/></column>
+      <column name="COURSE_ID" type="UUID"><constraints nullable="false"/></column>
+      <column name="STATUS" type="VARCHAR(20)"><constraints nullable="false"/></column>
+      <column name="COMPLETED_AT" type="TIMESTAMP WITH TIME ZONE"/>
+      <column name="PUBLISHED_LESSON_COUNT_AT_COMPLETION" type="INT"/>
+    </createTable>
+  </changeSet>
+  <changeSet id="5" author="ui-capture">
+    <createTable tableName="UIC_LESSON_ATTEMPT">
+      <column name="ID" type="UUID"><constraints primaryKey="true" nullable="false"/></column>
+      <column name="VERSION" type="INT"><constraints nullable="false"/></column>
+      <column name="STUDENT_ID" type="UUID"><constraints nullable="false"/></column>
+      <column name="LESSON_ID" type="UUID"><constraints nullable="false"/></column>
+      <column name="LESSON_VERSION_ID" type="UUID"><constraints nullable="false"/></column>
+      <column name="STARTED_AT" type="TIMESTAMP WITH TIME ZONE"><constraints nullable="false"/></column>
+      <column name="COMPLETED_AT" type="TIMESTAMP WITH TIME ZONE"/>
+    </createTable>
+  </changeSet>
+  <changeSet id="6" author="ui-capture">
+    <addForeignKeyConstraint baseTableName="UIC_STUDY_GROUP" baseColumnNames="OWNER_ID" constraintName="FK_STUDY_GROUP_OWNER_ID" referencedTableName="UIC_USER" referencedColumnNames="ID"/>
+    <createIndex tableName="UIC_STUDY_GROUP" indexName="IDX_UIC_STUDY_GROUP_OWNER"><column name="OWNER_ID"/></createIndex>
+  </changeSet>
+  <changeSet id="7" author="ui-capture">
+    <addForeignKeyConstraint baseTableName="UIC_GROUP_COURSE" baseColumnNames="GROUP_ID" constraintName="FK_GROUP_COURSE_GROUP_ID" referencedTableName="UIC_STUDY_GROUP" referencedColumnNames="ID"/>
+    <addForeignKeyConstraint baseTableName="UIC_GROUP_COURSE" baseColumnNames="COURSE_ID" constraintName="FK_GROUP_COURSE_COURSE_ID" referencedTableName="UIC_COURSE" referencedColumnNames="ID"/>
+    <createIndex tableName="UIC_GROUP_COURSE" indexName="IDX_UIC_GROUP_COURSE_GROUP"><column name="GROUP_ID"/></createIndex>
+    <createIndex tableName="UIC_GROUP_COURSE" indexName="IDX_UIC_GROUP_COURSE_COURSE"><column name="COURSE_ID"/></createIndex>
+    <addUniqueConstraint tableName="UIC_GROUP_COURSE" columnNames="GROUP_ID, COURSE_ID" constraintName="UQ_UIC_GROUP_COURSE"/>
+  </changeSet>
+  <changeSet id="8" author="ui-capture">
+    <addForeignKeyConstraint baseTableName="UIC_GROUP_MEMBER" baseColumnNames="GROUP_ID" constraintName="FK_GROUP_MEMBER_GROUP_ID" referencedTableName="UIC_STUDY_GROUP" referencedColumnNames="ID"/>
+    <addForeignKeyConstraint baseTableName="UIC_GROUP_MEMBER" baseColumnNames="STUDENT_ID" constraintName="FK_GROUP_MEMBER_STUDENT_ID" referencedTableName="UIC_USER" referencedColumnNames="ID"/>
+    <createIndex tableName="UIC_GROUP_MEMBER" indexName="IDX_UIC_GROUP_MEMBER_GROUP"><column name="GROUP_ID"/></createIndex>
+    <createIndex tableName="UIC_GROUP_MEMBER" indexName="IDX_UIC_GROUP_MEMBER_STUDENT"><column name="STUDENT_ID"/></createIndex>
+    <addUniqueConstraint tableName="UIC_GROUP_MEMBER" columnNames="GROUP_ID, STUDENT_ID" constraintName="UQ_UIC_GROUP_MEMBER"/>
+  </changeSet>
+  <changeSet id="9" author="ui-capture">
+    <addForeignKeyConstraint baseTableName="UIC_GROUP_COURSE_PROGRESS" baseColumnNames="GROUP_ID" constraintName="FK_GCP_GROUP_ID" referencedTableName="UIC_STUDY_GROUP" referencedColumnNames="ID"/>
+    <addForeignKeyConstraint baseTableName="UIC_GROUP_COURSE_PROGRESS" baseColumnNames="STUDENT_ID" constraintName="FK_GCP_STUDENT_ID" referencedTableName="UIC_USER" referencedColumnNames="ID"/>
+    <addForeignKeyConstraint baseTableName="UIC_GROUP_COURSE_PROGRESS" baseColumnNames="COURSE_ID" constraintName="FK_GCP_COURSE_ID" referencedTableName="UIC_COURSE" referencedColumnNames="ID"/>
+    <createIndex tableName="UIC_GROUP_COURSE_PROGRESS" indexName="IDX_UIC_GCP_GROUP"><column name="GROUP_ID"/></createIndex>
+    <createIndex tableName="UIC_GROUP_COURSE_PROGRESS" indexName="IDX_UIC_GCP_STUDENT"><column name="STUDENT_ID"/></createIndex>
+    <createIndex tableName="UIC_GROUP_COURSE_PROGRESS" indexName="IDX_UIC_GCP_COURSE"><column name="COURSE_ID"/></createIndex>
+    <addUniqueConstraint tableName="UIC_GROUP_COURSE_PROGRESS" columnNames="GROUP_ID, STUDENT_ID, COURSE_ID" constraintName="UQ_UIC_GCP"/>
+  </changeSet>
+  <changeSet id="10" author="ui-capture">
+    <addForeignKeyConstraint baseTableName="UIC_LESSON_ATTEMPT" baseColumnNames="STUDENT_ID" constraintName="FK_LESSON_ATTEMPT_STUDENT_ID" referencedTableName="UIC_USER" referencedColumnNames="ID"/>
+    <addForeignKeyConstraint baseTableName="UIC_LESSON_ATTEMPT" baseColumnNames="LESSON_ID" constraintName="FK_LESSON_ATTEMPT_LESSON_ID" referencedTableName="UIC_LESSON" referencedColumnNames="ID"/>
+    <addForeignKeyConstraint baseTableName="UIC_LESSON_ATTEMPT" baseColumnNames="LESSON_VERSION_ID" constraintName="FK_LESSON_ATTEMPT_VERSION_ID" referencedTableName="UIC_LESSON_VERSION" referencedColumnNames="ID"/>
+    <createIndex tableName="UIC_LESSON_ATTEMPT" indexName="IDX_UIC_LESSON_ATTEMPT_STUDENT"><column name="STUDENT_ID"/></createIndex>
+    <createIndex tableName="UIC_LESSON_ATTEMPT" indexName="IDX_UIC_LESSON_ATTEMPT_LESSON"><column name="LESSON_ID"/></createIndex>
+    <createIndex tableName="UIC_LESSON_ATTEMPT" indexName="IDX_UIC_LESSON_ATTEMPT_VERSION"><column name="LESSON_VERSION_ID"/></createIndex>
+    <addUniqueConstraint tableName="UIC_LESSON_ATTEMPT" columnNames="STUDENT_ID, LESSON_ID" constraintName="UQ_UIC_LESSON_ATTEMPT"/>
+  </changeSet>
+</databaseChangeLog>

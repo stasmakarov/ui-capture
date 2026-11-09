@@ -9,8 +9,13 @@ import io.jmix.securitydata.entity.RoleAssignmentEntity;
 import io.jmix.securityflowui.role.annotation.MenuPolicy;
 import io.jmix.securityflowui.role.annotation.ViewPolicy;
 import io.uitrainer.platform.entity.Course;
+import io.uitrainer.platform.entity.GroupCourse;
+import io.uitrainer.platform.entity.GroupCourseProgress;
+import io.uitrainer.platform.entity.GroupMember;
 import io.uitrainer.platform.entity.Lesson;
+import io.uitrainer.platform.entity.LessonAttempt;
 import io.uitrainer.platform.entity.LessonVersion;
+import io.uitrainer.platform.entity.StudyGroup;
 import io.uitrainer.platform.entity.User;
 
 /** Директор: все преподаватели и их курсы, только просмотр. Без ролей, токенов и записи в студии. */
@@ -38,7 +43,27 @@ public interface DirectorRole {
     @EntityAttributePolicy(entityClass = LessonVersion.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
     void lessonVersion();
 
-    @ViewPolicy(viewIds = {PlatformViews.DIRECTOR_HOME, PlatformViews.TEACHER_COURSES, PlatformViews.COURSE_DETAIL})
+    @EntityPolicy(entityClass = StudyGroup.class, actions = EntityPolicyAction.READ)
+    @EntityAttributePolicy(entityClass = StudyGroup.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
+    void studyGroup();
+
+    @EntityPolicy(entityClass = GroupCourse.class, actions = EntityPolicyAction.READ)
+    @EntityAttributePolicy(entityClass = GroupCourse.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
+    void groupCourse();
+
+    @EntityPolicy(entityClass = GroupMember.class, actions = EntityPolicyAction.READ)
+    @EntityAttributePolicy(entityClass = GroupMember.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
+    void groupMember();
+
+    @EntityPolicy(entityClass = GroupCourseProgress.class, actions = EntityPolicyAction.READ)
+    @EntityAttributePolicy(entityClass = GroupCourseProgress.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
+    void groupCourseProgress();
+
+    @EntityPolicy(entityClass = LessonAttempt.class, actions = EntityPolicyAction.READ)
+    @EntityAttributePolicy(entityClass = LessonAttempt.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
+    void lessonAttempt();
+
+    @ViewPolicy(viewIds = {PlatformViews.DIRECTOR_HOME, PlatformViews.TEACHER_COURSES, PlatformViews.COURSE_DETAIL, PlatformViews.GROUP_DETAIL, PlatformViews.GROUP_COURSE_DETAIL, PlatformViews.GROUP_MEMBER_DETAIL})
     @MenuPolicy(menuIds = PlatformViews.DIRECTOR_HOME)
     void views();
 }

@@ -26,4 +26,20 @@ public interface TrainerOwnDataRole {
 
     @JpqlRowLevelPolicy(entityClass = Course.class, where = "{E}.owner.username = :current_user_username")
     void course();
+
+    @JpqlRowLevelPolicy(entityClass = StudyGroup.class, where = "{E}.owner.username = :current_user_username")
+    void studyGroup();
+
+    @JpqlRowLevelPolicy(entityClass = GroupCourse.class, where = "{E}.group.owner.username = :current_user_username")
+    void groupCourse();
+
+    @JpqlRowLevelPolicy(entityClass = GroupMember.class, where = "{E}.group.owner.username = :current_user_username")
+    void groupMember();
+
+    @JpqlRowLevelPolicy(entityClass = GroupCourseProgress.class, where = "{E}.group.owner.username = :current_user_username")
+    void groupCourseProgress();
+
+    @JpqlRowLevelPolicy(entityClass = LessonAttempt.class,
+            where = "{E}.student.id in (select m.student.id from uic_GroupMember m where m.group.owner.username = :current_user_username)")
+    void lessonAttempt();
 }

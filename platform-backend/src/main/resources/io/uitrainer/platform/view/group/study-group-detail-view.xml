@@ -1,0 +1,115 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://studyGroupDetailView.title"
+      focusComponent="form">
+    <data>
+        <instance id="studyGroupDc" class="io.uitrainer.platform.entity.StudyGroup">
+            <fetchPlan extends="_base">
+                <property name="owner" fetchPlan="_instance_name"/>
+                <property name="courses" fetchPlan="_base">
+                    <property name="course" fetchPlan="_base"/>
+                </property>
+                <property name="members" fetchPlan="_base">
+                    <property name="student" fetchPlan="_instance_name"/>
+                </property>
+            </fetchPlan>
+            <loader id="studyGroupDl"/>
+            <collection id="coursesDc" property="courses"/>
+            <collection id="membersDc" property="members"/>
+        </instance>
+        <collection id="progressDc" class="io.uitrainer.platform.entity.GroupCourseProgress">
+            <fetchPlan extends="_base">
+                <property name="student" fetchPlan="_instance_name"/>
+                <property name="course" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <loader id="progressDl" readOnly="true">
+                <query>
+                    <![CDATA[select p from uic_GroupCourseProgress p where p.group = :container_studyGroupDc order by p.student.username, p.course.title]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="saveCloseAction" type="detail_saveClose"/>
+        <action id="closeAction" type="detail_close"/>
+    </actions>
+    <layout>
+        <formLayout id="form" dataContainer="studyGroupDc">
+            <responsiveSteps>
+                <responsiveStep minWidth="0" columns="1"/>
+                <responsiveStep minWidth="40em" columns="2"/>
+            </responsiveSteps>
+            <textField id="nameField" property="name"/>
+            <comboBox id="statusField" property="status" readOnly="true"/>
+            <comboBox id="accessModeField" property="accessMode"/>
+        </formLayout>
+        <hbox id="lifecycleButtons" classNames="buttons-panel">
+            <button id="activateButton" text="msg://activate" themeNames="primary"/>
+            <button id="closeGroupButton" text="msg://closeGroup"/>
+        </hbox>
+        <h4 text="msg://io.uitrainer.platform.entity/StudyGroup.members"/>
+        <hbox id="membersButtonsPanel" classNames="buttons-panel">
+            <button id="createMemberButton" action="membersDataGrid.createAction"/>
+            <button id="editMemberButton" action="membersDataGrid.editAction"/>
+            <button id="removeMemberButton" action="membersDataGrid.removeAction"/>
+        </hbox>
+        <dataGrid id="membersDataGrid" dataContainer="membersDc" width="100%" minHeight="10em">
+            <actions>
+                <action id="createAction" type="list_create">
+                    <properties>
+                        <property name="openMode" value="DIALOG"/>
+                    </properties>
+                </action>
+                <action id="editAction" type="list_edit">
+                    <properties>
+                        <property name="openMode" value="DIALOG"/>
+                    </properties>
+                </action>
+                <action id="removeAction" type="list_remove"/>
+            </actions>
+            <columns>
+                <column property="student"/>
+            </columns>
+        </dataGrid>
+        <h4 text="msg://io.uitrainer.platform.entity/StudyGroup.courses"/>
+        <hbox id="coursesButtonsPanel" classNames="buttons-panel">
+            <button id="createCourseButton" action="coursesDataGrid.createAction"/>
+            <button id="editCourseButton" action="coursesDataGrid.editAction"/>
+            <button id="removeCourseButton" action="coursesDataGrid.removeAction"/>
+        </hbox>
+        <dataGrid id="coursesDataGrid" dataContainer="coursesDc" width="100%" minHeight="10em">
+            <actions>
+                <action id="createAction" type="list_create">
+                    <properties>
+                        <property name="openMode" value="DIALOG"/>
+                    </properties>
+                </action>
+                <action id="editAction" type="list_edit">
+                    <properties>
+                        <property name="openMode" value="DIALOG"/>
+                    </properties>
+                </action>
+                <action id="removeAction" type="list_remove"/>
+            </actions>
+            <columns>
+                <column property="sortOrder"/>
+                <column property="course"/>
+            </columns>
+        </dataGrid>
+        <h4 text="msg://io.uitrainer.platform.entity/GroupCourseProgress"/>
+        <dataGrid id="progressDataGrid" dataContainer="progressDc" width="100%" minHeight="10em">
+            <columns>
+                <column property="student"/>
+                <column property="course"/>
+                <column property="status"/>
+            </columns>
+        </dataGrid>
+        <hbox id="detailActions">
+            <button id="saveAndCloseButton" action="saveCloseAction"/>
+            <button id="closeButton" action="closeAction"/>
+        </hbox>
+    </layout>
+</view>

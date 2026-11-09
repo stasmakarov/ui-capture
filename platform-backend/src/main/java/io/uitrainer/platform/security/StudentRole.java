@@ -26,7 +26,31 @@ public interface StudentRole {
     @EntityAttributePolicy(entityClass = User.class, attributes = {"id", "username", "firstName", "lastName"}, action = EntityAttributePolicyAction.VIEW)
     void user();
 
-    @ViewPolicy(viewIds = {PlatformViews.STUDENT_HOME, PlatformViews.LESSON_PREVIEW})
+    @EntityPolicy(entityClass = Course.class, actions = EntityPolicyAction.READ)
+    @EntityAttributePolicy(entityClass = Course.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
+    void course();
+
+    @EntityPolicy(entityClass = StudyGroup.class, actions = EntityPolicyAction.READ)
+    @EntityAttributePolicy(entityClass = StudyGroup.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
+    void studyGroup();
+
+    @EntityPolicy(entityClass = GroupCourse.class, actions = EntityPolicyAction.READ)
+    @EntityAttributePolicy(entityClass = GroupCourse.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
+    void groupCourse();
+
+    @EntityPolicy(entityClass = GroupMember.class, actions = EntityPolicyAction.READ)
+    @EntityAttributePolicy(entityClass = GroupMember.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
+    void groupMember();
+
+    @EntityPolicy(entityClass = GroupCourseProgress.class, actions = {EntityPolicyAction.READ, EntityPolicyAction.CREATE, EntityPolicyAction.UPDATE})
+    @EntityAttributePolicy(entityClass = GroupCourseProgress.class, attributes = "*", action = EntityAttributePolicyAction.MODIFY)
+    void groupCourseProgress();
+
+    @EntityPolicy(entityClass = LessonAttempt.class, actions = {EntityPolicyAction.READ, EntityPolicyAction.CREATE, EntityPolicyAction.UPDATE})
+    @EntityAttributePolicy(entityClass = LessonAttempt.class, attributes = "*", action = EntityAttributePolicyAction.MODIFY)
+    void lessonAttempt();
+
+    @ViewPolicy(viewIds = {PlatformViews.STUDENT_HOME, PlatformViews.STUDENT_GROUP, PlatformViews.STUDENT_COURSE, PlatformViews.LESSON_PREVIEW})
     @MenuPolicy(menuIds = PlatformViews.STUDENT_HOME)
     void views();
 }

@@ -4,9 +4,14 @@ import io.jmix.core.DataManager;
 import io.jmix.core.security.SystemAuthenticator;
 import io.jmix.securitydata.entity.RoleAssignmentEntity;
 import io.uitrainer.platform.entity.Course;
+import io.uitrainer.platform.entity.GroupAccessMode;
+import io.uitrainer.platform.entity.GroupCourse;
+import io.uitrainer.platform.entity.GroupMember;
+import io.uitrainer.platform.entity.GroupStatus;
 import io.uitrainer.platform.entity.Lesson;
 import io.uitrainer.platform.entity.LessonStatus;
 import io.uitrainer.platform.entity.LifecycleTransition;
+import io.uitrainer.platform.entity.StudyGroup;
 import io.uitrainer.platform.entity.User;
 import io.uitrainer.platform.security.*;
 import org.slf4j.Logger;
@@ -32,6 +37,8 @@ public class DemoDataInitializer {
 
     private static final Logger log = LoggerFactory.getLogger(DemoDataInitializer.class);
     public static final String DEMO_COURSE_CODE = "demo";
+    public static final String DEMO_COURSE_2_CODE = "demo-2";
+    public static final String DEMO_GROUP_NAME = "Демо-группа";
 
     private final DataManager dataManager;
     private final SystemAuthenticator systemAuthenticator;
@@ -50,7 +57,7 @@ public class DemoDataInitializer {
             user("reviewer", "Ревьюер", "Проверяющий", List.of(ReviewerRole.CODE, UiMinimalRole.CODE), List.of());
             User trainer = user("trainer", "Тренер", "Иванова", List.of(TrainerRole.CODE, UiMinimalRole.CODE), List.of(TrainerOwnDataRole.CODE));
             user("trainer2", "Тренер", "Петров", List.of(TrainerRole.CODE, UiMinimalRole.CODE), List.of(TrainerOwnDataRole.CODE));
-            user("student", "Ученик", "Сидоров", List.of(StudentRole.CODE, UiMinimalRole.CODE), List.of(StudentPublishedRole.CODE));
+            User student = user("student", "Ученик", "Сидоров", List.of(StudentRole.CODE, UiMinimalRole.CODE), List.of(StudentPublishedRole.CODE));
             user("director", "Директор", "Смирнова", List.of(DirectorRole.CODE, UiMinimalRole.CODE), List.of());
             boolean hasCourse = dataManager.load(Course.class).query("select c from uic_Course c where c.code = :c")
                     .parameter("c", DEMO_COURSE_CODE).optional().isPresent();
@@ -65,6 +72,9 @@ public class DemoDataInitializer {
             Course course = dataManager.load(Course.class).query("select c from uic_Course c where c.code = :c")
                     .parameter("c", DEMO_COURSE_CODE).one();
             seedCabinetLessons(trainer, course);
+            Course course2 = course(DEMO_COURSE_2_CODE, "Демо-курс 2: следующий в группе", trainer);
+            createLessonIfAbsent(trainer, course2, "demo2-published", "Демо: урок второго курса", LessonStatus.PUBLISHED);
+            seedDemoGroup(trainer, student, course, course2);
             log.info("Демо-вход (пароль совпадает с логином): admin, trainer, trainer2, reviewer, student, director");
         });
     }
@@ -86,6 +96,47 @@ public class DemoDataInitializer {
                     journal(lesson, LessonStatus.REVIEW, LessonStatus.DRAFT, trainer.getUsername(),
                             "Демо: поправьте формулировку шага", now);
                 });
+    }
+
+    private Course course(String code, String title, User owner) {
+        return dataManager.load(Course.class).query("select c from uic_Course c where c.code = :c")
+                .parameter("c", code).optional().orElseGet(() -> {
+                    Course created = dataManager.create(Course.class);
+                    created.setCode(code);
+                    created.setTitle(title);
+                    created.setOwner(owner);
+                    return dataManager.save(created);
+                });
+    }
+
+    private void seedDemoGroup(User trainer, User student, Course first, Course second) {
+        boolean exists = dataManager.load(StudyGroup.class)
+                .query("select g from uic_StudyGroup g where g.name = :n and g.owner = :o")
+                .parameter("n", DEMO_GROUP_NAME)
+                .parameter("o", trainer)
+                .optional()
+                .isPresent();
+        if (exists) return;
+        StudyGroup group = dataManager.create(StudyGroup.class);
+        group.setName(DEMO_GROUP_NAME);
+        group.setOwner(trainer);
+        group.setStatus(GroupStatus.ACTIVE);
+        group.setAccessMode(GroupAccessMode.SEQUENTIAL);
+        group = dataManager.save(group);
+        GroupMember member = dataManager.create(GroupMember.class);
+        member.setGroup(group);
+        member.setStudent(student);
+        dataManager.save(member);
+        GroupCourse one = dataManager.create(GroupCourse.class);
+        one.setGroup(group);
+        one.setCourse(first);
+        one.setSortOrder(1);
+        dataManager.save(one);
+        GroupCourse two = dataManager.create(GroupCourse.class);
+        two.setGroup(group);
+        two.setCourse(second);
+        two.setSortOrder(2);
+        dataManager.save(two);
     }
 
     private Optional<Lesson> createLessonIfAbsent(User author, Course course, String externalId, String title, LessonStatus status) {

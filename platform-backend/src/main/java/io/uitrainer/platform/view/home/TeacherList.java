@@ -4,6 +4,7 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import io.jmix.core.DataManager;
+import io.uitrainer.platform.entity.GroupStatus;
 import io.uitrainer.platform.entity.User;
 import io.uitrainer.platform.security.TrainerRole;
 
@@ -12,7 +13,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.function.Consumer;
 
-/** Преподаватели — пользователи с ролью тренера — и число их курсов. Групп в системе нет. */
+/** Преподаватели — пользователи с ролью тренера — и число их курсов и активных групп. */
 public class TeacherList extends VerticalLayout {
 
     private final DataManager dataManager;
@@ -31,6 +32,7 @@ public class TeacherList extends VerticalLayout {
         grid.addColumn(TeacherRow::name).setHeader("Преподаватель").setFlexGrow(2);
         grid.addColumn(TeacherRow::username).setHeader("Логин").setFlexGrow(1);
         grid.addColumn(TeacherRow::courses).setHeader("Курсы").setWidth("8em").setFlexGrow(0);
+        grid.addColumn(TeacherRow::activeGroups).setHeader("Группы").setWidth("8em").setFlexGrow(0);
         grid.addItemClickListener(event -> onOpen.accept(event.getItem()));
         add(empty, grid);
     }
@@ -60,12 +62,18 @@ public class TeacherList extends VerticalLayout {
                             "select count(c) from uic_Course c where c.owner.username = :u", Long.class)
                     .parameter("u", username)
                     .one();
-            rows.add(new TeacherRow(user.getUsername(), user.getDisplayName(), courses == null ? 0 : courses));
+            Long groups = dataManager.loadValue(
+                            "select count(g) from uic_StudyGroup g where g.owner.username = :u and g.status = :st", Long.class)
+                    .parameter("u", username)
+                    .parameter("st", GroupStatus.ACTIVE.getId())
+                    .one();
+            rows.add(new TeacherRow(user.getUsername(), user.getDisplayName(),
+                    courses == null ? 0 : courses, groups == null ? 0 : groups));
         }
         rows.sort(Comparator.comparing(TeacherRow::name, String.CASE_INSENSITIVE_ORDER));
         return rows;
     }
 
-    public record TeacherRow(String username, String name, long courses) {
+    public record TeacherRow(String username, String name, long courses, long activeGroups) {
     }
 }

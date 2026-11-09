@@ -1,6 +1,7 @@
 package io.uitrainer.platform.security;
 
 import io.uitrainer.platform.entity.*;
+import io.jmix.securitydata.entity.RoleAssignmentEntity;
 import io.jmix.security.model.EntityAttributePolicyAction;
 import io.jmix.security.model.EntityPolicyAction;
 import io.jmix.security.role.annotation.EntityAttributePolicy;
@@ -50,7 +51,31 @@ public interface TrainerRole {
     @EntityAttributePolicy(entityClass = User.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
     void user();
 
-    @ViewPolicy(viewIds = {PlatformViews.TRAINER_HOME, PlatformViews.LESSON_QUEUE, PlatformViews.LESSON_DETAIL, PlatformViews.LESSON_EDIT, PlatformViews.LESSON_PREVIEW, PlatformViews.COURSE_LIST, PlatformViews.COURSE_DETAIL})
+    @EntityPolicy(entityClass = RoleAssignmentEntity.class, actions = EntityPolicyAction.READ)
+    @EntityAttributePolicy(entityClass = RoleAssignmentEntity.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
+    void roleAssignment();
+
+    @EntityPolicy(entityClass = StudyGroup.class, actions = {EntityPolicyAction.CREATE, EntityPolicyAction.READ, EntityPolicyAction.UPDATE, EntityPolicyAction.DELETE})
+    @EntityAttributePolicy(entityClass = StudyGroup.class, attributes = "*", action = EntityAttributePolicyAction.MODIFY)
+    void studyGroup();
+
+    @EntityPolicy(entityClass = GroupCourse.class, actions = {EntityPolicyAction.CREATE, EntityPolicyAction.READ, EntityPolicyAction.UPDATE, EntityPolicyAction.DELETE})
+    @EntityAttributePolicy(entityClass = GroupCourse.class, attributes = "*", action = EntityAttributePolicyAction.MODIFY)
+    void groupCourse();
+
+    @EntityPolicy(entityClass = GroupMember.class, actions = {EntityPolicyAction.CREATE, EntityPolicyAction.READ, EntityPolicyAction.UPDATE, EntityPolicyAction.DELETE})
+    @EntityAttributePolicy(entityClass = GroupMember.class, attributes = "*", action = EntityAttributePolicyAction.MODIFY)
+    void groupMember();
+
+    @EntityPolicy(entityClass = GroupCourseProgress.class, actions = EntityPolicyAction.READ)
+    @EntityAttributePolicy(entityClass = GroupCourseProgress.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
+    void groupCourseProgress();
+
+    @EntityPolicy(entityClass = LessonAttempt.class, actions = EntityPolicyAction.READ)
+    @EntityAttributePolicy(entityClass = LessonAttempt.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
+    void lessonAttempt();
+
+    @ViewPolicy(viewIds = {PlatformViews.TRAINER_HOME, PlatformViews.LESSON_QUEUE, PlatformViews.LESSON_DETAIL, PlatformViews.LESSON_EDIT, PlatformViews.LESSON_PREVIEW, PlatformViews.COURSE_LIST, PlatformViews.COURSE_DETAIL, PlatformViews.GROUP_DETAIL, PlatformViews.GROUP_COURSE_DETAIL, PlatformViews.GROUP_MEMBER_DETAIL})
     @MenuPolicy(menuIds = {PlatformViews.TRAINER_HOME, PlatformViews.COURSE_LIST})
     void views();
 }

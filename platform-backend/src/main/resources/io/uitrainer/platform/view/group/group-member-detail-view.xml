@@ -1,0 +1,44 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://groupMemberDetailView.title"
+      focusComponent="form">
+    <data>
+        <instance id="groupMemberDc" class="io.uitrainer.platform.entity.GroupMember">
+            <fetchPlan extends="_base">
+                <property name="group" fetchPlan="_instance_name"/>
+                <property name="student" fetchPlan="_instance_name"/>
+            </fetchPlan>
+            <loader id="groupMemberDl"/>
+        </instance>
+        <collection id="studentsDc" class="io.uitrainer.platform.entity.User">
+            <fetchPlan extends="_instance_name">
+                <property name="username"/>
+                <property name="firstName"/>
+                <property name="lastName"/>
+            </fetchPlan>
+            <loader id="studentsDl">
+                <query>
+                    <![CDATA[select u from User u where u.username in
+                    (select r.username from sec_RoleAssignmentEntity r where r.roleCode = 'student' and r.roleType = 'resource')
+                    order by u.username]]>
+                </query>
+            </loader>
+        </collection>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <actions>
+        <action id="saveCloseAction" type="detail_saveClose"/>
+        <action id="closeAction" type="detail_close"/>
+    </actions>
+    <layout>
+        <formLayout id="form" dataContainer="groupMemberDc">
+            <entityComboBox id="studentField" property="student" itemsContainer="studentsDc"/>
+        </formLayout>
+        <hbox id="detailActions">
+            <button id="saveAndCloseButton" action="saveCloseAction"/>
+            <button id="closeButton" action="closeAction"/>
+        </hbox>
+    </layout>
+</view>

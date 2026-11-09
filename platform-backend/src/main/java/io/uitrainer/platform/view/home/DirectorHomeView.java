@@ -34,7 +34,7 @@ public class DirectorHomeView extends StandardView {
     public void onInit(InitEvent event) {
         H2 title = new H2("Преподаватели");
         title.getStyle().set("margin", "0");
-        Span lead = new Span("Все преподаватели и число их курсов. Откройте строку, чтобы посмотреть курсы.");
+        Span lead = new Span("Все преподаватели, число курсов и активных групп. Откройте строку, чтобы посмотреть курсы и группы.");
         lead.getStyle().set("color", "var(--lumo-secondary-text-color)");
         TeacherList teachers = new TeacherList(dataManager, row -> getUI().ifPresent(ui -> ui.navigate(
                 TeacherCoursesView.class, new RouteParameters("username", row.username()))));
