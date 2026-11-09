@@ -29,7 +29,9 @@ import io.uitrainer.platform.service.LessonProgressService;
 import io.uitrainer.platform.view.main.MainView;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 
 @Route(value = "cabinet/student/groups/:groupId/courses/:courseId", layout = MainView.class)
@@ -51,6 +53,7 @@ public class StudentCourseView extends StandardView {
     private UUID groupId;
     private UUID courseId;
     private User student;
+    private Map<UUID, LessonAttempt> attempts = Map.of();
 
     public StudentCourseView() {
         getContent().setSizeFull();
@@ -75,8 +78,11 @@ public class StudentCourseView extends StandardView {
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
         super.beforeEnter(event);
-        groupId = parse(event.getRouteParameters().get("groupId").orElse(""));
-        courseId = parse(event.getRouteParameters().get("courseId").orElse(""));
+        groupId = parseUuid(event.getRouteParameters().get("groupId").orElse(""));
+        courseId = parseUuid(event.getRouteParameters().get("courseId").orElse(""));
+        if (groupId == null || courseId == null) {
+            return;
+        }
         Button back = new Button("К группе", e -> getUI().ifPresent(ui -> ui.navigate(
                 StudentGroupView.class, new RouteParameters("groupId", groupId.toString()))));
         back.setId("backToStudentGroup");
@@ -87,8 +93,19 @@ public class StudentCourseView extends StandardView {
                 .query("select u from User u where u.username = :u")
                 .parameter("u", access.username())
                 .one();
-        StudyGroup group = groupProgress.loadGroup(groupId);
-        Course course = dataManager.load(Course.class).id(courseId).fetchPlan(FetchPlan.BASE).one();
+        StudyGroup group;
+        Course course;
+        try {
+            group = groupProgress.loadGroup(groupId);
+            course = dataManager.load(Course.class).id(courseId).fetchPlan(FetchPlan.BASE).one();
+        } catch (RuntimeException ex) {
+            title.setText("Курс не найден");
+            empty.setText("Нет доступа к этому курсу.");
+            empty.setVisible(true);
+            grid.setVisible(false);
+            return;
+        }
+        groupProgress.recalculateStudentInGroup(group, student);
         if (!groupProgress.isCourseAccessible(group, student, course)) {
             title.setText("Курс закрыт");
             empty.setText("Этот курс пока недоступен.");
@@ -98,6 +115,10 @@ public class StudentCourseView extends StandardView {
         }
         title.setText(course.getTitle());
         List<Lesson> lessons = lessonProgress.publishedLessons(course);
+        attempts = new HashMap<>();
+        for (LessonAttempt attempt : lessonProgress.attemptsFor(student, lessons)) {
+            attempts.put(attempt.getLesson().getId(), attempt);
+        }
         empty.setText("Опубликованных уроков нет.");
         empty.setVisible(lessons.isEmpty());
         grid.setVisible(true);
@@ -105,9 +126,10 @@ public class StudentCourseView extends StandardView {
     }
 
     private HorizontalLayout actions(Lesson lesson) {
-        LessonAttempt attempt = lessonProgress.findAttempt(student, lesson);
+        LessonAttempt attempt = attempts.get(lesson.getId());
         Button start = new Button("Начать урок", e -> run(() -> {
-            lessonProgress.startLesson(lesson.getId());
+            LessonAttempt started = lessonProgress.startLesson(lesson.getId());
+            attempts.put(lesson.getId(), started);
             openPreview(lesson);
             reload();
         }));
@@ -131,7 +153,7 @@ public class StudentCourseView extends StandardView {
     }
 
     private String attemptLabel(Lesson lesson) {
-        LessonAttempt attempt = lessonProgress.findAttempt(student, lesson);
+        LessonAttempt attempt = attempts.get(lesson.getId());
         if (attempt == null) {
             return "Не начат";
         }
@@ -139,7 +161,7 @@ public class StudentCourseView extends StandardView {
     }
 
     private void openPreview(Lesson lesson) {
-        LessonAttempt attempt = lessonProgress.findAttempt(student, lesson);
+        LessonAttempt attempt = attempts.get(lesson.getId());
         UUID versionId = attempt != null && attempt.getLessonVersion() != null
                 ? attempt.getLessonVersion().getId()
                 : lesson.getPublishedVersion() == null ? null : lesson.getPublishedVersion().getId();
@@ -165,7 +187,14 @@ public class StudentCourseView extends StandardView {
                 new RouteParam("courseId", courseId.toString()))));
     }
 
-    private static UUID parse(String value) {
-        return UUID.fromString(value);
+    private UUID parseUuid(String value) {
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException ex) {
+            Notification.show("Неверная ссылка", 4000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            getUI().ifPresent(ui -> ui.navigate(StudentHomeView.class));
+            return null;
+        }
     }
 }

@@ -24,6 +24,7 @@ import io.uitrainer.platform.security.PlatformViews;
 import io.uitrainer.platform.service.ConflictException;
 import io.uitrainer.platform.service.CurrentUserAccess;
 import io.uitrainer.platform.service.GroupLifecycleService;
+import io.uitrainer.platform.service.GroupProgressService;
 import io.uitrainer.platform.view.main.MainView;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -41,6 +42,8 @@ public class StudyGroupDetailView extends StandardDetailView<StudyGroup> {
     private CurrentUserAccess access;
     @Autowired
     private GroupLifecycleService lifecycle;
+    @Autowired
+    private GroupProgressService groupProgress;
 
     @ViewComponent
     private JmixButton activateButton;
@@ -54,11 +57,17 @@ public class StudyGroupDetailView extends StandardDetailView<StudyGroup> {
     private DataGrid<GroupCourse> coursesDataGrid;
     @ViewComponent
     private InstanceContainer<StudyGroup> studyGroupDc;
+    @ViewComponent
+    private JmixButton moveUpButton;
+    @ViewComponent
+    private JmixButton moveDownButton;
 
     @Subscribe
     public void onInit(InitEvent event) {
         activateButton.addClickListener(e -> changeStatus(true));
         closeGroupButton.addClickListener(e -> changeStatus(false));
+        moveUpButton.addClickListener(e -> moveCourse(-1));
+        moveDownButton.addClickListener(e -> moveCourse(1));
     }
 
     @Subscribe
@@ -110,6 +119,19 @@ public class StudyGroupDetailView extends StandardDetailView<StudyGroup> {
         hideGridActions(coursesDataGrid);
         activateButton.setVisible(false);
         closeGroupButton.setVisible(false);
+        moveUpButton.setVisible(false);
+        moveDownButton.setVisible(false);
+    }
+
+    private void moveCourse(int delta) {
+        GroupCourse selected = coursesDataGrid.getSingleSelectedItem();
+        StudyGroup group = getEditedEntity();
+        if (selected == null || entityStates.isNew(group)) {
+            Notification.show("Сначала сохраните группу и выберите курс", 4000, Notification.Position.MIDDLE);
+            return;
+        }
+        groupProgress.moveCourse(group, selected, delta);
+        getUI().ifPresent(ui -> ui.getPage().reload());
     }
 
     private void hideGridActions(DataGrid<?> grid) {

@@ -79,6 +79,8 @@
             <button id="createCourseButton" action="coursesDataGrid.createAction"/>
             <button id="editCourseButton" action="coursesDataGrid.editAction"/>
             <button id="removeCourseButton" action="coursesDataGrid.removeAction"/>
+            <button id="moveUpButton" text="msg://moveUp"/>
+            <button id="moveDownButton" text="msg://moveDown"/>
         </hbox>
         <dataGrid id="coursesDataGrid" dataContainer="coursesDc" width="100%" minHeight="10em">
             <actions>

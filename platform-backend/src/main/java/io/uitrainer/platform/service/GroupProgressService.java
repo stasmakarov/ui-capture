@@ -2,13 +2,16 @@ package io.uitrainer.platform.service;
 
 import io.jmix.core.DataManager;
 import io.jmix.core.FetchPlan;
+import io.jmix.core.SaveContext;
 import io.jmix.core.TimeSource;
+import io.jmix.core.entity.KeyValueEntity;
 import io.uitrainer.platform.entity.Course;
 import io.uitrainer.platform.entity.CourseProgressStatus;
 import io.uitrainer.platform.entity.GroupAccessMode;
 import io.uitrainer.platform.entity.GroupCourse;
 import io.uitrainer.platform.entity.GroupCourseProgress;
 import io.uitrainer.platform.entity.GroupStatus;
+import io.uitrainer.platform.entity.Lesson;
 import io.uitrainer.platform.entity.LessonStatus;
 import io.uitrainer.platform.entity.StudyGroup;
 import io.uitrainer.platform.entity.User;
@@ -18,7 +21,11 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -39,12 +46,17 @@ public class GroupProgressService {
                         + "where m.group = g and gc.group = g and m.student = :s and gc.course = :c")
                 .parameter("s", student)
                 .parameter("c", course)
-                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
-                        .add("courses", FetchPlan.BASE)
-                        .add("members", FetchPlan.BASE))
+                .fetchPlan(FetchPlan.BASE)
                 .list();
         for (StudyGroup group : groups) {
             recalculate(group, student, course);
+        }
+    }
+
+    @Transactional
+    public void recalculateStudentInGroup(StudyGroup group, User student) {
+        for (GroupCourse gc : orderedCourses(group)) {
+            recalculate(group, student, gc.getCourse());
         }
     }
 
@@ -54,9 +66,9 @@ public class GroupProgressService {
         if (progress.getStatus() == CourseProgressStatus.COMPLETED) {
             return progress;
         }
-        long published = publishedLessonCount(course);
-        long completed = completedPublishedLessonCount(student, course);
-        boolean started = completed > 0 || hasStartedLesson(student, course);
+        long published = publishedLessonCount(course.getId());
+        long completed = completedPublishedLessonCount(student.getId(), course.getId());
+        boolean started = completed > 0 || hasStartedLesson(student.getId(), course.getId());
         if (published > 0 && completed >= published) {
             progress.setStatus(CourseProgressStatus.COMPLETED);
             progress.setCompletedAt(now());
@@ -72,55 +84,76 @@ public class GroupProgressService {
     }
 
     public boolean isCourseAccessible(StudyGroup group, User student, Course course) {
-        if (group.getStatus() != GroupStatus.ACTIVE) {
+        return snapshot(group, student).accessible().stream()
+                .anyMatch(gc -> gc.getCourse().getId().equals(course.getId()));
+    }
+
+    public List<GroupCourse> accessibleCourses(StudyGroup group, User student) {
+        return snapshot(group, student).accessible();
+    }
+
+    public CourseProgressStatus status(StudyGroup group, User student, Course course) {
+        return snapshot(group, student).status(course.getId());
+    }
+
+    public boolean canStudentOpenLesson(User student, Lesson lesson) {
+        if (student == null || lesson == null || lesson.getCourse() == null) {
             return false;
         }
-        if (!isMember(group, student)) {
-            return false;
-        }
-        List<GroupCourse> ordered = orderedCourses(group);
-        if (ordered.stream().noneMatch(gc -> gc.getCourse().getId().equals(course.getId()))) {
-            return false;
-        }
-        if (group.getAccessMode() == GroupAccessMode.ALL_AT_ONCE) {
-            return true;
-        }
-        for (GroupCourse gc : ordered) {
-            if (gc.getCourse().getId().equals(course.getId())) {
+        Course course = lesson.getCourse();
+        List<StudyGroup> groups = dataManager.unconstrained().load(StudyGroup.class)
+                .query("select distinct g from uic_StudyGroup g, uic_GroupMember m, uic_GroupCourse gc "
+                        + "where m.group = g and gc.group = g and m.student.id = :s and gc.course.id = :c and g.status = :st")
+                .parameter("s", student.getId())
+                .parameter("c", course.getId())
+                .parameter("st", GroupStatus.ACTIVE.getId())
+                .fetchPlan(FetchPlan.BASE)
+                .list();
+        for (StudyGroup group : groups) {
+            if (isCourseAccessible(group, student, course)) {
                 return true;
-            }
-            GroupCourseProgress previous = findProgress(group, student, gc.getCourse());
-            if (previous == null || previous.getStatus() != CourseProgressStatus.COMPLETED) {
-                return false;
             }
         }
         return false;
     }
 
-    public List<GroupCourse> accessibleCourses(StudyGroup group, User student) {
-        List<GroupCourse> result = new ArrayList<>();
-        for (GroupCourse gc : orderedCourses(group)) {
-            if (isCourseAccessible(group, student, gc.getCourse())) {
-                result.add(gc);
-            }
+    public GroupSnapshot snapshot(StudyGroup group, User student) {
+        StudyGroup loaded = dataManager.unconstrained().load(StudyGroup.class)
+                .id(group.getId())
+                .fetchPlan(FetchPlan.BASE)
+                .one();
+        boolean member = isMember(loaded, student);
+        List<GroupCourse> ordered = orderedCourses(loaded);
+        List<UUID> courseIds = ordered.stream().map(gc -> gc.getCourse().getId()).toList();
+        Map<UUID, Long> published = publishedCounts(courseIds);
+        Map<UUID, Long> completedAttempts = completedCounts(student.getId(), courseIds);
+        Set<UUID> started = startedCourses(student.getId(), courseIds);
+        Map<UUID, CourseProgressStatus> stored = storedStatuses(loaded.getId(), student.getId());
+        Map<UUID, CourseProgressStatus> statuses = new HashMap<>();
+        for (GroupCourse gc : ordered) {
+            UUID courseId = gc.getCourse().getId();
+            statuses.put(courseId, resolveStatus(stored.get(courseId),
+                    published.getOrDefault(courseId, 0L),
+                    completedAttempts.getOrDefault(courseId, 0L),
+                    started.contains(courseId)));
         }
-        return result;
-    }
-
-    public CourseProgressStatus status(StudyGroup group, User student, Course course) {
-        GroupCourseProgress progress = findProgress(group, student, course);
-        return progress == null ? CourseProgressStatus.NOT_STARTED : progress.getStatus();
+        return new GroupSnapshot(loaded, member, ordered, published, statuses);
     }
 
     public GroupSummary summarizeStudent(StudyGroup group, User student) {
-        List<GroupCourse> all = orderedCourses(group);
+        GroupSnapshot snap = snapshot(group, student);
+        long total = 0;
         long completed = 0;
-        for (GroupCourse gc : all) {
-            if (status(group, student, gc.getCourse()) == CourseProgressStatus.COMPLETED) {
+        for (GroupCourse gc : snap.ordered()) {
+            if (snap.published(gc.getCourse().getId()) == 0) {
+                continue;
+            }
+            total++;
+            if (snap.status(gc.getCourse().getId()) == CourseProgressStatus.COMPLETED) {
                 completed++;
             }
         }
-        return new GroupSummary(group, 1, completed, all.size());
+        return new GroupSummary(snap.group(), 1, completed, total);
     }
 
     public GroupSummary summarize(StudyGroup group) {
@@ -128,18 +161,28 @@ public class GroupProgressService {
                 .id(group.getId())
                 .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
                         .add("members", FetchPlan.BASE)
-                        .add("courses", FetchPlan.BASE))
+                        .add("courses", fp2 -> fp2.addFetchPlan(FetchPlan.BASE).add("course", FetchPlan.BASE)))
                 .one();
         long members = loaded.getMembers() == null ? 0 : loaded.getMembers().size();
-        long courses = loaded.getCourses() == null ? 0 : loaded.getCourses().size();
-        long totalPairs = members * courses;
-        Long completed = dataManager.unconstrained().loadValue(
-                        "select count(p) from uic_GroupCourseProgress p where p.group.id = :g and p.status = :st",
-                        Long.class)
-                .parameter("g", loaded.getId())
-                .parameter("st", CourseProgressStatus.COMPLETED.getId())
-                .one();
-        return new GroupSummary(loaded, members, completed == null ? 0 : completed, totalPairs);
+        List<GroupCourse> ordered = orderedCourses(loaded);
+        List<UUID> courseIds = ordered.stream().map(gc -> gc.getCourse().getId()).toList();
+        Map<UUID, Long> published = publishedCounts(courseIds);
+        List<UUID> contentIds = courseIds.stream().filter(id -> published.getOrDefault(id, 0L) > 0).toList();
+        long totalPairs = members * contentIds.size();
+        long completedPairs = 0;
+        if (!contentIds.isEmpty() && members > 0) {
+            Long completed = dataManager.unconstrained().loadValue(
+                            "select count(p) from uic_GroupCourseProgress p where p.group.id = :g and p.status = :st "
+                                    + "and p.student.id in (select m.student.id from uic_GroupMember m where m.group.id = :g) "
+                                    + "and p.course.id in :ids",
+                            Long.class)
+                    .parameter("g", loaded.getId())
+                    .parameter("st", CourseProgressStatus.COMPLETED.getId())
+                    .parameter("ids", contentIds)
+                    .one();
+            completedPairs = Math.min(completed == null ? 0 : completed, totalPairs);
+        }
+        return new GroupSummary(loaded, members, completedPairs, totalPairs);
     }
 
     public List<GroupCourse> orderedCourses(StudyGroup group) {
@@ -152,6 +195,80 @@ public class GroupProgressService {
                 .list();
         courses.sort(Comparator.comparing(GroupCourse::getSortOrder, Comparator.nullsLast(Integer::compareTo)));
         return courses;
+    }
+
+    public int nextSortOrder(StudyGroup group) {
+        if (group.getId() == null) {
+            return 1;
+        }
+        Integer max = dataManager.unconstrained().loadValue(
+                        "select max(gc.sortOrder) from uic_GroupCourse gc where gc.group.id = :g", Integer.class)
+                .parameter("g", group.getId())
+                .optional()
+                .orElse(null);
+        return max == null ? 1 : max + 1;
+    }
+
+    @Transactional
+    public void moveCourse(StudyGroup group, GroupCourse selected, int delta) {
+        List<GroupCourse> ordered = orderedCourses(group);
+        int index = -1;
+        for (int i = 0; i < ordered.size(); i++) {
+            if (ordered.get(i).getId().equals(selected.getId())) {
+                index = i;
+                break;
+            }
+        }
+        int otherIndex = index + delta;
+        if (index < 0 || otherIndex < 0 || otherIndex >= ordered.size()) {
+            return;
+        }
+        GroupCourse a = ordered.get(index);
+        GroupCourse b = ordered.get(otherIndex);
+        int aOrder = a.getSortOrder();
+        int bOrder = b.getSortOrder();
+        a.setSortOrder(-Math.abs(a.getId().hashCode()) - 1);
+        dataManager.unconstrained().saveWithoutReload(a);
+        a.setSortOrder(bOrder);
+        b.setSortOrder(aOrder);
+        dataManager.unconstrained().save(new SaveContext().saving(a, b));
+    }
+
+    @Transactional
+    public void deleteProgressForMember(UUID groupId, UUID studentId) {
+        List<GroupCourseProgress> rows = dataManager.unconstrained().load(GroupCourseProgress.class)
+                .query("select p from uic_GroupCourseProgress p where p.group.id = :g and p.student.id = :s")
+                .parameter("g", groupId)
+                .parameter("s", studentId)
+                .list();
+        if (!rows.isEmpty()) {
+            dataManager.unconstrained().remove(rows.toArray());
+        }
+    }
+
+    @Transactional
+    public void deleteProgressForCourse(UUID groupId, UUID courseId) {
+        List<GroupCourseProgress> rows = dataManager.unconstrained().load(GroupCourseProgress.class)
+                .query("select p from uic_GroupCourseProgress p where p.group.id = :g and p.course.id = :c")
+                .parameter("g", groupId)
+                .parameter("c", courseId)
+                .list();
+        if (!rows.isEmpty()) {
+            dataManager.unconstrained().remove(rows.toArray());
+        }
+    }
+
+    private CourseProgressStatus resolveStatus(CourseProgressStatus stored, long published, long completed, boolean started) {
+        if (stored == CourseProgressStatus.COMPLETED) {
+            return CourseProgressStatus.COMPLETED;
+        }
+        if (published > 0 && completed >= published) {
+            return CourseProgressStatus.COMPLETED;
+        }
+        if (started || completed > 0) {
+            return CourseProgressStatus.STARTED;
+        }
+        return CourseProgressStatus.NOT_STARTED;
     }
 
     private GroupCourseProgress loadOrCreate(StudyGroup group, User student, Course course) {
@@ -191,36 +308,84 @@ public class GroupProgressService {
         return count != null && count > 0;
     }
 
-    private long publishedLessonCount(Course course) {
-        Long count = dataManager.unconstrained().loadValue(
-                        "select count(l) from uic_Lesson l where l.course.id = :c and l.status = :st",
-                        Long.class)
-                .parameter("c", course.getId())
-                .parameter("st", LessonStatus.PUBLISHED.getId())
-                .one();
-        return count == null ? 0 : count;
+    private long publishedLessonCount(UUID courseId) {
+        return publishedCounts(List.of(courseId)).getOrDefault(courseId, 0L);
     }
 
-    private long completedPublishedLessonCount(User student, Course course) {
-        Long count = dataManager.unconstrained().loadValue(
-                        "select count(a) from uic_LessonAttempt a where a.student.id = :s "
-                                + "and a.completedAt is not null and a.lesson.course.id = :c and a.lesson.status = :st",
-                        Long.class)
-                .parameter("s", student.getId())
-                .parameter("c", course.getId())
+    private Map<UUID, Long> publishedCounts(List<UUID> courseIds) {
+        Map<UUID, Long> result = new HashMap<>();
+        if (courseIds.isEmpty()) {
+            return result;
+        }
+        List<KeyValueEntity> rows = dataManager.unconstrained().loadValues(
+                        "select l.course.id, count(l) from uic_Lesson l where l.course.id in :ids and l.status = :st group by l.course.id")
+                .properties("courseId", "cnt")
+                .parameter("ids", courseIds)
                 .parameter("st", LessonStatus.PUBLISHED.getId())
-                .one();
-        return count == null ? 0 : count;
+                .list();
+        for (KeyValueEntity row : rows) {
+            result.put(row.getValue("courseId"), ((Number) row.getValue("cnt")).longValue());
+        }
+        return result;
     }
 
-    private boolean hasStartedLesson(User student, Course course) {
-        Long count = dataManager.unconstrained().loadValue(
-                        "select count(a) from uic_LessonAttempt a where a.student.id = :s and a.lesson.course.id = :c",
-                        Long.class)
-                .parameter("s", student.getId())
-                .parameter("c", course.getId())
-                .one();
-        return count != null && count > 0;
+    private long completedPublishedLessonCount(UUID studentId, UUID courseId) {
+        return completedCounts(studentId, List.of(courseId)).getOrDefault(courseId, 0L);
+    }
+
+    private Map<UUID, Long> completedCounts(UUID studentId, List<UUID> courseIds) {
+        Map<UUID, Long> result = new HashMap<>();
+        if (courseIds.isEmpty()) {
+            return result;
+        }
+        List<KeyValueEntity> rows = dataManager.unconstrained().loadValues(
+                        "select a.lesson.course.id, count(a) from uic_LessonAttempt a where a.student.id = :s "
+                                + "and a.completedAt is not null and a.lesson.course.id in :ids and a.lesson.status = :st "
+                                + "group by a.lesson.course.id")
+                .properties("courseId", "cnt")
+                .parameter("s", studentId)
+                .parameter("ids", courseIds)
+                .parameter("st", LessonStatus.PUBLISHED.getId())
+                .list();
+        for (KeyValueEntity row : rows) {
+            result.put(row.getValue("courseId"), ((Number) row.getValue("cnt")).longValue());
+        }
+        return result;
+    }
+
+    private boolean hasStartedLesson(UUID studentId, UUID courseId) {
+        return startedCourses(studentId, List.of(courseId)).contains(courseId);
+    }
+
+    private Set<UUID> startedCourses(UUID studentId, List<UUID> courseIds) {
+        Set<UUID> result = new HashSet<>();
+        if (courseIds.isEmpty()) {
+            return result;
+        }
+        List<KeyValueEntity> rows = dataManager.unconstrained().loadValues(
+                        "select distinct a.lesson.course.id from uic_LessonAttempt a where a.student.id = :s and a.lesson.course.id in :ids")
+                .properties("courseId")
+                .parameter("s", studentId)
+                .parameter("ids", courseIds)
+                .list();
+        for (KeyValueEntity row : rows) {
+            result.add(row.getValue("courseId"));
+        }
+        return result;
+    }
+
+    private Map<UUID, CourseProgressStatus> storedStatuses(UUID groupId, UUID studentId) {
+        Map<UUID, CourseProgressStatus> result = new HashMap<>();
+        List<GroupCourseProgress> rows = dataManager.unconstrained().load(GroupCourseProgress.class)
+                .query("select p from uic_GroupCourseProgress p where p.group.id = :g and p.student.id = :s")
+                .parameter("g", groupId)
+                .parameter("s", studentId)
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("course", FetchPlan.INSTANCE_NAME))
+                .list();
+        for (GroupCourseProgress row : rows) {
+            result.put(row.getCourse().getId(), row.getStatus());
+        }
+        return result;
     }
 
     private OffsetDateTime now() {
@@ -233,6 +398,40 @@ public class GroupProgressService {
                 return "нет курсов";
             }
             return completedPairs + " / " + totalPairs + " пройдено";
+        }
+    }
+
+    public record GroupSnapshot(StudyGroup group, boolean member, List<GroupCourse> ordered,
+                               Map<UUID, Long> published, Map<UUID, CourseProgressStatus> statuses) {
+        public long published(UUID courseId) {
+            return published.getOrDefault(courseId, 0L);
+        }
+
+        public CourseProgressStatus status(UUID courseId) {
+            return statuses.getOrDefault(courseId, CourseProgressStatus.NOT_STARTED);
+        }
+
+        public List<GroupCourse> accessible() {
+            if (!member || group.getStatus() != GroupStatus.ACTIVE) {
+                return List.of();
+            }
+            List<GroupCourse> result = new ArrayList<>();
+            boolean sequential = group.getAccessMode() == GroupAccessMode.SEQUENTIAL;
+            boolean blocked = false;
+            for (GroupCourse gc : ordered) {
+                UUID courseId = gc.getCourse().getId();
+                if (published(courseId) == 0) {
+                    continue;
+                }
+                if (sequential && blocked) {
+                    continue;
+                }
+                result.add(gc);
+                if (sequential && status(courseId) != CourseProgressStatus.COMPLETED) {
+                    blocked = true;
+                }
+            }
+            return result;
         }
     }
 

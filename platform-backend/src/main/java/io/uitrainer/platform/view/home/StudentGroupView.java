@@ -4,12 +4,13 @@ import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.Span;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.router.BeforeEnterEvent;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteParam;
 import com.vaadin.flow.router.RouteParameters;
 import io.jmix.core.DataManager;
-import io.jmix.core.FetchPlan;
 import io.jmix.flowui.view.StandardView;
 import io.jmix.flowui.view.ViewController;
 import io.uitrainer.platform.entity.CourseProgressStatus;
@@ -39,6 +40,7 @@ public class StudentGroupView extends StandardView {
     private final H2 title = new H2();
     private final Span empty = new Span();
     private final Grid<GroupCourse> grid = new Grid<>(GroupCourse.class, false);
+    private GroupProgressService.GroupSnapshot snapshot;
 
     public StudentGroupView() {
         getContent().setSizeFull();
@@ -67,10 +69,13 @@ public class StudentGroupView extends StandardView {
     @Override
     public void beforeEnter(BeforeEnterEvent event) {
         super.beforeEnter(event);
-        String groupId = event.getRouteParameters().get("groupId").orElse("");
+        UUID groupId = parseUuid(event.getRouteParameters().get("groupId").orElse(""));
+        if (groupId == null) {
+            return;
+        }
         StudyGroup group;
         try {
-            group = groupProgress.loadGroup(UUID.fromString(groupId));
+            group = groupProgress.loadGroup(groupId);
         } catch (RuntimeException ex) {
             title.setText("Группа не найдена");
             empty.setText("Нет доступа к этой группе.");
@@ -83,7 +88,9 @@ public class StudentGroupView extends StandardView {
                 .query("select u from User u where u.username = :u")
                 .parameter("u", access.username())
                 .one();
-        List<GroupCourse> courses = groupProgress.accessibleCourses(group, student);
+        groupProgress.recalculateStudentInGroup(group, student);
+        snapshot = groupProgress.snapshot(group, student);
+        List<GroupCourse> courses = snapshot.accessible();
         empty.setText("Нет открытых курсов.");
         empty.setVisible(courses.isEmpty());
         grid.setVisible(true);
@@ -91,15 +98,24 @@ public class StudentGroupView extends StandardView {
     }
 
     private String progressLabel(GroupCourse gc) {
-        User student = dataManager.load(User.class)
-                .query("select u from User u where u.username = :u")
-                .parameter("u", access.username())
-                .one();
-        CourseProgressStatus status = groupProgress.status(gc.getGroup(), student, gc.getCourse());
+        CourseProgressStatus status = snapshot == null
+                ? CourseProgressStatus.NOT_STARTED
+                : snapshot.status(gc.getCourse().getId());
         return switch (status) {
             case NOT_STARTED -> "Не начат";
             case STARTED -> "Начат";
             case COMPLETED -> "Пройден";
         };
+    }
+
+    private UUID parseUuid(String value) {
+        try {
+            return UUID.fromString(value);
+        } catch (IllegalArgumentException ex) {
+            Notification.show("Неверная ссылка", 4000, Notification.Position.MIDDLE)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+            getUI().ifPresent(ui -> ui.navigate(StudentHomeView.class));
+            return null;
+        }
     }
 }

@@ -42,8 +42,8 @@ public interface StudentRole {
     @EntityAttributePolicy(entityClass = GroupMember.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
     void groupMember();
 
-    @EntityPolicy(entityClass = GroupCourseProgress.class, actions = {EntityPolicyAction.READ, EntityPolicyAction.CREATE, EntityPolicyAction.UPDATE})
-    @EntityAttributePolicy(entityClass = GroupCourseProgress.class, attributes = "*", action = EntityAttributePolicyAction.MODIFY)
+    @EntityPolicy(entityClass = GroupCourseProgress.class, actions = EntityPolicyAction.READ)
+    @EntityAttributePolicy(entityClass = GroupCourseProgress.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
     void groupCourseProgress();
 
     @EntityPolicy(entityClass = LessonAttempt.class, actions = {EntityPolicyAction.READ, EntityPolicyAction.CREATE, EntityPolicyAction.UPDATE})

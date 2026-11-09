@@ -1,6 +1,8 @@
 package io.uitrainer.platform.entity;
 
+import io.jmix.core.DeletePolicy;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
+import io.jmix.core.entity.annotation.OnDeleteInverse;
 import io.jmix.core.metamodel.annotation.JmixEntity;
 import jakarta.persistence.*;
 
@@ -33,6 +35,7 @@ public class GroupCourseProgress {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private User student;
 
+    @OnDeleteInverse(DeletePolicy.DENY)
     @JoinColumn(name = "COURSE_ID", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private Course course;

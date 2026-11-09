@@ -22,6 +22,8 @@ public class DeletePolicyExceptionHandler extends AbstractUiExceptionHandler {
         if (throwable instanceof DeletePolicyException denied) {
             text = switch (denied.getRefEntity()) {
                 case "uic_Lesson" -> "Нельзя удалить курс, пока к нему привязаны уроки";
+                case "uic_GroupCourse", "uic_GroupCourseProgress" ->
+                        "Нельзя удалить курс, пока он назначен группе";
                 case "uic_LessonVersion", "uic_LifecycleTransition" ->
                         "Нельзя удалить урок, у которого уже есть версии. Он остаётся в списке «Уроки».";
                 default -> text;

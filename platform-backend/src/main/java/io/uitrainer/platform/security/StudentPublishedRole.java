@@ -19,7 +19,9 @@ public interface StudentPublishedRole {
     @JpqlRowLevelPolicy(entityClass = Lesson.class, where = "{E}.status = 'PUBLISHED'")
     void lesson();
 
-    @JpqlRowLevelPolicy(entityClass = LessonVersion.class, where = "{E}.lesson.status = 'PUBLISHED' and {E}.lesson.publishedVersion.id = {E}.id")
+    @JpqlRowLevelPolicy(entityClass = LessonVersion.class, where = "{E}.lesson.status = 'PUBLISHED' and ("
+            + "{E}.lesson.publishedVersion.id = {E}.id "
+            + "or {E}.id in (select a.lessonVersion.id from uic_LessonAttempt a where a.student.username = :current_user_username))")
     void lessonVersion();
 
     @JpqlRowLevelPolicy(entityClass = StudyGroup.class,

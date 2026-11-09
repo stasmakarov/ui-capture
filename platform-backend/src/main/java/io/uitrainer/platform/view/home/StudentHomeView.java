@@ -66,6 +66,9 @@ public class StudentHomeView extends StandardView {
                 .parameter("st", GroupStatus.ACTIVE.getId())
                 .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE))
                 .list();
+        for (StudyGroup group : groups) {
+            groupProgress.recalculateStudentInGroup(group, student);
+        }
         empty.setVisible(groups.isEmpty());
         grid.setItems(groups.stream().map(g -> groupProgress.summarizeStudent(g, student)).toList());
         getContent().add(title, empty, grid);

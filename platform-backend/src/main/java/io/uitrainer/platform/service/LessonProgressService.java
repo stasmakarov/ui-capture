@@ -4,12 +4,10 @@ import io.jmix.core.DataManager;
 import io.jmix.core.FetchPlan;
 import io.jmix.core.TimeSource;
 import io.uitrainer.platform.entity.Course;
-import io.uitrainer.platform.entity.GroupStatus;
 import io.uitrainer.platform.entity.Lesson;
 import io.uitrainer.platform.entity.LessonAttempt;
 import io.uitrainer.platform.entity.LessonStatus;
 import io.uitrainer.platform.entity.LessonVersion;
-import io.uitrainer.platform.entity.StudyGroup;
 import io.uitrainer.platform.entity.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -51,9 +49,17 @@ public class LessonProgressService {
         attempt.setLesson(lesson);
         attempt.setLessonVersion(version);
         attempt.setStartedAt(timeSource.now().toOffsetDateTime());
-        LessonAttempt saved = dataManager.save(attempt);
-        groupProgress.recalculateForStudentAndCourse(student, lesson.getCourse());
-        return saved;
+        try {
+            LessonAttempt saved = dataManager.save(attempt);
+            groupProgress.recalculateForStudentAndCourse(student, lesson.getCourse());
+            return saved;
+        } catch (RuntimeException ex) {
+            LessonAttempt raced = findAttempt(student, lesson);
+            if (raced != null) {
+                return raced;
+            }
+            throw ex;
+        }
     }
 
     @Transactional
@@ -86,26 +92,29 @@ public class LessonProgressService {
                 .orElse(null);
     }
 
+    public List<LessonAttempt> attemptsFor(User student, List<Lesson> lessons) {
+        if (lessons.isEmpty()) {
+            return List.of();
+        }
+        return dataManager.load(LessonAttempt.class)
+                .query("select a from uic_LessonAttempt a where a.student.id = :s and a.lesson.id in :ids")
+                .parameter("s", student.getId())
+                .parameter("ids", lessons.stream().map(Lesson::getId).toList())
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
+                        .add("lesson", FetchPlan.INSTANCE_NAME)
+                        .add("lessonVersion", FetchPlan.INSTANCE_NAME)
+                        .add("student", FetchPlan.INSTANCE_NAME))
+                .list();
+    }
+
     private void assertAccessible(User student, Lesson lesson) {
         Course course = lesson.getCourse();
         if (course == null || lesson.getStatus() != LessonStatus.PUBLISHED) {
             throw new ConflictException("Урок недоступен");
         }
-        List<StudyGroup> groups = dataManager.load(StudyGroup.class)
-                .query("select g from uic_StudyGroup g join g.members m join g.courses gc "
-                        + "where m.student.id = :s and gc.course.id = :c and g.status = :st")
-                .parameter("s", student.getId())
-                .parameter("c", course.getId())
-                .parameter("st", GroupStatus.ACTIVE.getId())
-                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
-                        .add("courses", fp2 -> fp2.addFetchPlan(FetchPlan.BASE).add("course", FetchPlan.INSTANCE_NAME)))
-                .list();
-        for (StudyGroup group : groups) {
-            if (groupProgress.isCourseAccessible(group, student, course)) {
-                return;
-            }
+        if (!groupProgress.canStudentOpenLesson(student, lesson)) {
+            throw new ConflictException("Курс пока закрыт");
         }
-        throw new ConflictException("Курс пока закрыт");
     }
 
     private Lesson loadLesson(UUID lessonId) {

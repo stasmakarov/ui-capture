@@ -16,13 +16,6 @@
                 <property name="firstName"/>
                 <property name="lastName"/>
             </fetchPlan>
-            <loader id="studentsDl">
-                <query>
-                    <![CDATA[select u from User u where u.username in
-                    (select r.username from sec_RoleAssignmentEntity r where r.roleCode = 'student' and r.roleType = 'resource')
-                    order by u.username]]>
-                </query>
-            </loader>
         </collection>
     </data>
     <facets>

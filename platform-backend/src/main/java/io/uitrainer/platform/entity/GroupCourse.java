@@ -1,6 +1,8 @@
 package io.uitrainer.platform.entity;
 
+import io.jmix.core.DeletePolicy;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
+import io.jmix.core.entity.annotation.OnDeleteInverse;
 import io.jmix.core.metamodel.annotation.DependsOnProperties;
 import io.jmix.core.metamodel.annotation.InstanceName;
 import io.jmix.core.metamodel.annotation.JmixEntity;
@@ -12,7 +14,8 @@ import java.util.UUID;
 @Table(name = "UIC_GROUP_COURSE", indexes = {
         @Index(name = "IDX_UIC_GROUP_COURSE_GROUP", columnList = "GROUP_ID"),
         @Index(name = "IDX_UIC_GROUP_COURSE_COURSE", columnList = "COURSE_ID"),
-        @Index(name = "UQ_UIC_GROUP_COURSE", columnList = "GROUP_ID, COURSE_ID", unique = true)
+        @Index(name = "UQ_UIC_GROUP_COURSE", columnList = "GROUP_ID, COURSE_ID", unique = true),
+        @Index(name = "UQ_UIC_GROUP_COURSE_ORDER", columnList = "GROUP_ID, SORT_ORDER", unique = true)
 })
 @Entity(name = "uic_GroupCourse")
 public class GroupCourse {
@@ -29,6 +32,7 @@ public class GroupCourse {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private StudyGroup group;
 
+    @OnDeleteInverse(DeletePolicy.DENY)
     @JoinColumn(name = "COURSE_ID", nullable = false)
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     private Course course;

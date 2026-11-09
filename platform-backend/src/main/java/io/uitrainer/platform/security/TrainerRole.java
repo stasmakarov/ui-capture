@@ -1,7 +1,6 @@
 package io.uitrainer.platform.security;
 
 import io.uitrainer.platform.entity.*;
-import io.jmix.securitydata.entity.RoleAssignmentEntity;
 import io.jmix.security.model.EntityAttributePolicyAction;
 import io.jmix.security.model.EntityPolicyAction;
 import io.jmix.security.role.annotation.EntityAttributePolicy;
@@ -50,10 +49,6 @@ public interface TrainerRole {
     @EntityPolicy(entityClass = User.class, actions = EntityPolicyAction.READ)
     @EntityAttributePolicy(entityClass = User.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
     void user();
-
-    @EntityPolicy(entityClass = RoleAssignmentEntity.class, actions = EntityPolicyAction.READ)
-    @EntityAttributePolicy(entityClass = RoleAssignmentEntity.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
-    void roleAssignment();
 
     @EntityPolicy(entityClass = StudyGroup.class, actions = {EntityPolicyAction.CREATE, EntityPolicyAction.READ, EntityPolicyAction.UPDATE, EntityPolicyAction.DELETE})
     @EntityAttributePolicy(entityClass = StudyGroup.class, attributes = "*", action = EntityAttributePolicyAction.MODIFY)

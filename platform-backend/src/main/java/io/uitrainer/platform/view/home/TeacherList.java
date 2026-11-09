@@ -4,13 +4,16 @@ import com.vaadin.flow.component.grid.Grid;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import io.jmix.core.DataManager;
+import io.jmix.core.entity.KeyValueEntity;
 import io.uitrainer.platform.entity.GroupStatus;
 import io.uitrainer.platform.entity.User;
 import io.uitrainer.platform.security.TrainerRole;
 
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 
 /** Преподаватели — пользователи с ролью тренера — и число их курсов и активных групп. */
@@ -49,6 +52,11 @@ public class TeacherList extends VerticalLayout {
                                 + "where r.roleCode = :code and r.roleType = 'resource'", String.class)
                 .parameter("code", TrainerRole.CODE)
                 .list();
+        Map<String, Long> courses = counts(
+                "select c.owner.username, count(c) from uic_Course c group by c.owner.username");
+        Map<String, Long> groups = counts(
+                "select g.owner.username, count(g) from uic_StudyGroup g where g.status = :st group by g.owner.username",
+                GroupStatus.ACTIVE.getId());
         List<TeacherRow> rows = new ArrayList<>();
         for (String username : usernames) {
             User user = dataManager.load(User.class)
@@ -58,20 +66,27 @@ public class TeacherList extends VerticalLayout {
                     .optional()
                     .orElse(null);
             if (user == null) continue;
-            Long courses = dataManager.loadValue(
-                            "select count(c) from uic_Course c where c.owner.username = :u", Long.class)
-                    .parameter("u", username)
-                    .one();
-            Long groups = dataManager.loadValue(
-                            "select count(g) from uic_StudyGroup g where g.owner.username = :u and g.status = :st", Long.class)
-                    .parameter("u", username)
-                    .parameter("st", GroupStatus.ACTIVE.getId())
-                    .one();
             rows.add(new TeacherRow(user.getUsername(), user.getDisplayName(),
-                    courses == null ? 0 : courses, groups == null ? 0 : groups));
+                    courses.getOrDefault(username, 0L), groups.getOrDefault(username, 0L)));
         }
         rows.sort(Comparator.comparing(TeacherRow::name, String.CASE_INSENSITIVE_ORDER));
         return rows;
+    }
+
+    private Map<String, Long> counts(String query) {
+        return counts(query, null);
+    }
+
+    private Map<String, Long> counts(String query, String status) {
+        var loader = dataManager.loadValues(query).properties("username", "cnt");
+        if (status != null) {
+            loader = loader.parameter("st", status);
+        }
+        Map<String, Long> result = new HashMap<>();
+        for (KeyValueEntity row : loader.list()) {
+            result.put(row.getValue("username"), ((Number) row.getValue("cnt")).longValue());
+        }
+        return result;
     }
 
     public record TeacherRow(String username, String name, long courses, long activeGroups) {
