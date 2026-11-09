@@ -18,7 +18,7 @@ const PACK_SCRIPT = /(<script type="application\/json" id="uitrainer-pack">)([\s
 export function resolveTrainerTemplate(templatePath?: string): string {
   const envPath = process.env.UITRAINER_TEMPLATE
   const resources = (process as NodeJS.Process & { resourcesPath?: string }).resourcesPath
-  const here = path.dirname(fileURLToPath(import.meta.url))
+  const here = typeof __dirname === 'string' ? __dirname : path.dirname(fileURLToPath(import.meta.url))
   const candidates = [
     templatePath,
     envPath,
