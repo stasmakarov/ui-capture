@@ -5,6 +5,8 @@ import io.uitrainer.platform.entity.StudioRelease;
 import io.uitrainer.platform.security.AdminRole;
 import io.uitrainer.platform.service.*;
 import jakarta.servlet.http.HttpServletRequest;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -46,21 +49,22 @@ public class StudioReleaseController {
     public ResponseEntity<byte[]> latestYml() {
         Optional<StudioRelease> current = releases.current(StudioReleaseService.WIN);
         if (current.isEmpty()) return ResponseEntity.notFound().build();
-        byte[] body = releases.open(current.get().getLatestYml());
+        byte[] body = releases.readSmall(current.get().getLatestYml());
         return ResponseEntity.ok()
                 .contentType(new MediaType("text", "yaml", StandardCharsets.UTF_8))
                 .body(body);
     }
 
     @GetMapping("/win/{fileName:.+}")
-    public ResponseEntity<byte[]> winFile(@PathVariable String fileName) {
+    public ResponseEntity<Resource> winFile(@PathVariable String fileName) {
         Optional<StudioRelease> current = releases.current(StudioReleaseService.WIN);
         if (current.isEmpty() || !current.get().getFileName().equals(fileName)) return ResponseEntity.notFound().build();
         StudioRelease release = current.get();
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + release.getFileName() + "\"")
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                .body(releases.open(release.getExe()));
+                .contentLength(release.getSize())
+                .body(new InputStreamResource(releases.open(release.getExe())));
     }
 
     @PostMapping(value = "/win", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -76,9 +80,10 @@ public class StudioReleaseController {
         if (!admin) return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(error(HttpStatus.FORBIDDEN, "Загрузка релиза доступна только администратору"));
         try {
+            byte[] yml = latestYml.getBytes();
             StudioRelease saved = systemAuthenticator.withSystem(() -> {
-                try {
-                    return releases.uploadWin(version, exe.getOriginalFilename(), exe.getBytes(), latestYml.getBytes(), username.get());
+                try (InputStream exeStream = exe.getInputStream()) {
+                    return releases.uploadWin(version, exe.getOriginalFilename(), exeStream, yml, username.get());
                 } catch (IOException e) {
                     throw new PackageException("Не удалось прочитать файлы");
                 }

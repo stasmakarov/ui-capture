@@ -9,11 +9,18 @@ import io.uitrainer.platform.entity.StudioRelease;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.io.ByteArrayInputStream;
+import java.io.FilterInputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.nio.charset.StandardCharsets;
+import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
+import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
 import java.util.Optional;
@@ -40,45 +47,78 @@ public class StudioReleaseService {
                 .optional();
     }
 
-    public byte[] open(FileRef ref) {
-        try (var stream = fileStorageLocator.getDefault().openStream(ref)) {
-            return stream.readAllBytes();
-        } catch (Exception e) {
+    /** Поток файла релиза. Закрывает вызывающий. */
+    public InputStream open(FileRef ref) {
+        try {
+            return fileStorageLocator.getDefault().openStream(ref);
+        } catch (RuntimeException e) {
             throw new PackageException("Не удалось прочитать файл релиза");
         }
     }
 
+    public byte[] readSmall(FileRef ref) {
+        try (InputStream stream = open(ref)) {
+            return stream.readAllBytes();
+        } catch (IOException e) {
+            throw new PackageException("Не удалось прочитать файл релиза");
+        }
+    }
+
+    /**
+     * Загружает релиз под Windows. .exe читается потоком: sha512 и размер считаются по фактическим байтам.
+     * Старые файлы удаляются только после коммита, при откате удаляются только что сохранённые новые.
+     */
     @Transactional
-    public StudioRelease uploadWin(String version, String exeName, byte[] exe, byte[] latestYml, String uploadedBy) {
+    public StudioRelease uploadWin(String version, @Nullable String exeName, InputStream exe, byte[] latestYml, String uploadedBy) {
+        FileStorage storage = fileStorageLocator.getDefault();
+        List<FileRef> created = new ArrayList<>();
+        List<FileRef> replaced = new ArrayList<>();
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCompletion(int status) {
+                List<FileRef> garbage = status == STATUS_COMMITTED ? replaced : created;
+                garbage.forEach(ref -> removeQuietly(storage, ref));
+            }
+        });
+
         if (version == null || version.isBlank()) throw new PackageException("Укажите version");
-        if (exe == null || exe.length == 0) throw new PackageException("Нужен файл .exe");
+        if (exe == null) throw new PackageException("Нужен файл .exe");
         if (latestYml == null || latestYml.length == 0) throw new PackageException("Нужен файл latest.yml");
-        String name = exeName == null || exeName.isBlank() ? "uitrainer-Studio-Setup-" + version.trim() + ".exe" : exeName;
+        String ver = version.trim();
+        String name = exeName == null || exeName.isBlank() ? "uitrainer-Studio-Setup-" + ver + ".exe" : exeName;
         if (!name.toLowerCase().endsWith(".exe")) throw new PackageException("Ожидается файл .exe");
         String yml = new String(latestYml, StandardCharsets.UTF_8);
-        if (!ymlContains(yml, "version:", version.trim()) || !yml.contains(name)) {
+        if (!ymlContains(yml, "version:", ver) || !yml.contains(name)) {
             throw new PackageException("latest.yml должен ссылаться на загруженный .exe и совпадать по version");
         }
         Optional<StudioRelease> existing = current(WIN);
-        if (existing.isPresent() && version.trim().equals(existing.get().getVersionName())) {
+        if (existing.isPresent() && ver.equals(existing.get().getVersionName())) {
             throw new ConflictException("Релиз этой версии уже загружен");
         }
-        FileStorage storage = fileStorageLocator.getDefault();
+
+        MessageDigest digest = sha512Digest();
+        CountingInputStream counting = new CountingInputStream(new DigestInputStream(exe, digest));
+        FileRef exeRef = storage.saveStream("studio-win-" + ver + ".exe", counting);
+        created.add(exeRef);
+        if (counting.count() == 0) throw new PackageException("Нужен файл .exe");
+        FileRef ymlRef = storage.saveStream("studio-win-latest.yml", new ByteArrayInputStream(latestYml));
+        created.add(ymlRef);
+
         StudioRelease release = existing.orElseGet(() -> {
-            StudioRelease created = dataManager.create(StudioRelease.class);
-            created.setPlatform(WIN);
-            return created;
+            StudioRelease fresh = dataManager.create(StudioRelease.class);
+            fresh.setPlatform(WIN);
+            return fresh;
         });
         if (existing.isPresent()) {
-            removeQuietly(storage, release.getExe());
-            removeQuietly(storage, release.getLatestYml());
+            if (release.getExe() != null) replaced.add(release.getExe());
+            if (release.getLatestYml() != null) replaced.add(release.getLatestYml());
         }
-        release.setVersionName(version.trim());
+        release.setVersionName(ver);
         release.setFileName(name);
-        release.setSha512(sha512(exe));
-        release.setSize((long) exe.length);
-        release.setExe(storage.saveStream("studio-win-" + version.trim() + ".exe", new ByteArrayInputStream(exe)));
-        release.setLatestYml(storage.saveStream("studio-win-latest.yml", new ByteArrayInputStream(latestYml)));
+        release.setSha512(Base64.getEncoder().encodeToString(digest.digest()));
+        release.setSize(counting.count());
+        release.setExe(exeRef);
+        release.setLatestYml(ymlRef);
         release.setUploadedAt(timeSource.now().toOffsetDateTime());
         release.setUploadedBy(uploadedBy);
         return dataManager.unconstrained().save(release);
@@ -104,9 +144,9 @@ public class StudioReleaseService {
         return false;
     }
 
-    private static String sha512(byte[] bytes) {
+    private static MessageDigest sha512Digest() {
         try {
-            return Base64.getEncoder().encodeToString(MessageDigest.getInstance("SHA-512").digest(bytes));
+            return MessageDigest.getInstance("SHA-512");
         } catch (NoSuchAlgorithmException e) {
             throw new IllegalStateException(e);
         }
@@ -114,5 +154,39 @@ public class StudioReleaseService {
 
     public List<StudioRelease> all() {
         return dataManager.unconstrained().load(StudioRelease.class).all().list();
+    }
+
+    /** Считает фактически прочитанные байты. */
+    private static final class CountingInputStream extends FilterInputStream {
+        private long count;
+
+        CountingInputStream(InputStream in) {
+            super(in);
+        }
+
+        long count() {
+            return count;
+        }
+
+        @Override
+        public int read() throws IOException {
+            int b = super.read();
+            if (b >= 0) count++;
+            return b;
+        }
+
+        @Override
+        public int read(byte[] b, int off, int len) throws IOException {
+            int n = super.read(b, off, len);
+            if (n > 0) count += n;
+            return n;
+        }
+
+        @Override
+        public long skip(long n) throws IOException {
+            long skipped = super.skip(n);
+            count += skipped;
+            return skipped;
+        }
     }
 }

@@ -49,6 +49,16 @@ class StudioApiTest {
         return systemAuthenticator.withUser(username, () -> tokenService.issueToken("test", null).plainText());
     }
 
+    /** Порт хранится на пользователе и переживает тест: сбрасываем, чтобы тесты не зависели от порядка. */
+    private void resetStudioPort(String username) {
+        systemAuthenticator.withSystem(() -> {
+            User user = dataManager.load(User.class)
+                    .query("select u from User u where u.username = :u").parameter("u", username).one();
+            user.setStudioLocalPort(null);
+            return dataManager.save(user);
+        });
+    }
+
     private JsonNode importZip(String token, byte[] zip, int expectedStatus) throws Exception {
         MvcResult result = mvc.perform(post("/api/lessons/import")
                         .header("Authorization", "Bearer " + token)
@@ -150,6 +160,7 @@ class StudioApiTest {
     @Test
     void ticketIsExchangedOnceForWorkingToken() throws Exception {
         demoData.init();
+        resetStudioPort("trainer");
         Course course = systemAuthenticator.withSystem(() -> dataManager.load(Course.class)
                 .query("select c from uic_Course c where c.code = :c").parameter("c", DemoDataInitializer.DEMO_COURSE_CODE).one());
         String ticket = systemAuthenticator.withUser("trainer", () -> tokenService.issueTicket(course.getId()));
@@ -184,6 +195,7 @@ class StudioApiTest {
     @Test
     void exchangeStoresStudioPortOnUser() throws Exception {
         demoData.init();
+        resetStudioPort("trainer");
         String ticket = systemAuthenticator.withUser("trainer", () -> tokenService.issueTicket(null));
         mvc.perform(post("/api/studio/exchange").contentType("application/json")
                         .content("{\"ticket\":\"" + ticket + "\",\"port\":45001}"))

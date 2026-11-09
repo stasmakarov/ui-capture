@@ -12,9 +12,9 @@ import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.component.upload.Upload;
-import com.vaadin.flow.component.upload.receivers.MemoryBuffer;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteParameters;
+import com.vaadin.flow.server.streams.UploadHandler;
 import io.jmix.core.DataManager;
 import io.jmix.core.TimeSource;
 import io.jmix.flowui.ViewNavigators;
@@ -35,6 +35,12 @@ import io.uitrainer.platform.view.user.UserListView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.lang.Nullable;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStream;
+import java.nio.file.Files;
+import java.util.concurrent.atomic.AtomicReference;
 
 /** Кабинет платформы: преподаватели, пользователи, роли и очередь проверки. Токены — в меню администрирования. */
 @Route(value = "cabinet/admin", layout = MainView.class)
@@ -137,20 +143,33 @@ public class AdminHomeView extends StandardView {
         TextField version = new TextField("version");
         version.setId("studioReleaseVersion");
         version.setWidth("16em");
-        MemoryBuffer exeBuffer = new MemoryBuffer();
-        Upload exe = new Upload(exeBuffer);
+        // .exe (~150 МБ) пишется во временный файл и отдаётся сервису потоком, в памяти не держим.
+        AtomicReference<File> exeFile = new AtomicReference<>();
+        AtomicReference<String> exeName = new AtomicReference<>();
+        Upload exe = new Upload(UploadHandler.toTempFile((metadata, file) -> {
+            File previous = exeFile.getAndSet(file);
+            if (previous != null) deleteQuietly(previous);
+            exeName.set(metadata.fileName());
+        }));
         exe.setAcceptedFileTypes(".exe");
         exe.setMaxFiles(1);
-        MemoryBuffer ymlBuffer = new MemoryBuffer();
-        Upload yml = new Upload(ymlBuffer);
+        AtomicReference<byte[]> ymlBytes = new AtomicReference<>();
+        Upload yml = new Upload(UploadHandler.inMemory((metadata, data) -> ymlBytes.set(data)));
         yml.setAcceptedFileTypes(".yml", ".yaml");
         yml.setMaxFiles(1);
         Button send = new Button("Загрузить", e -> {
+            File file = exeFile.get();
+            if (file == null) {
+                Notification.show("Нужен файл .exe", 5000, Notification.Position.TOP_CENTER)
+                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
+                return;
+            }
             try {
-                releases.uploadWin(version.getValue(), exeBuffer.getFileName(),
-                        exeBuffer.getInputStream().readAllBytes(),
-                        ymlBuffer.getInputStream().readAllBytes(),
-                        access.username());
+                try (InputStream exeStream = new FileInputStream(file)) {
+                    releases.uploadWin(version.getValue(), exeName.get(), exeStream, ymlBytes.get(), access.username());
+                }
+                exeFile.set(null);
+                deleteQuietly(file);
                 Notification.show("Релиз загружен", 4000, Notification.Position.TOP_CENTER)
                         .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
                 getUI().ifPresent(ui -> ui.getPage().reload());
@@ -165,7 +184,19 @@ public class AdminHomeView extends StandardView {
         send.setId("uploadStudioRelease");
         send.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
         form.add(version, exe, yml, send);
+        form.addDetachListener(ev -> {
+            File left = exeFile.getAndSet(null);
+            if (left != null) deleteQuietly(left);
+        });
         return form;
+    }
+
+    private static void deleteQuietly(File file) {
+        try {
+            Files.deleteIfExists(file.toPath());
+        } catch (java.io.IOException ignored) {
+            /* временный файл удалит ОС */
+        }
     }
 
     private void reloadTeachers() {
