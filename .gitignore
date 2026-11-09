@@ -18,6 +18,7 @@ src/generated
 artifacts/*.html
 *.local
 platform-backend/src/main/resources/application-local.properties
+deploy/deploy.local.env
 
 # Editor directories and files
 .vscode/*

@@ -167,6 +167,12 @@ cd platform-backend
 cd platform-backend && ./gradlew build
 ```
 
+### Деплой на сервер
+
+Ubuntu: systemd + bootJar по SSH, без Docker для приложения. Разовая подготовка `./scripts/server-setup.sh`, дальше из IDE задача `deployProd` (группа deploy) или `./scripts/build-prod-jar.sh`. Хост задаётся `UITRAINER_DEPLOY_HOST=user@ip` или файлом `deploy/deploy.local.env` (не в git). Подробности: [docs/deploy.md](docs/deploy.md).
+
+На сервере нет демо-сида (`dev`/`local` не включать). После первого старта вход `admin` / `admin`. Преподавателя создайте в админке. Без HTTPS пароли и токены студии идут открытым текстом.
+
 ### Связать студию с сервером
 
 1. Запустите студию: `npm start` (http://127.0.0.1:44731).

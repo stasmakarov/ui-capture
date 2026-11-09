@@ -1,0 +1,19 @@
+[Unit]
+Description=uitrainer platform (Jmix)
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=uitrainer
+Group=uitrainer
+WorkingDirectory=/opt/uitrainer
+EnvironmentFile=/etc/uitrainer/app.env
+ExecStart=/usr/lib/jvm/java-21-openjdk-amd64/bin/java -Xms256m -Xmx1g -jar /opt/uitrainer/app.jar
+Restart=on-failure
+RestartSec=15
+StandardOutput=journal
+StandardError=journal
+
+[Install]
+WantedBy=multi-user.target

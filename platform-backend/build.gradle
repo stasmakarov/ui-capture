@@ -72,3 +72,17 @@ test {
         exceptionFormat = 'full'
     }
 }
+
+tasks.register('deployProd', Exec) {
+    group = 'deploy'
+    description = 'Собрать production bootJar и задеплоить на Ubuntu по SSH (scripts/build-prod-jar.sh)'
+    workingDir = rootProject.projectDir.parentFile
+    commandLine 'bash', 'scripts/build-prod-jar.sh'
+}
+
+tasks.register('buildProdJar', Exec) {
+    group = 'deploy'
+    description = 'Собрать production bootJar без выкладки (--skip-deploy)'
+    workingDir = rootProject.projectDir.parentFile
+    commandLine 'bash', 'scripts/build-prod-jar.sh', '--skip-deploy'
+}
