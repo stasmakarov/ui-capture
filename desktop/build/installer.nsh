@@ -1,6 +1,9 @@
 !include "nsDialogs.nsh"
 !include "LogicLib.nsh"
 
+!ifndef BUILD_UNINSTALLER
+; Страница и переменные нужны только установщику: в проходе сборки деинсталлятора
+; они не используются, а предупреждения NSIS electron-builder считает ошибками.
 Var StudioDialog
 Var DataDirCtl
 Var PortCtl
@@ -65,6 +68,7 @@ Function StudioSettingsPageLeave
     Abort
   portOk:
 FunctionEnd
+!endif
 
 !macro customInstall
   ${If} $DataDir == ""
