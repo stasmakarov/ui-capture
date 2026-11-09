@@ -224,7 +224,7 @@ export async function startStudio(options: StudioOptions): Promise<{ url: string
         server: {
           middlewareMode: true,
           watch: {
-            ignored: ['**/artifacts/**', '**/platform-backend/**', '**/dist-single/**', '**/captures/**', '**/lessons/**', '**/.uitrainer/**'],
+            ignored: ['**/artifacts/**', '**/platform-backend/**', '**/dist-single/**', '**/dist-template/**', '**/captures/**', '**/lessons/**', '**/.uitrainer/**'],
           },
         },
         appType: 'spa',
@@ -285,8 +285,9 @@ export async function startStudio(options: StudioOptions): Promise<{ url: string
 }
 
 function openBrowser(url: string) {
-  const command = process.platform === 'darwin' ? 'open' : 'xdg-open'
-  const child = spawn(command, [url], { detached: true, stdio: 'ignore' })
+  const child = process.platform === 'win32'
+    ? spawn('cmd', ['/c', 'start', '', url], { detached: true, stdio: 'ignore', windowsHide: true })
+    : spawn(process.platform === 'darwin' ? 'open' : 'xdg-open', [url], { detached: true, stdio: 'ignore' })
   child.unref()
 }
 

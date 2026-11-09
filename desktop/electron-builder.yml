@@ -16,6 +16,8 @@ extraResources:
     filter:
       - "**/*"
       - "!lessons/**"
+  - from: ../dist-template/trainer-template.html
+    to: trainer-template.html
 asarUnpack:
   - "**/node_modules/onnxruntime-node/**"
   - "**/node_modules/sharp/**"

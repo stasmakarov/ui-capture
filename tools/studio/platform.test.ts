@@ -57,7 +57,9 @@ describe('студия ↔ платформа', () => {
     expect(link.courseId).toBe('c-1')
     const stored = await readPlatformLink(root)
     expect(stored?.token).toBe('uicst_secret-token')
-    expect((await stat(path.join(root, '.studio-platform.json'))).mode & 0o777).toBe(0o600)
+    if (process.platform !== 'win32') {
+      expect((await stat(path.join(root, '.studio-platform.json'))).mode & 0o777).toBe(0o600)
+    }
     expect(JSON.stringify(publicLink(stored))).not.toContain('secret-token')
   })
 

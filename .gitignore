@@ -10,6 +10,7 @@ lerna-debug.log*
 node_modules
 dist
 dist-single
+dist-template
 desktop/release
 dist-ssr
 src/generated
