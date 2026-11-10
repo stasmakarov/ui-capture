@@ -18,6 +18,8 @@ extraResources:
       - "!lessons/**"
   - from: ../dist-template/trainer-template.html
     to: trainer-template.html
+  - from: ../dist-inpage/inpage.js
+    to: inpage.js
 asarUnpack:
   - "**/node_modules/onnxruntime-node/**"
   - "**/node_modules/sharp/**"

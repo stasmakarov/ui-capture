@@ -76,8 +76,39 @@ button.on {
   flex: none;
 }
 
-.banner-actions {
+.banner-end {
   margin-left: auto;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.banner-update {
+  font-size: 13px;
+}
+
+.banner-user {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+
+.banner-avatar {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: #1c1915;
+  color: #ffd84a;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-weight: 700;
+  font-size: 13px;
+  flex: none;
+}
+
+.banner-actions {
   display: flex;
   align-items: center;
   gap: 8px;

@@ -168,6 +168,7 @@ class StudioApiTest {
                         .content("{\"ticket\":\"" + ticket + "\"}"))
                 .andExpect(status().isOk())
                 .andExpect(jsonPath("$.username").value("trainer"))
+                .andExpect(jsonPath("$.displayName").value("Тренер Иванова"))
                 .andExpect(jsonPath("$.courseId").value(course.getId().toString()))
                 .andReturn();
         String token = mapper.readTree(result.getResponse().getContentAsByteArray()).path("token").asText();
@@ -176,7 +177,9 @@ class StudioApiTest {
         assertThat(owner.getStudioLocalPort()).isNull();
         assertThat(token).startsWith("uicst_");
         mvc.perform(get("/api/studio/whoami").header("Authorization", "Bearer " + token))
-                .andExpect(status().isOk()).andExpect(jsonPath("$.username").value("trainer"));
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.username").value("trainer"))
+                .andExpect(jsonPath("$.displayName").value("Тренер Иванова"));
         mvc.perform(post("/api/studio/exchange").contentType("application/json").content("{\"ticket\":\"" + ticket + "\"}"))
                 .andExpect(status().isForbidden())
                 .andExpect(jsonPath("$.error").value(org.hamcrest.Matchers.containsString("уже использован")));

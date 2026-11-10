@@ -17,6 +17,7 @@ jobs:
       - run: npm ci
       - run: npx playwright install chromium
       - run: npm run build:template
+      - run: npm run build:inpage
       - run: npm test
       - name: Smoke packHtml
         run: npx tsx tools/pack/smoke.ts
@@ -37,6 +38,11 @@ jobs:
           CSC_IDENTITY_AUTO_DISCOVERY: 'false'
           UITRAINER_UPDATE_URL: ${{ vars.UITRAINER_PLATFORM_URL }}/api/studio/releases/win
         run: npx electron-builder --win nsis --x64 --publish never
+      - name: Smoke inpage in win-unpacked
+        shell: bash
+        run: |
+          test -f desktop/release/win-unpacked/resources/inpage.js
+          ELECTRON_RUN_AS_NODE=1 "desktop/release/win-unpacked/uitrainer Studio.exe" "$GITHUB_WORKSPACE/desktop/scripts/smoke-inpage.cjs"
       - uses: actions/upload-artifact@v4
         with:
           name: uitrainer-studio-windows

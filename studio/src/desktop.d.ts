@@ -10,6 +10,7 @@ export type DesktopApi = {
   saveSettings: (payload: { dataDir: string; port: number; migrate: 'move' | 'switch' | null }) => Promise<{ ok: true } | { error: string }>
   checkUpdates: () => Promise<void>
   getAppVersion: () => Promise<string>
+  onUpdateProgress: (callback: (info: { version: string; percent: number } | null) => void) => () => void
 }
 
 declare global {

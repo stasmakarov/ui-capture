@@ -11,9 +11,17 @@ import { buildCapture, writeCatalog } from '../builder/build.ts'
 import { serveLessons } from '../builder/staticServer.ts'
 import { packHtml } from '../pack/packHtml.ts'
 import { exportLessonPackage, importLessonPackage } from '../package/lessonPackage.ts'
-import { detectBrowsers, gostBrowserHint, resolveBrowserLaunch, settingsFromSaved, type BrowserId, type StudioSettings } from './browsers.ts'
+import { chromiumInstalled, detectBrowsers, gostBrowserHint, resolveBrowserLaunch, settingsFromSaved, type BrowserId, type StudioSettings } from './browsers.ts'
 import { exchangeTicket, forgetPlatformLink, normalizeServer, publicLink, publishLesson, readPlatformLink } from './platform.ts'
-import { downloadWhisper, onWhisperStatus, transcribeWav, whisperStatus } from './transcribe.ts'
+import { downloadWhisper, onWhisperStatus, refreshWhisperModelBytes, transcribeWav, whisperStatus } from './transcribe.ts'
+import { loadInpageScript } from '../capture/inpageBundle.ts'
+
+export { loadInpageScript }
+
+export type DevMiddleware = {
+  middlewares: (request: http.IncomingMessage, response: http.ServerResponse, next: () => void) => void
+  close: () => Promise<void>
+}
 
 export type StudioOptions = {
   port: number
@@ -22,6 +30,29 @@ export type StudioOptions = {
   capturesDir: string
   staticDir?: string
   studioVersion?: string
+  dev?: DevMiddleware
+}
+
+type ChromiumInstallPhase = 'idle' | 'installing' | 'ready' | 'error'
+
+type ChromiumInstallStatus = {
+  phase: ChromiumInstallPhase
+  installed: boolean
+  error: string
+}
+
+let chromiumInstall: ChromiumInstallStatus = { phase: 'idle', installed: false, error: '' }
+
+function chromiumStatus(): ChromiumInstallStatus {
+  const installed = chromiumInstalled()
+  if (installed && chromiumInstall.phase !== 'installing') {
+    return { phase: 'ready', installed: true, error: '' }
+  }
+  return { ...chromiumInstall, installed }
+}
+
+function browsersPayload() {
+  return { options: detectBrowsers(), hint: gostBrowserHint, chromium: chromiumStatus() }
 }
 
 type LiveStep = {
@@ -218,17 +249,7 @@ function serveStatic(staticDir: string, pathname: string, response: http.ServerR
 }
 
 export async function startStudio(options: StudioOptions): Promise<{ url: string; close: () => Promise<void> }> {
-  const vite = options.staticDir
-    ? null
-    : await (await import('vite')).createServer({
-        server: {
-          middlewareMode: true,
-          watch: {
-            ignored: ['**/artifacts/**', '**/platform-backend/**', '**/dist-single/**', '**/dist-template/**', '**/captures/**', '**/lessons/**', '**/.uitrainer/**'],
-          },
-        },
-        appType: 'spa',
-      })
+  void refreshWhisperModelBytes()
   const lessonsDir = options.lessonsDir
   await mkdir(lessonsDir, { recursive: true })
 
@@ -257,10 +278,15 @@ export async function startStudio(options: StudioOptions): Promise<{ url: string
         }
         return
       }
-      vite!.middlewares(request, response, () => {
-        response.writeHead(404)
-        response.end('not found')
-      })
+      if (options.dev) {
+        options.dev.middlewares(request, response, () => {
+          response.writeHead(404)
+          response.end('not found')
+        })
+        return
+      }
+      response.writeHead(404)
+      response.end('not found')
     } catch (error) {
       sendJson(response, 500, { error: error instanceof Error ? error.message : String(error) })
     }
@@ -279,7 +305,7 @@ export async function startStudio(options: StudioOptions): Promise<{ url: string
     close: async () => {
       if (session) await session.controls.stop().catch(() => undefined)
       await new Promise<void>((resolve) => server.close(() => resolve()))
-      await vite?.close()
+      await options.dev?.close()
     },
   }
 }
@@ -332,12 +358,31 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
     return
   }
   if (request.method === 'GET' && url.pathname === '/api/browsers') {
-    sendJson(response, 200, { options: detectBrowsers(), hint: gostBrowserHint })
+    sendJson(response, 200, browsersPayload())
     return
   }
   if (request.method === 'POST' && url.pathname === '/api/browsers/install-chromium') {
-    void installPlaywrightChromium().catch(() => undefined)
-    sendJson(response, 200, { ok: true })
+    if (chromiumInstalled()) {
+      chromiumInstall = { phase: 'ready', installed: true, error: '' }
+      sendJson(response, 200, browsersPayload())
+      return
+    }
+    if (chromiumInstall.phase !== 'installing') {
+      chromiumInstall = { phase: 'installing', installed: false, error: '' }
+      void installPlaywrightChromium()
+        .then(() => {
+          chromiumInstall = { phase: 'ready', installed: true, error: '' }
+        })
+        .catch((error) => {
+          const detail = error instanceof Error ? error.message : String(error)
+          chromiumInstall = {
+            phase: 'error',
+            installed: false,
+            error: `Не удалось установить Chromium. Проверьте интернет и нажмите «Установить Chromium» ещё раз. ${detail}`,
+          }
+        })
+    }
+    sendJson(response, 200, browsersPayload())
     return
   }
   if (request.method === 'GET' && url.pathname === '/api/whisper') {

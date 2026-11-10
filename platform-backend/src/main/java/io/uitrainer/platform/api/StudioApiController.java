@@ -85,6 +85,7 @@ public class StudioApiController {
             Map<String, Object> out = new LinkedHashMap<>();
             out.put("token", exchange.token());
             out.put("username", exchange.username());
+            out.put("displayName", exchange.displayName());
             out.put("courseId", exchange.courseId());
             out.put("courseTitle", exchange.courseTitle());
             out.put("expiresAt", exchange.expiresAt() == null ? null : exchange.expiresAt().toString());
@@ -96,10 +97,11 @@ public class StudioApiController {
 
     @GetMapping("/studio/whoami")
     public ResponseEntity<Map<String, Object>> whoami(HttpServletRequest request) {
-        Optional<String> username = systemAuthenticator.withSystem(() -> tokenService.authenticate(bearer(request)));
-        if (username.isEmpty()) return error(HttpStatus.UNAUTHORIZED, "Токен студии недействителен или отозван");
+        Optional<StudioTokenService.Identity> identity = systemAuthenticator.withSystem(() -> tokenService.identify(bearer(request)));
+        if (identity.isEmpty()) return error(HttpStatus.UNAUTHORIZED, "Токен студии недействителен или отозван");
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("username", username.get());
+        out.put("username", identity.get().username());
+        out.put("displayName", identity.get().displayName());
         return ResponseEntity.ok(out);
     }
 

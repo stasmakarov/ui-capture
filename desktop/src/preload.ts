@@ -8,6 +8,11 @@ contextBridge.exposeInMainWorld('uitrainerDesktop', {
     ipcRenderer.invoke('desktop:saveSettings', payload),
   checkUpdates: () => ipcRenderer.invoke('desktop:checkUpdates'),
   getAppVersion: () => ipcRenderer.invoke('desktop:getAppVersion'),
+  onUpdateProgress: (callback: (info: { version: string; percent: number } | null) => void) => {
+    const listener = (_event: unknown, info: { version: string; percent: number } | null) => callback(info)
+    ipcRenderer.on('desktop:update-progress', listener)
+    return () => ipcRenderer.removeListener('desktop:update-progress', listener)
+  },
 })
 
 contextBridge.exposeInMainWorld('portDialog', {

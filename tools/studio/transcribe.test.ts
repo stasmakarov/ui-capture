@@ -27,7 +27,7 @@ describe('downloadWhisper', () => {
       await downloadWhisper()
       expect(percents).toContain(55)
       expect(whisperStatus().phase).toBe('ready')
-      expect(whisperStatus().hint).toBe('Модель установлена')
+      expect(whisperStatus().hint).toBe('Распознавание речи установлено')
       await expect(transcribeWav('нет-файла.wav')).resolves.toBe('комментарий к шагу')
     } finally {
       stop()

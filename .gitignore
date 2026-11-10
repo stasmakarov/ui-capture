@@ -11,6 +11,7 @@ node_modules
 dist
 dist-single
 dist-template
+dist-inpage
 desktop/release
 dist-ssr
 src/generated

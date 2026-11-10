@@ -52,7 +52,10 @@ public class StudioTokenService {
     public record IssuedToken(StudioToken token, String plainText) {
     }
 
-    public record Exchange(String token, String username, @Nullable UUID courseId, @Nullable String courseTitle, OffsetDateTime expiresAt) {
+    public record Exchange(String token, String username, String displayName, @Nullable UUID courseId, @Nullable String courseTitle, OffsetDateTime expiresAt) {
+    }
+
+    public record Identity(String username, String displayName) {
     }
 
     /** Выпустить токен текущему пользователю. Открытый текст возвращается один раз. */
@@ -88,6 +91,11 @@ public class StudioTokenService {
     /** Проверка Bearer-токена: имя владельца или пусто. Вызывается без аутентификации. */
     @Transactional
     public Optional<String> authenticate(@Nullable String plain) {
+        return identify(plain).map(Identity::username);
+    }
+
+    @Transactional
+    public Optional<Identity> identify(@Nullable String plain) {
         if (plain == null || !plain.startsWith(TOKEN_PREFIX)) return Optional.empty();
         String hash = LessonPackageReader.sha256(plain.getBytes(StandardCharsets.UTF_8));
         Optional<StudioToken> found = dataManager.unconstrained().load(StudioToken.class)
@@ -100,7 +108,8 @@ public class StudioTokenService {
         if (!Boolean.TRUE.equals(token.getOwner().getActive())) return Optional.empty();
         token.setLastUsedAt(now());
         dataManager.unconstrained().save(token);
-        return Optional.of(token.getOwner().getUsername());
+        User owner = token.getOwner();
+        return Optional.of(new Identity(owner.getUsername(), personName(owner)));
     }
 
     /** Одноразовый тикет для ссылки uitrainer://new — живёт минуты. */
@@ -149,9 +158,16 @@ public class StudioTokenService {
         }
         IssuedToken issued = issueFor(ticket.getOwner(), "Студия (по ссылке с платформы)", exchangedTokenTtl);
         Course course = ticket.getCourse();
-        return new Exchange(issued.plainText(), ticket.getOwner().getUsername(),
+        return new Exchange(issued.plainText(), ticket.getOwner().getUsername(), personName(ticket.getOwner()),
                 course == null ? null : course.getId(), course == null ? null : course.getTitle(),
                 issued.token().getExpiresAt());
+    }
+
+    static String personName(User user) {
+        String first = user.getFirstName() == null ? "" : user.getFirstName().trim();
+        String last = user.getLastName() == null ? "" : user.getLastName().trim();
+        String name = (first + " " + last).trim();
+        return name.isEmpty() ? user.getUsername() : name;
     }
 
     private User currentUser() {

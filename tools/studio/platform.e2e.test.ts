@@ -3,7 +3,7 @@ import { tmpdir } from 'node:os'
 import path from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { chromium, type Page } from 'playwright'
-import { startStudio } from './server.ts'
+import { startStudioDev } from './devStudio.ts'
 
 /**
  * Сквозной сценарий M2: тренер в кабинете платформы жмёт «Записать в студии» → студия получает тикет (запасной путь
@@ -61,7 +61,7 @@ describe.skipIf(!platformUrl)('платформа: студия публикуе
     await shot(page, '03a-studio-not-found')
     await page.getByRole('button', { name: 'Закрыть' }).click()
 
-    const studio = await startStudio({ port: 44731, open: false, lessonsDir, capturesDir: path.join(root, 'captures') })
+    const studio = await startStudioDev({ port: 44731, open: false, lessonsDir, capturesDir: path.join(root, 'captures') })
     // закрыть после браузера: открытая вкладка студии держит SSE-соединение
     cleanup.splice(1, 0, () => studio.close())
 

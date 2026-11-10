@@ -10,13 +10,14 @@ export type PlatformLink = {
   server: string
   token: string
   username: string
+  displayName: string | null
   courseId: string | null
   courseTitle: string | null
   expiresAt: string | null
   linkedAt: string
 }
 
-export type PublicPlatformLink = Omit<PlatformLink, 'token'> & { connected: true; tokenPrefix: string }
+export type PublicPlatformLink = Omit<PlatformLink, 'token'> & { connected: true }
 
 export type PublishResult = {
   lessonId: string
@@ -49,7 +50,7 @@ export async function readPlatformLink(lessonsDir: string): Promise<PlatformLink
   try {
     const parsed = JSON.parse(await readFile(platformFile(lessonsDir), 'utf8')) as PlatformLink
     if (!parsed.server || !parsed.token) return null
-    return parsed
+    return { ...parsed, displayName: parsed.displayName ?? null }
   } catch {
     return null
   }
@@ -58,7 +59,7 @@ export async function readPlatformLink(lessonsDir: string): Promise<PlatformLink
 export function publicLink(link: PlatformLink | null): PublicPlatformLink | { connected: false } {
   if (!link) return { connected: false }
   const { token, ...rest } = link
-  return { ...rest, connected: true, tokenPrefix: `${token.slice(0, 12)}…` }
+  return { ...rest, connected: true, displayName: rest.displayName ?? null }
 }
 
 export async function savePlatformLink(lessonsDir: string, link: PlatformLink): Promise<void> {
@@ -111,11 +112,12 @@ export async function exchangeTicket(
     body: JSON.stringify(body),
   })
   if (!response.ok) throw new Error(`Платформа не приняла тикет: ${await errorText(response)}`)
-  const payload = await response.json() as { token: string; username: string; courseId: string | null; courseTitle: string | null; expiresAt: string | null }
+  const payload = await response.json() as { token: string; username: string; displayName?: string | null; courseId: string | null; courseTitle: string | null; expiresAt: string | null }
   const link: PlatformLink = {
     server,
     token: payload.token,
     username: payload.username,
+    displayName: payload.displayName?.trim() || payload.username,
     courseId: payload.courseId ?? (course?.trim() || null),
     courseTitle: payload.courseTitle ?? null,
     expiresAt: payload.expiresAt ?? null,
@@ -131,11 +133,12 @@ export async function loginWithToken(lessonsDir: string, serverValue: string, to
   const server = normalizeServer(serverValue)
   const response = await fetch(`${server}/api/studio/whoami`, { headers: { Authorization: `Bearer ${token.trim()}` } })
   if (!response.ok) throw new Error(`Токен не подошёл: ${await errorText(response)}`)
-  const payload = await response.json() as { username: string }
+  const payload = await response.json() as { username: string; displayName?: string | null }
   const link: PlatformLink = {
     server,
     token: token.trim(),
     username: payload.username,
+    displayName: payload.displayName?.trim() || payload.username,
     courseId: course?.trim() || null,
     courseTitle: null,
     expiresAt: null,

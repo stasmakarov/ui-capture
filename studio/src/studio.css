@@ -138,6 +138,23 @@
   padding: var(--lumo-space-l);
 }
 
+.form.lesson-form {
+  display: grid;
+  grid-template-columns: 1fr;
+  align-items: start;
+}
+
+.form.lesson-form .wide,
+.form.lesson-form .action-bar {
+  grid-column: 1 / -1;
+}
+
+@media (min-width: 900px) {
+  .form.lesson-form {
+    grid-template-columns: 1fr 1fr;
+  }
+}
+
 .studio .field,
 .form label,
 .form .field,
@@ -191,7 +208,13 @@
   border-radius: var(--lumo-border-radius-s);
   padding: 10px 12px;
   margin: 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  align-items: center;
 }
+
+.whisper p { margin: 0; }
 
 .installed {
   background: var(--lumo-success-color-10pct);

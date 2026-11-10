@@ -17,6 +17,7 @@ export type WhisperStatus = {
   totalBytes: number
   file: string
   error: string
+  modelBytes: number
 }
 
 type HubProgress = {
@@ -38,6 +39,8 @@ type Live = {
 const listeners = new Set<(status: WhisperStatus) => void>()
 let live: Live = { phase: 'idle', percent: 0, loadedBytes: 0, totalBytes: 0, file: '', error: '' }
 let running: Promise<void> | null = null
+let modelBytes = 0
+let modelBytesTried = false
 
 const MODEL_DIR = '.uitrainer/models'
 
@@ -64,8 +67,41 @@ export function whisperReady(): boolean {
 }
 
 export function whisperHint(): string {
-  if (whisperReady()) return 'Модель установлена'
-  return 'Модель речи не скачана. Запись и аудио работают без текста. Скачайте модель кнопкой «Скачать модель речи» или командой npx uitrainer whisper-download. Интернет нужен только на время загрузки.'
+  if (whisperReady()) return 'Распознавание речи установлено'
+  return 'Распознавание речи не установлено. Голос запишется, но текст шагов придётся вводить вручную.'
+}
+
+export function whisperModelBytes(): number {
+  return modelBytes
+}
+
+function countsAsModelFile(name: string): boolean {
+  const base = name.split('/').pop() ?? name
+  if (base.endsWith('.json')) return /^(config|tokenizer|preprocessor|generation|added_tokens|special_tokens_map|vocab)/.test(base) || base.includes('tokenizer')
+  return /quantized.*\.onnx$/.test(base) || /model_quantized\.onnx$/.test(base)
+}
+
+export async function refreshWhisperModelBytes(): Promise<number> {
+  if (modelBytesTried) return modelBytes
+  modelBytesTried = true
+  try {
+    const response = await fetch('https://huggingface.co/api/models/Xenova/whisper-small?blobs=true', {
+      signal: AbortSignal.timeout(8000),
+    })
+    if (!response.ok) return modelBytes
+    const payload = await response.json() as { siblings?: Array<{ rfilename?: string; size?: number }> }
+    let total = 0
+    for (const file of payload.siblings ?? []) {
+      if (file.rfilename && countsAsModelFile(file.rfilename) && typeof file.size === 'number') total += file.size
+    }
+    if (total > 0) {
+      modelBytes = total
+      emit()
+    }
+  } catch {
+    /* офлайн — кнопка без размера */
+  }
+  return modelBytes
 }
 
 export function whisperStatus(): WhisperStatus {
@@ -75,12 +111,13 @@ export function whisperStatus(): WhisperStatus {
       phase: 'downloading',
       ready: false,
       model: MODEL,
-      hint: 'Скачиваю модель речи…',
+      hint: 'Устанавливаю распознавание речи…',
       percent: live.percent,
       loadedBytes: live.loadedBytes,
       totalBytes: live.totalBytes,
       file: live.file,
       error: '',
+      modelBytes,
     }
   }
   if (live.phase === 'error' && !ready) {
@@ -94,6 +131,7 @@ export function whisperStatus(): WhisperStatus {
       totalBytes: live.totalBytes,
       file: live.file,
       error: live.error,
+      modelBytes,
     }
   }
   if (ready) {
@@ -101,12 +139,13 @@ export function whisperStatus(): WhisperStatus {
       phase: 'ready',
       ready: true,
       model: MODEL,
-      hint: 'Модель установлена',
+      hint: 'Распознавание речи установлено',
       percent: 100,
       loadedBytes: live.loadedBytes,
       totalBytes: live.totalBytes,
       file: live.file,
       error: '',
+      modelBytes,
     }
   }
   return {
@@ -119,6 +158,7 @@ export function whisperStatus(): WhisperStatus {
     totalBytes: 0,
     file: '',
     error: '',
+    modelBytes,
   }
 }
 
@@ -165,7 +205,7 @@ async function runDownload(): Promise<void> {
     const detail = error instanceof Error ? error.message : String(error)
     publish({
       phase: 'error',
-      error: `Не удалось скачать модель речи. ${detail} Проверьте интернет и нажмите «Скачать модель речи» ещё раз. Запись урока без модели возможна.`,
+      error: `Не удалось установить распознавание речи. ${detail} Проверьте интернет и нажмите «Установить распознавание речи» ещё раз. Запись урока без него возможна.`,
     })
     throw error
   }
