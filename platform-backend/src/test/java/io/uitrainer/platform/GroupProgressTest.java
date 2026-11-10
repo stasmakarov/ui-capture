@@ -1,10 +1,14 @@
 package io.uitrainer.platform;
 
+import io.jmix.core.AccessManager;
 import io.jmix.core.DataManager;
 import io.jmix.core.DeletePolicyException;
 import io.jmix.core.FetchPlan;
+import io.jmix.core.Metadata;
 import io.jmix.core.SaveContext;
+import io.jmix.core.accesscontext.CrudEntityContext;
 import io.jmix.core.security.AccessDeniedException;
+import io.jmix.flowui.accesscontext.UiShowViewContext;
 import io.jmix.securitydata.entity.RoleAssignmentEntity;
 import io.jmix.core.security.SystemAuthenticator;
 import io.uitrainer.platform.app.DemoDataInitializer;
@@ -21,6 +25,7 @@ import io.uitrainer.platform.entity.LessonStatus;
 import io.uitrainer.platform.entity.LessonVersion;
 import io.uitrainer.platform.entity.StudyGroup;
 import io.uitrainer.platform.entity.User;
+import io.uitrainer.platform.security.PlatformViews;
 import io.uitrainer.platform.security.StudentPublishedRole;
 import io.uitrainer.platform.security.StudentRole;
 import io.uitrainer.platform.security.UiMinimalRole;
@@ -77,6 +82,10 @@ class GroupProgressTest {
     PasswordEncoder passwordEncoder;
     @Autowired
     LessonAttemptInsert attemptInsert;
+    @Autowired
+    AccessManager accessManager;
+    @Autowired
+    Metadata metadata;
 
     @BeforeEach
     void users() {
@@ -213,6 +222,12 @@ class GroupProgressTest {
             loaded.setName("нельзя");
             return dataManager.save(loaded);
         })).isInstanceOf(AccessDeniedException.class);
+
+        assertThat(auth.withUser("trainer", this::groupListPermitted)).isTrue();
+        assertThat(auth.withUser("director", this::groupListPermitted)).isTrue();
+        assertThat(auth.withUser("student", this::groupListPermitted)).isFalse();
+        assertThat(auth.withUser("trainer", this::groupCreatePermitted)).isTrue();
+        assertThat(auth.withUser("director", this::groupCreatePermitted)).isFalse();
     }
 
     @Test
@@ -564,6 +579,18 @@ class GroupProgressTest {
             return null;
         });
         assertThat(dataManager.unconstrained().load(Lesson.class).id(first).one().getSortOrder()).isEqualTo(order);
+    }
+
+    private boolean groupListPermitted() {
+        UiShowViewContext context = new UiShowViewContext(PlatformViews.GROUP_LIST);
+        accessManager.applyRegisteredConstraints(context);
+        return context.isPermitted();
+    }
+
+    private boolean groupCreatePermitted() {
+        CrudEntityContext context = new CrudEntityContext(metadata.getClass(StudyGroup.class));
+        accessManager.applyRegisteredConstraints(context);
+        return context.isCreatePermitted();
     }
 
     private List<String> accessibleTitles(StudyGroup group) {

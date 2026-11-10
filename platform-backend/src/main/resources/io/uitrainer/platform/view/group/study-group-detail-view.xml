@@ -17,6 +17,13 @@
             <collection id="coursesDc" property="courses"/>
             <collection id="membersDc" property="members"/>
         </instance>
+        <collection id="trainersDc" class="io.uitrainer.platform.entity.User">
+            <fetchPlan extends="_instance_name">
+                <property name="username"/>
+                <property name="firstName"/>
+                <property name="lastName"/>
+            </fetchPlan>
+        </collection>
         <collection id="progressDc" class="io.uitrainer.platform.entity.GroupCourseProgress">
             <fetchPlan extends="_base">
                 <property name="student" fetchPlan="_instance_name"/>
@@ -43,6 +50,7 @@
                 <responsiveStep minWidth="40em" columns="2"/>
             </responsiveSteps>
             <textField id="nameField" property="name"/>
+            <entityComboBox id="ownerField" property="owner" itemsContainer="trainersDc"/>
             <comboBox id="statusField" property="status" readOnly="true"/>
             <comboBox id="accessModeField" property="accessMode"/>
         </formLayout>

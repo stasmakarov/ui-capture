@@ -1,0 +1,54 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://studyGroupListView.title"
+      focusComponent="groupsDataGrid">
+    <data>
+        <collection id="groupsDc" class="io.uitrainer.platform.entity.StudyGroup">
+            <fetchPlan extends="_base">
+                <property name="owner" fetchPlan="_base"/>
+                <property name="courses" fetchPlan="_base"/>
+                <property name="members" fetchPlan="_base"/>
+            </fetchPlan>
+            <loader id="groupsDl" readOnly="true">
+                <query>
+                    <![CDATA[select e from uic_StudyGroup e where e.status <> :closed order by e.name]]>
+                </query>
+            </loader>
+        </collection>
+        <collection id="trainersDc" class="io.uitrainer.platform.entity.User">
+            <fetchPlan extends="_instance_name">
+                <property name="username"/>
+                <property name="firstName"/>
+                <property name="lastName"/>
+            </fetchPlan>
+        </collection>
+    </data>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
+    <layout>
+        <hbox id="filterPanel" classNames="buttons-panel" width="100%">
+            <textField id="nameField" placeholder="msg://nameFilter" clearButtonVisible="true"/>
+            <entityComboBox id="ownerField" metaClass="User" itemsContainer="trainersDc"
+                            placeholder="msg://ownerFilter" clearButtonVisible="true"/>
+            <checkbox id="includeClosedField" label="msg://includeClosed"/>
+        </hbox>
+        <hbox id="buttonsPanel" classNames="buttons-panel">
+            <button id="createButton" action="groupsDataGrid.createAction"/>
+            <button id="editButton" action="groupsDataGrid.editAction"/>
+            <button id="refreshButton" action="groupsDataGrid.refreshAction"/>
+        </hbox>
+        <dataGrid id="groupsDataGrid" dataContainer="groupsDc" width="100%" minHeight="20em">
+            <actions>
+                <action id="createAction" type="list_create"/>
+                <action id="editAction" type="list_edit"/>
+                <action id="refreshAction" type="list_refresh"/>
+            </actions>
+            <columns>
+                <column property="name"/>
+                <column property="accessMode"/>
+                <column property="status"/>
+            </columns>
+        </dataGrid>
+    </layout>
+</view>

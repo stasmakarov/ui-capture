@@ -63,7 +63,7 @@ public interface DirectorRole {
     @EntityAttributePolicy(entityClass = LessonAttempt.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
     void lessonAttempt();
 
-    @ViewPolicy(viewIds = {PlatformViews.DIRECTOR_HOME, PlatformViews.TEACHER_COURSES, PlatformViews.COURSE_DETAIL, PlatformViews.GROUP_DETAIL, PlatformViews.GROUP_COURSE_DETAIL, PlatformViews.GROUP_MEMBER_DETAIL})
-    @MenuPolicy(menuIds = PlatformViews.DIRECTOR_HOME)
+    @ViewPolicy(viewIds = {PlatformViews.DIRECTOR_HOME, PlatformViews.TEACHER_COURSES, PlatformViews.COURSE_DETAIL, PlatformViews.GROUP_LIST, PlatformViews.GROUP_DETAIL, PlatformViews.GROUP_COURSE_DETAIL, PlatformViews.GROUP_MEMBER_DETAIL})
+    @MenuPolicy(menuIds = {PlatformViews.DIRECTOR_HOME, PlatformViews.GROUP_LIST})
     void views();
 }

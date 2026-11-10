@@ -22,6 +22,7 @@ public interface AdminRole {
             PlatformViews.REVIEW_QUEUE,
             PlatformViews.COURSE_LIST,
             PlatformViews.LESSON_LIST,
+            PlatformViews.GROUP_LIST,
             PlatformViews.STUDIO_TOKENS,
             PlatformViews.USER_LIST,
             "administration",

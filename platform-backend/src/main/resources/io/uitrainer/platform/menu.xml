@@ -7,6 +7,7 @@
     <item view="uic_StudentHome" title="msg://io.uitrainer.platform/menu.home.student" icon="ACADEMY_CAP"/>
     <item view="uic_Course.list" title="msg://io.uitrainer.platform.view.course/courseListView.title" icon="BOOK"/>
     <item view="uic_Lesson.list" title="msg://io.uitrainer.platform/menu.lessons" icon="ACADEMY_CAP"/>
+    <item view="uic_StudyGroup.list" title="msg://io.uitrainer.platform/menu.groups" icon="USERS"/>
     <menu id="administration" title="msg://io.uitrainer.platform/menu.administration" icon="COG">
         <item view="uic_StudioToken.list" title="msg://io.uitrainer.platform/menu.studioTokens" icon="KEY"/>
     </menu>

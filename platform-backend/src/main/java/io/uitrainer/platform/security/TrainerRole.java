@@ -70,7 +70,7 @@ public interface TrainerRole {
     @EntityAttributePolicy(entityClass = LessonAttempt.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
     void lessonAttempt();
 
-    @ViewPolicy(viewIds = {PlatformViews.TRAINER_HOME, PlatformViews.LESSON_QUEUE, PlatformViews.LESSON_DETAIL, PlatformViews.LESSON_EDIT, PlatformViews.LESSON_PREVIEW, PlatformViews.COURSE_LIST, PlatformViews.COURSE_DETAIL, PlatformViews.GROUP_DETAIL, PlatformViews.GROUP_COURSE_DETAIL, PlatformViews.GROUP_MEMBER_DETAIL})
-    @MenuPolicy(menuIds = {PlatformViews.TRAINER_HOME, PlatformViews.COURSE_LIST})
+    @ViewPolicy(viewIds = {PlatformViews.TRAINER_HOME, PlatformViews.LESSON_QUEUE, PlatformViews.LESSON_DETAIL, PlatformViews.LESSON_EDIT, PlatformViews.LESSON_PREVIEW, PlatformViews.COURSE_LIST, PlatformViews.COURSE_DETAIL, PlatformViews.GROUP_LIST, PlatformViews.GROUP_DETAIL, PlatformViews.GROUP_COURSE_DETAIL, PlatformViews.GROUP_MEMBER_DETAIL})
+    @MenuPolicy(menuIds = {PlatformViews.TRAINER_HOME, PlatformViews.COURSE_LIST, PlatformViews.GROUP_LIST})
     void views();
 }

@@ -19,6 +19,7 @@ import io.uitrainer.platform.entity.Course;
 import io.uitrainer.platform.entity.GroupStatus;
 import io.uitrainer.platform.entity.StudyGroup;
 import io.uitrainer.platform.security.PlatformViews;
+import io.uitrainer.platform.view.group.StudyGroupListView;
 import io.uitrainer.platform.service.GroupProgressService;
 import io.uitrainer.platform.view.main.MainView;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -110,11 +111,15 @@ public class TrainerHomeView extends StandardView {
                 .fetchPlan("_base")
                 .list());
 
-        H3 groupsTitle = new H3("Группы");
+        H3 groupsTitle = new H3("Мои группы");
         groupsTitle.getStyle().set("margin", "0");
+        Button allGroups = new Button("Все группы", e -> viewNavigators.view(this, StudyGroupListView.class).navigate());
+        allGroups.setId("allGroups");
+        HorizontalLayout groupsHeader = new HorizontalLayout(groupsTitle, allGroups);
+        groupsHeader.setAlignItems(com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment.BASELINE);
         H3 coursesTitle = new H3("Курсы");
         coursesTitle.getStyle().set("margin", "0");
-        getContent().add(title, lead, actions, counters, groupsTitle, history, groups, coursesTitle, courses);
+        getContent().add(title, lead, actions, counters, groupsHeader, history, groups, coursesTitle, courses);
         getContent().expand(courses);
     }
 

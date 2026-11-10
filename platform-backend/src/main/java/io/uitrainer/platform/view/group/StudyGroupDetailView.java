@@ -5,6 +5,7 @@ import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.router.Route;
 import io.jmix.core.DataManager;
 import io.jmix.core.EntityStates;
+import io.jmix.flowui.component.combobox.EntityComboBox;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.kit.action.Action;
 import io.jmix.flowui.kit.component.button.JmixButton;
@@ -24,6 +25,7 @@ import io.uitrainer.platform.entity.GroupStatus;
 import io.uitrainer.platform.entity.StudyGroup;
 import io.uitrainer.platform.entity.User;
 import io.uitrainer.platform.security.PlatformViews;
+import io.uitrainer.platform.security.TrainerRole;
 import io.uitrainer.platform.service.ConflictException;
 import io.uitrainer.platform.service.CurrentUserAccess;
 import io.uitrainer.platform.service.GroupLifecycleService;
@@ -67,6 +69,10 @@ public class StudyGroupDetailView extends StandardDetailView<StudyGroup> {
     private JmixButton moveUpButton;
     @ViewComponent
     private JmixButton moveDownButton;
+    @ViewComponent
+    private EntityComboBox<User> ownerField;
+    @ViewComponent
+    private CollectionContainer<User> trainersDc;
 
     private boolean rearrangingCourses;
 
@@ -81,8 +87,10 @@ public class StudyGroupDetailView extends StandardDetailView<StudyGroup> {
 
     @Subscribe
     public void onInitEntity(InitEntityEvent<StudyGroup> event) {
-        event.getEntity().setOwner(currentUser());
         event.getEntity().setStatus(GroupStatus.CREATED);
+        if (!access.isAdmin()) {
+            event.getEntity().setOwner(currentUser());
+        }
     }
 
     @Subscribe
@@ -93,12 +101,26 @@ public class StudyGroupDetailView extends StandardDetailView<StudyGroup> {
             saveAndCloseButton.setVisible(false);
             hideMutations();
         }
+        boolean pickOwner = access.isAdmin() && entityStates.isNew(getEditedEntity());
+        ownerField.setReadOnly(!pickOwner);
+        if (access.isAdmin()) {
+            trainersDc.setItems(dataManager.unconstrained().load(User.class)
+                    .query("select u from User u where u.username in "
+                            + "(select r.username from sec_RoleAssignmentEntity r where r.roleCode = :c and r.roleType = 'resource') "
+                            + "order by u.username")
+                    .parameter("c", TrainerRole.CODE)
+                    .fetchPlan(fp -> fp.add("username").add("firstName").add("lastName"))
+                    .list());
+        }
         refreshLifecycleButtons();
         refreshMoveButtons();
     }
 
     @Subscribe
     public void onBeforeSave(BeforeSaveEvent event) {
+        if (getEditedEntity().getOwner() == null) {
+            throw new ConflictException("Выберите преподавателя");
+        }
         List<GroupCourse> ordered = SortOrders.sorted(coursesDc.getMutableItems(), GroupCourse::getSortOrder);
         SortOrders.normalize(ordered, GroupCourse::setSortOrder);
         replaceCourses(ordered);
