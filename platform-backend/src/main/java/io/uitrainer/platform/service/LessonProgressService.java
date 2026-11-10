@@ -9,10 +9,12 @@ import io.uitrainer.platform.entity.LessonAttempt;
 import io.uitrainer.platform.entity.LessonStatus;
 import io.uitrainer.platform.entity.LessonVersion;
 import io.uitrainer.platform.entity.User;
+import jakarta.persistence.PersistenceException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.sql.SQLException;
 import java.util.List;
 import java.util.UUID;
 
@@ -58,7 +60,7 @@ public class LessonProgressService {
         LessonAttempt saved;
         try {
             saved = attemptInsert.insert(attempt);
-        } catch (DataIntegrityViolationException ex) {
+        } catch (DataIntegrityViolationException | PersistenceException ex) {
             if (!isAttemptUniqueViolation(ex)) {
                 throw ex;
             }
@@ -149,6 +151,9 @@ public class LessonProgressService {
 
     private boolean isAttemptUniqueViolation(Throwable ex) {
         while (ex != null) {
+            if (ex instanceof SQLException sql && "23505".equals(sql.getSQLState())) {
+                return true;
+            }
             String message = ex.getMessage();
             if (message != null && message.toUpperCase().contains(ATTEMPT_UNIQUE)) {
                 return true;

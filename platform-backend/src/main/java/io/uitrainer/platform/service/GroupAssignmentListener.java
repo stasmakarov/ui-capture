@@ -83,6 +83,7 @@ public class GroupAssignmentListener {
             if (groupId != null && courseId != null) {
                 groupProgress.deleteProgressForCourse(groupId, courseId);
             }
+            groupProgress.normalizeCourseOrder(groupId);
             return;
         }
         if (event.getType() == EntityChangedEvent.Type.UPDATED) {

@@ -27,6 +27,7 @@ import io.uitrainer.platform.security.UiMinimalRole;
 import io.uitrainer.platform.service.ConflictException;
 import io.uitrainer.platform.service.GroupLifecycleService;
 import io.uitrainer.platform.service.GroupProgressService;
+import io.uitrainer.platform.service.LessonAttemptInsert;
 import io.uitrainer.platform.service.LessonImportService;
 import io.uitrainer.platform.service.LessonLifecycleService;
 import io.uitrainer.platform.service.LessonOrderService;
@@ -74,6 +75,8 @@ class GroupProgressTest {
     LessonOrderService lessonOrder;
     @Autowired
     PasswordEncoder passwordEncoder;
+    @Autowired
+    LessonAttemptInsert attemptInsert;
 
     @BeforeEach
     void users() {
@@ -290,8 +293,6 @@ class GroupProgressTest {
             return null;
         });
         List<GroupCourse> left = groupProgress.orderedCourses(group);
-        SortOrders.normalize(left, GroupCourse::setSortOrder);
-        auth.withUser("trainer", () -> dataManager.save(new SaveContext().saving(left.toArray())));
         assertThat(left.stream().map(GroupCourse::getSortOrder)).containsExactly(1, 2);
         assertThat(left.stream().map(gc -> gc.getCourse().getTitle())).containsExactly("Порядок-2", "Порядок-3");
     }
@@ -330,6 +331,32 @@ class GroupProgressTest {
         pool.shutdown();
         assertThat(pool.awaitTermination(30, TimeUnit.SECONDS)).isTrue();
         assertThat(error.get()).isNull();
+        Long count = dataManager.unconstrained().loadValue(
+                        "select count(a) from uic_LessonAttempt a where a.student.id = :s and a.lesson.id = :l",
+                        Long.class)
+                .parameter("s", student().getId())
+                .parameter("l", lessonId)
+                .one();
+        assertThat(count).isEqualTo(1);
+    }
+
+    @Test
+    void startLessonAfterDuplicateInsertReturnsExisting() {
+        Course course = course("Дубль старт");
+        UUID lessonId = publishLesson(course, "dup-start");
+        sequentialGroup("seq-dup-start", course);
+        LessonAttempt first = auth.withUser("student", () -> lessonProgress.startLesson(lessonId));
+        Lesson lesson = dataManager.unconstrained().load(Lesson.class).id(lessonId)
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("publishedVersion", FetchPlan.BASE))
+                .one();
+        LessonAttempt duplicate = dataManager.unconstrained().create(LessonAttempt.class);
+        duplicate.setStudent(student());
+        duplicate.setLesson(lesson);
+        duplicate.setLessonVersion(lesson.getPublishedVersion());
+        duplicate.setStartedAt(first.getStartedAt());
+        assertThatThrownBy(() -> attemptInsert.insert(duplicate)).isNotNull();
+        LessonAttempt again = auth.withUser("student", () -> lessonProgress.startLesson(lessonId));
+        assertThat(again.getId()).isEqualTo(first.getId());
         Long count = dataManager.unconstrained().loadValue(
                         "select count(a) from uic_LessonAttempt a where a.student.id = :s and a.lesson.id = :l",
                         Long.class)
@@ -396,7 +423,7 @@ class GroupProgressTest {
         assertThatThrownBy(() -> auth.withUser("trainer", () -> {
             dataManager.remove(dataManager.load(Course.class).id(courseId).one());
             return null;
-        })).isInstanceOfAny(DeletePolicyException.class, jakarta.persistence.PersistenceException.class);
+        })).isInstanceOf(DeletePolicyException.class);
         assertThat(dataManager.unconstrained().load(Course.class).id(courseId).optional()).isPresent();
     }
 
@@ -521,7 +548,12 @@ class GroupProgressTest {
             lessonOrder.moveLesson(course, last, -1);
             return null;
         });
-        assertThat(auth.withUser("trainer", () -> lessonProgress.publishedLessons(course)).stream().map(Lesson::getId))
+        assertThatThrownBy(() -> auth.withUser("trainer2", () -> {
+            lessonOrder.moveLesson(course, last, -1);
+            return null;
+        })).isInstanceOf(AccessDeniedException.class);
+        sequentialGroup("seq-lsn-order", course);
+        assertThat(auth.withUser("student", () -> lessonProgress.publishedLessons(course)).stream().map(Lesson::getId))
                 .containsExactly(first, third, second);
 
         Integer order = dataManager.unconstrained().load(Lesson.class).id(first).one().getSortOrder();

@@ -221,6 +221,19 @@ public class GroupProgressService {
         return courses;
     }
 
+    @Transactional
+    public void normalizeCourseOrder(UUID groupId) {
+        if (groupId == null) {
+            return;
+        }
+        StudyGroup group = dataManager.unconstrained().load(StudyGroup.class).id(groupId).one();
+        List<GroupCourse> ordered = orderedCourses(group);
+        SortOrders.normalize(ordered, GroupCourse::setSortOrder);
+        if (!ordered.isEmpty()) {
+            dataManager.unconstrained().save(new SaveContext().saving(ordered.toArray()));
+        }
+    }
+
     public int nextSortOrder(StudyGroup group) {
         int max = 0;
         if (group.getId() != null) {

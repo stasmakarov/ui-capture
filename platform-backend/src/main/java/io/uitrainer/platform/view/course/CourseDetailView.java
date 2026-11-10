@@ -22,6 +22,7 @@ import io.uitrainer.platform.entity.Lesson;
 import io.uitrainer.platform.entity.User;
 import io.uitrainer.platform.security.PlatformViews;
 import io.uitrainer.platform.service.CurrentUserAccess;
+import io.uitrainer.platform.service.LessonOrderService;
 import io.uitrainer.platform.service.SortOrders;
 import io.uitrainer.platform.view.main.MainView;
 import io.uitrainer.platform.view.studio.StudioLaunch;
@@ -44,6 +45,8 @@ public class CourseDetailView extends StandardDetailView<Course> {
     private StudioLaunch studioLaunch;
     @Autowired
     private CurrentUserAccess access;
+    @Autowired
+    private LessonOrderService lessonOrder;
 
     @ViewComponent
     private JmixButton recordInStudio;
@@ -122,10 +125,9 @@ public class CourseDetailView extends StandardDetailView<Course> {
             return;
         }
         List<Lesson> ordered = SortOrders.sorted(lessonsDc.getMutableItems(), Lesson::getSortOrder);
-        if (!SortOrders.move(ordered, selected, delta)) {
+        if (!lessonOrder.reorder(ordered, selected, delta)) {
             return;
         }
-        SortOrders.normalize(ordered, Lesson::setSortOrder);
         replaceLessons(ordered);
         lessonsDataGrid.select(selected);
         refreshMoveButtons();

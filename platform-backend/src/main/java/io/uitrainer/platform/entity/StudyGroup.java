@@ -53,6 +53,7 @@ public class StudyGroup {
 
     @Composition
     @OnDelete(DeletePolicy.CASCADE)
+    @OrderBy("sortOrder")
     @OneToMany(mappedBy = "group")
     private List<GroupCourse> courses;
 

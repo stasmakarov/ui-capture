@@ -3,6 +3,7 @@ package io.uitrainer.platform.entity;
 import io.jmix.core.DeletePolicy;
 import io.jmix.core.FileRef;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
+import io.jmix.core.entity.annotation.Listeners;
 import io.jmix.core.entity.annotation.OnDelete;
 import io.jmix.core.metamodel.annotation.Composition;
 import io.jmix.core.metamodel.annotation.InstanceName;
@@ -16,6 +17,7 @@ import java.util.List;
 import java.util.UUID;
 
 @JmixEntity
+@Listeners("uic_CourseDeleteListener")
 @Table(name = "UIC_COURSE", indexes = {@Index(name = "IDX_UIC_COURSE_CODE", columnList = "CODE", unique = true)})
 @Entity(name = "uic_Course")
 public class Course {
@@ -53,6 +55,7 @@ public class Course {
 
     @Composition
     @OnDelete(DeletePolicy.DENY)
+    @OrderBy("sortOrder")
     @OneToMany(mappedBy = "course")
     private List<Lesson> lessons;
 

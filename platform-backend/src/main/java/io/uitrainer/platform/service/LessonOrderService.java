@@ -3,8 +3,10 @@ package io.uitrainer.platform.service;
 import io.jmix.core.DataManager;
 import io.jmix.core.FetchPlan;
 import io.jmix.core.SaveContext;
+import io.jmix.core.security.AccessDeniedException;
 import io.uitrainer.platform.entity.Course;
 import io.uitrainer.platform.entity.Lesson;
+import io.uitrainer.platform.entity.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,9 +17,19 @@ import java.util.UUID;
 public class LessonOrderService {
 
     private final DataManager dataManager;
+    private final CurrentUserAccess access;
 
-    public LessonOrderService(DataManager dataManager) {
+    public LessonOrderService(DataManager dataManager, CurrentUserAccess access) {
         this.dataManager = dataManager;
+        this.access = access;
+    }
+
+    public boolean reorder(List<Lesson> items, Lesson selected, int delta) {
+        if (!SortOrders.move(items, selectedById(items, selected), delta)) {
+            return false;
+        }
+        SortOrders.normalize(items, Lesson::setSortOrder);
+        return true;
     }
 
     public List<Lesson> orderedLessons(UUID courseId) {
@@ -51,11 +63,11 @@ public class LessonOrderService {
 
     @Transactional
     public void moveLesson(Course course, Lesson selected, int delta) {
+        assertOwnerOrAdmin(course);
         List<Lesson> ordered = orderedLessons(course.getId());
-        if (!SortOrders.move(ordered, selectedById(ordered, selected), delta)) {
+        if (!reorder(ordered, selected, delta)) {
             return;
         }
-        SortOrders.normalize(ordered, Lesson::setSortOrder);
         dataManager.unconstrained().save(new SaveContext().saving(ordered.toArray()));
     }
 
@@ -76,6 +88,20 @@ public class LessonOrderService {
             return 1;
         }
         return SortOrders.next(lessons.stream().map(Lesson::getSortOrder).toList());
+    }
+
+    private void assertOwnerOrAdmin(Course course) {
+        if (access.isAdmin()) {
+            return;
+        }
+        Course loaded = dataManager.unconstrained().load(Course.class)
+                .id(course.getId())
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("owner", FetchPlan.INSTANCE_NAME))
+                .one();
+        User owner = loaded.getOwner();
+        if (owner == null || !access.username().equals(owner.getUsername())) {
+            throw new AccessDeniedException("entity", "uic_Lesson", "update");
+        }
     }
 
     private Lesson selectedById(List<Lesson> ordered, Lesson selected) {
