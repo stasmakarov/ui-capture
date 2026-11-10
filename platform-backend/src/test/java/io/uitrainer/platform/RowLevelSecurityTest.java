@@ -5,9 +5,15 @@ import io.jmix.core.DeletePolicyException;
 import io.jmix.core.security.SystemAuthenticator;
 import io.uitrainer.platform.app.DemoDataInitializer;
 import io.uitrainer.platform.entity.Course;
+import io.uitrainer.platform.entity.CourseSharing;
+import io.uitrainer.platform.entity.GroupAccessMode;
+import io.uitrainer.platform.entity.GroupCourse;
+import io.uitrainer.platform.entity.GroupMember;
+import io.uitrainer.platform.entity.GroupStatus;
 import io.uitrainer.platform.entity.Lesson;
 import io.uitrainer.platform.entity.LessonStatus;
 import io.uitrainer.platform.entity.StudioToken;
+import io.uitrainer.platform.entity.StudyGroup;
 import io.uitrainer.platform.entity.User;
 import io.uitrainer.platform.service.LessonImportService;
 import io.uitrainer.platform.service.LessonLifecycleService;
@@ -118,6 +124,12 @@ class RowLevelSecurityTest {
         assertThat(auth.withUser("admin", () -> dataManager.load(Course.class).id(empty.getId()).optional())).isEmpty();
     }
 
+    private User user(String username) {
+        return dataManager.unconstrained().load(User.class)
+                .query("select u from User u where u.username = :u")
+                .parameter("u", username).one();
+    }
+
     private Course saveCourse(String ownerUsername, String title) {
         User owner = dataManager.load(User.class).query("select u from User u where u.username = :u")
                 .parameter("u", ownerUsername).one();
@@ -137,6 +149,42 @@ class RowLevelSecurityTest {
         return auth.withUser(username, () -> dataManager.load(Course.class).id(courseId)
                 .fetchPlan(fp -> fp.addFetchPlan("_base").add("lessons", "_base")).one()
                 .getLessons().stream().map(Lesson::getExternalId).toList());
+    }
+
+    @Test
+    void studentSeesPublishedLessonsOfLeadCourseInGroup() {
+        Course course = auth.withUser("trainer", () -> {
+            Course c = saveCourse("trainer", "Ведение для группы");
+            c.setSharing(CourseSharing.ALL_TEACHERS);
+            return dataManager.save(c);
+        });
+        String lessonExt = TestPackages.uniqueId("lead-stu");
+        UUID lessonId = auth.withUser("trainer", () -> {
+            UUID id = importService.importPackage(TestPackages.validZip(lessonExt, "урок ведения"),
+                    course.getId(), "test").lesson().getId();
+            lifecycle.transition(id, LessonStatus.PUBLISHED, null);
+            return id;
+        });
+        auth.withUser("trainer", () -> {
+            StudyGroup group = dataManager.create(StudyGroup.class);
+            group.setName("lead-stu-" + TestPackages.uniqueId("g"));
+            group.setOwner(user("trainer"));
+            group.setStatus(GroupStatus.ACTIVE);
+            group.setAccessMode(GroupAccessMode.ALL_AT_ONCE);
+            group = dataManager.save(group);
+            GroupMember member = dataManager.create(GroupMember.class);
+            member.setGroup(group);
+            member.setStudent(user("student"));
+            dataManager.save(member);
+            GroupCourse line = dataManager.create(GroupCourse.class);
+            line.setGroup(group);
+            line.setCourse(course);
+            line.setSortOrder(1);
+            dataManager.save(line);
+            return null;
+        });
+        assertThat(auth.withUser("student", () -> dataManager.load(Lesson.class).id(lessonId).optional())).isPresent();
+        assertThat(visibleLessonIds("student")).contains(lessonExt);
     }
 
     @Test

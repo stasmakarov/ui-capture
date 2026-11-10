@@ -82,7 +82,8 @@ public class LessonLifecycleService {
         transition.setActor(access.username());
         transition.setAt(timeSource.now().toOffsetDateTime());
         transition.setComment(text == null || text.isEmpty() ? null : text);
-        dataManager.unconstrained().save(new SaveContext().saving(lesson, transition));
+        LessonAccessListener.runLifecycleSave(() ->
+                dataManager.unconstrained().save(new SaveContext().saving(lesson, transition)));
         return load(lessonId);
     }
 

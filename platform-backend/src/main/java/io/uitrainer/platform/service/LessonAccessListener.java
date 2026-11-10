@@ -9,6 +9,7 @@ import io.jmix.data.listener.BeforeDeleteEntityListener;
 import io.uitrainer.platform.entity.Course;
 import io.uitrainer.platform.entity.Lesson;
 import io.uitrainer.platform.entity.LessonVersion;
+import io.uitrainer.platform.entity.User;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
@@ -17,6 +18,8 @@ import java.util.UUID;
 
 @Component("uic_LessonAccessListener")
 public class LessonAccessListener implements BeforeDeleteEntityListener<Lesson> {
+
+    private static final ThreadLocal<Boolean> LIFECYCLE_SAVE = new ThreadLocal<>();
 
     private final DataManager dataManager;
     private final EntityStates entityStates;
@@ -31,46 +34,72 @@ public class LessonAccessListener implements BeforeDeleteEntityListener<Lesson> 
         this.access = access;
     }
 
+    static void runLifecycleSave(Runnable action) {
+        LIFECYCLE_SAVE.set(Boolean.TRUE);
+        try {
+            action.run();
+        } finally {
+            LIFECYCLE_SAVE.remove();
+        }
+    }
+
     @EventListener
     public void onLessonSaving(EntitySavingEvent<Lesson> event) {
         Lesson lesson = event.getEntity();
         boolean isNew = entityStates.isNew(lesson);
+        Lesson stored = isNew || lesson.getId() == null ? null : storedLesson(lesson.getId());
         Course newCourse = courseOf(lesson);
-        Course oldCourse = isNew || lesson.getId() == null ? null : storedCourse(lesson.getId());
+        Course oldCourse = stored == null ? null : stored.getCourse();
         if (courseChanged(oldCourse, newCourse)) {
-            assertCanSave(oldCourse);
-            assertCanSave(newCourse);
+            assertCanSave(stored == null ? lesson : stored, oldCourse, false);
+            assertCanSave(lesson, newCourse, isNew);
             return;
         }
-        assertCanSave(newCourse);
+        assertCanSave(lesson, newCourse, isNew);
     }
 
     @EventListener
     public void onLessonVersionSaving(EntitySavingEvent<LessonVersion> event) {
         LessonVersion version = event.getEntity();
-        if (!entityStates.isNew(version) && !entityStates.isLoaded(version, "lesson")) {
-            return;
+        boolean isNew = entityStates.isNew(version);
+        Lesson newLesson = isNew || entityStates.isLoaded(version, "lesson") ? version.getLesson() : null;
+        Lesson oldLesson = isNew || version.getId() == null ? null : storedVersionLesson(version.getId());
+        if (oldLesson != null) {
+            assertCanSave(oldLesson, courseOf(oldLesson), false);
         }
-        Lesson lesson = version.getLesson();
-        Course course = courseOf(lesson);
-        if (course == null && lesson != null && lesson.getId() != null) {
-            course = storedCourse(lesson.getId());
+        if (newLesson != null && (oldLesson == null || !Objects.equals(oldLesson.getId(), newLesson.getId()))) {
+            assertCanSave(newLesson, courseOf(newLesson), entityStates.isNew(newLesson));
         }
-        assertCanSave(course);
+        if (oldLesson == null && newLesson == null) {
+            throw new AccessDeniedException("entity", "uic_LessonVersion", "update");
+        }
     }
 
     @Override
     public void onBeforeDelete(Lesson lesson) {
-        assertCanDelete(courseOf(lesson));
+        assertCanMutate(lesson, courseOf(lesson), false);
     }
 
-    private Course storedCourse(UUID lessonId) {
-        Lesson stored = dataManager.unconstrained().load(Lesson.class)
+    private Lesson storedLesson(UUID lessonId) {
+        return dataManager.unconstrained().load(Lesson.class)
                 .id(lessonId)
-                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("course", FetchPlan.BASE))
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
+                        .add("course", FetchPlan.BASE)
+                        .add("author", FetchPlan.BASE))
                 .optional()
                 .orElse(null);
-        return stored == null ? null : stored.getCourse();
+    }
+
+    private Lesson storedVersionLesson(UUID versionId) {
+        LessonVersion stored = dataManager.unconstrained().load(LessonVersion.class)
+                .id(versionId)
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
+                        .add("lesson", b -> b.addFetchPlan(FetchPlan.BASE)
+                                .add("course", FetchPlan.BASE)
+                                .add("author", FetchPlan.BASE)))
+                .optional()
+                .orElse(null);
+        return stored == null ? null : stored.getLesson();
     }
 
     private boolean courseChanged(Course oldCourse, Course newCourse) {
@@ -87,24 +116,35 @@ public class LessonAccessListener implements BeforeDeleteEntityListener<Lesson> 
             return lesson.getCourse();
         }
         if (lesson.getId() != null) {
-            return storedCourse(lesson.getId());
+            Lesson stored = storedLesson(lesson.getId());
+            return stored == null ? null : stored.getCourse();
         }
         return null;
     }
 
-    private void assertCanSave(Course course) {
-        if (access.isAdmin() || access.isReviewer()) {
+    private void assertCanSave(Lesson lesson, Course course, boolean isNew) {
+        if (access.isAdmin()) {
             return;
         }
-        assertCanDelete(course);
+        if (Boolean.TRUE.equals(LIFECYCLE_SAVE.get()) && access.isReviewer()) {
+            return;
+        }
+        assertCanMutate(lesson, course, isNew);
     }
 
-    private void assertCanDelete(Course course) {
+    private void assertCanMutate(Lesson lesson, Course course, boolean isNew) {
         if (access.isAdmin()) {
             return;
         }
         if (course == null) {
-            if (access.isTrainer()) {
+            if (isNew) {
+                if (access.isTrainer()) {
+                    return;
+                }
+                throw new AccessDeniedException("entity", "uic_Lesson", "update");
+            }
+            User author = authorOf(lesson);
+            if (access.isTrainer() && author != null && access.username().equals(author.getUsername())) {
                 return;
             }
             throw new AccessDeniedException("entity", "uic_Lesson", "update");
@@ -112,5 +152,19 @@ public class LessonAccessListener implements BeforeDeleteEntityListener<Lesson> 
         if (!courseAccess.canEdit(course)) {
             throw new AccessDeniedException("entity", "uic_Lesson", "update");
         }
+    }
+
+    private User authorOf(Lesson lesson) {
+        if (lesson == null) {
+            return null;
+        }
+        if (entityStates.isNew(lesson) || entityStates.isLoaded(lesson, "author")) {
+            return lesson.getAuthor();
+        }
+        if (lesson.getId() != null) {
+            Lesson stored = storedLesson(lesson.getId());
+            return stored == null ? null : stored.getAuthor();
+        }
+        return null;
     }
 }

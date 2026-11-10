@@ -5,6 +5,7 @@ import io.jmix.core.FetchPlan;
 import io.jmix.core.security.AccessDeniedException;
 import io.jmix.core.security.CurrentAuthentication;
 import io.jmix.core.security.SystemAuthenticator;
+import io.jmix.securitydata.entity.RoleAssignmentEntity;
 import io.uitrainer.platform.app.DemoDataInitializer;
 import io.uitrainer.platform.entity.Course;
 import io.uitrainer.platform.entity.CourseCoauthor;
@@ -15,8 +16,10 @@ import io.uitrainer.platform.entity.GroupCourse;
 import io.uitrainer.platform.entity.GroupStatus;
 import io.uitrainer.platform.entity.Lesson;
 import io.uitrainer.platform.entity.LessonStatus;
+import io.uitrainer.platform.entity.LessonVersion;
 import io.uitrainer.platform.entity.StudyGroup;
 import io.uitrainer.platform.entity.User;
+import io.uitrainer.platform.security.ReviewerRole;
 import io.uitrainer.platform.service.AccessException;
 import io.uitrainer.platform.service.ConflictException;
 import io.uitrainer.platform.service.LessonImportService;
@@ -374,6 +377,89 @@ class CourseAccessTest {
     }
 
     @Test
+    void reviewerCannotRenameForeignLessonButCanPublishViaLifecycle() {
+        Course course = auth.withUser("trainer", () -> {
+            Course c = saveCourse("trainer", "ревью обход");
+            c.setSharing(CourseSharing.ALL_TEACHERS);
+            return dataManager.save(c);
+        });
+        UUID publishedId = auth.withUser("trainer", () -> {
+            UUID id = importService.importPackage(TestPackages.validZip(TestPackages.uniqueId("rev-pub"), "p"),
+                    course.getId(), "test").lesson().getId();
+            lifecycle.transition(id, LessonStatus.PUBLISHED, null);
+            return id;
+        });
+        UUID reviewId = auth.withUser("trainer", () -> {
+            UUID id = importService.importPackage(TestPackages.validZip(TestPackages.uniqueId("rev-q"), "q"),
+                    course.getId(), "test").lesson().getId();
+            lifecycle.transition(id, LessonStatus.REVIEW, null);
+            return id;
+        });
+        grantRole("trainer2", ReviewerRole.CODE, "resource");
+        try {
+            assertThatThrownBy(() -> auth.withUser("trainer2", () -> {
+                Lesson loaded = dataManager.load(Lesson.class).id(publishedId).one();
+                loaded.setTitle("хак");
+                return dataManager.save(loaded);
+            })).isInstanceOf(AccessDeniedException.class);
+            auth.withUser("trainer2", () -> lifecycle.transition(reviewId, LessonStatus.PUBLISHED, null));
+            assertThat(dataManager.unconstrained().load(Lesson.class).id(reviewId).one().getStatus())
+                    .isEqualTo(LessonStatus.PUBLISHED);
+        } finally {
+            revokeRole("trainer2", ReviewerRole.CODE);
+        }
+    }
+
+    @Test
+    void unassignedLessonOnlyAuthorOrAdmin() {
+        UUID lessonId = auth.withUser("trainer", () -> importService.importPackage(
+                TestPackages.validZip(TestPackages.uniqueId("orphan"), "свой без курса"), null, "test")
+                .lesson().getId());
+        assertThatThrownBy(() -> auth.withUser("trainer2", () -> {
+            Lesson loaded = dataManager.unconstrained().load(Lesson.class).id(lessonId).one();
+            loaded.setTitle("чужой");
+            return dataManager.save(loaded);
+        })).isInstanceOf(AccessDeniedException.class);
+        assertThatThrownBy(() -> auth.withUser("trainer2", () -> {
+            dataManager.remove(dataManager.unconstrained().load(Lesson.class).id(lessonId).one());
+            return null;
+        })).isInstanceOf(AccessDeniedException.class);
+        auth.withUser("trainer", () -> {
+            Lesson loaded = dataManager.load(Lesson.class).id(lessonId).one();
+            loaded.setTitle("автор");
+            return dataManager.save(loaded);
+        });
+        assertThat(dataManager.unconstrained().load(Lesson.class).id(lessonId).one().getTitle()).isEqualTo("автор");
+    }
+
+    @Test
+    void lessonVersionNeedsLoadedLessonAndCannotMove() {
+        Course course = auth.withUser("trainer", () -> saveCourse("trainer", "версии"));
+        UUID lessonId = auth.withUser("trainer", () -> importService.importPackage(
+                TestPackages.validZip(TestPackages.uniqueId("ver-src"), "src"), course.getId(), "test")
+                .lesson().getId());
+        UUID otherId = auth.withUser("trainer", () -> importService.importPackage(
+                TestPackages.validZip(TestPackages.uniqueId("ver-dst"), "dst"), course.getId(), "test")
+                .lesson().getId());
+        UUID versionId = dataManager.unconstrained().load(Lesson.class).id(lessonId)
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("currentVersion", FetchPlan.BASE))
+                .one().getCurrentVersion().getId();
+        LessonVersion unloaded = dataManager.unconstrained().load(LessonVersion.class).id(versionId)
+                .fetchPlan(FetchPlan.BASE)
+                .one();
+        unloaded.setTitle("хак версии");
+        assertThatThrownBy(() -> auth.withUser("trainer2", () -> dataManager.save(unloaded)))
+                .isInstanceOf(AccessDeniedException.class);
+        Lesson other = dataManager.unconstrained().load(Lesson.class).id(otherId).one();
+        LessonVersion loaded = dataManager.unconstrained().load(LessonVersion.class).id(versionId)
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("lesson", FetchPlan.BASE))
+                .one();
+        loaded.setLesson(other);
+        assertThatThrownBy(() -> auth.withUser("trainer2", () -> dataManager.save(loaded)))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
     void sharingPersists() {
         Course course = auth.withUser("trainer", () -> saveCourse("trainer", "Sharing save"));
         auth.withUser("trainer", () -> {
@@ -424,5 +510,33 @@ class CourseAccessTest {
                 .parameter("u", username)
                 .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.INSTANCE_NAME).add("username"))
                 .one();
+    }
+
+    private void grantRole(String username, String role, String type) {
+        auth.withSystem(() -> {
+            boolean exists = dataManager.load(RoleAssignmentEntity.class)
+                    .query("select r from sec_RoleAssignmentEntity r where r.username = :u and r.roleCode = :c")
+                    .parameter("u", username).parameter("c", role).optional().isPresent();
+            if (exists) {
+                return null;
+            }
+            RoleAssignmentEntity assignment = dataManager.create(RoleAssignmentEntity.class);
+            assignment.setUsername(username);
+            assignment.setRoleCode(role);
+            assignment.setRoleType(type);
+            dataManager.save(assignment);
+            return null;
+        });
+    }
+
+    private void revokeRole(String username, String role) {
+        auth.withSystem(() -> {
+            dataManager.load(RoleAssignmentEntity.class)
+                    .query("select r from sec_RoleAssignmentEntity r where r.username = :u and r.roleCode = :c")
+                    .parameter("u", username).parameter("c", role)
+                    .list()
+                    .forEach(dataManager::remove);
+            return null;
+        });
     }
 }
