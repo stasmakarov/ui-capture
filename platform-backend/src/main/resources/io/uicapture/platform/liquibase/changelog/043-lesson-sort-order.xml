@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
+  <changeSet id="1" author="ui-capture">
+    <addColumn tableName="UIC_LESSON">
+      <column name="SORT_ORDER" type="INT"/>
+    </addColumn>
+  </changeSet>
+  <changeSet id="2" author="ui-capture">
+    <sql>
+      UPDATE UIC_LESSON l
+      SET SORT_ORDER = s.rn
+      FROM (
+        SELECT ID, ROW_NUMBER() OVER (PARTITION BY COURSE_ID ORDER BY CREATED_DATE, ID) AS rn
+        FROM UIC_LESSON
+        WHERE COURSE_ID IS NOT NULL
+      ) s
+      WHERE l.ID = s.ID;
+      UPDATE UIC_LESSON SET SORT_ORDER = 1 WHERE COURSE_ID IS NULL;
+    </sql>
+  </changeSet>
+  <changeSet id="3" author="ui-capture">
+    <addNotNullConstraint tableName="UIC_LESSON" columnName="SORT_ORDER" columnDataType="INT"/>
+  </changeSet>
+</databaseChangeLog>

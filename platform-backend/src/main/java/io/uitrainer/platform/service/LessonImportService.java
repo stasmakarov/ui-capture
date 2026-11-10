@@ -78,6 +78,9 @@ public class LessonImportService {
                     .orElseThrow(() -> new PackageException("Курс " + courseId + " не найден"));
             lesson.setCourse(course);
         }
+        if (newLesson) {
+            lesson.setSortOrder(nextLessonSortOrder(lesson.getCourse()));
+        }
 
         int nextNo = 1;
         if (!newLesson) {
@@ -144,6 +147,18 @@ public class LessonImportService {
         saved = dataManager.unconstrained().save(saved);
         LessonVersion savedVersion = dataManager.unconstrained().load(LessonVersion.class).id(version.getId()).one();
         return new ImportResult(saved, savedVersion, newLesson);
+    }
+
+    private int nextLessonSortOrder(Course course) {
+        if (course == null || course.getId() == null) {
+            return 1;
+        }
+        Integer max = dataManager.unconstrained().loadValue(
+                        "select max(l.sortOrder) from uic_Lesson l where l.course.id = :c", Integer.class)
+                .parameter("c", course.getId())
+                .optional()
+                .orElse(null);
+        return max == null ? 1 : max + 1;
     }
 
     private OffsetDateTime now() {

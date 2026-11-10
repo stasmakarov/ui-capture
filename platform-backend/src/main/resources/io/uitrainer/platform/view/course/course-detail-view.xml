@@ -52,6 +52,8 @@
             <button action="lessonsDataGrid.createAction"/>
             <button action="lessonsDataGrid.editAction"/>
             <button action="lessonsDataGrid.removeAction"/>
+            <button id="moveUpButton" text="msg://io.uitrainer.platform.view.group/moveUp"/>
+            <button id="moveDownButton" text="msg://io.uitrainer.platform.view.group/moveDown"/>
         </hbox>
         <dataGrid id="lessonsDataGrid" dataContainer="lessonsDc" width="100%" minHeight="20em">
             <actions>
@@ -70,6 +72,7 @@
                 <action id="removeAction" type="list_remove"/>
             </actions>
             <columns>
+                <column property="sortOrder"/>
                 <column property="title"/>
                 <column property="externalId"/>
                 <column property="sourceSite"/>

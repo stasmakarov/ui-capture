@@ -64,7 +64,7 @@ public class LessonPreviewView extends StandardView {
         }
         Button back = new Button("К уроку", VaadinIcon.ARROW_LEFT.create(),
                 e -> getUI().ifPresent(ui -> ui.navigate("lessons/" + version.getLesson().getId())));
-        HorizontalLayout header = new HorizontalLayout(back, new Span(version.getLesson().getTitle() + " · v" + version.getVersionNo()));
+        HorizontalLayout header = new HorizontalLayout(back, new Span(previewTitle(version)));
         header.setDefaultVerticalComponentAlignment(FlexComponent.Alignment.CENTER);
         getContent().add(header);
         if (version.getTrainerHtml() == null) {
@@ -83,6 +83,12 @@ public class LessonPreviewView extends StandardView {
         frame.setId("trainerPreview");
         getContent().add(frame);
         getContent().setFlexGrow(1, frame);
+    }
+
+    private String previewTitle(LessonVersion version) {
+        Integer order = version.getLesson().getSortOrder();
+        String title = version.getLesson().getTitle() + " · v" + version.getVersionNo();
+        return order == null ? title : "Урок " + order + ". " + title;
     }
 
     private boolean studentMayOpen(LessonVersion version) {

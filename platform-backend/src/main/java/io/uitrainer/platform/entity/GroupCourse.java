@@ -15,7 +15,7 @@ import java.util.UUID;
         @Index(name = "IDX_UIC_GROUP_COURSE_GROUP", columnList = "GROUP_ID"),
         @Index(name = "IDX_UIC_GROUP_COURSE_COURSE", columnList = "COURSE_ID"),
         @Index(name = "UQ_UIC_GROUP_COURSE", columnList = "GROUP_ID, COURSE_ID", unique = true),
-        @Index(name = "UQ_UIC_GROUP_COURSE_ORDER", columnList = "GROUP_ID, SORT_ORDER", unique = true)
+        @Index(name = "IDX_UIC_GROUP_COURSE_ORDER", columnList = "GROUP_ID, SORT_ORDER")
 })
 @Entity(name = "uic_GroupCourse")
 public class GroupCourse {

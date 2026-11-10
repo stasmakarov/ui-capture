@@ -57,6 +57,9 @@ public class Lesson {
     @JoinColumn(name = "COURSE_ID")
     private Course course;
 
+    @Column(name = "SORT_ORDER", nullable = false)
+    private Integer sortOrder = 1;
+
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "CURRENT_VERSION_ID")
     private LessonVersion currentVersion;
@@ -77,6 +80,8 @@ public class Lesson {
     public void setStatus(LessonStatus status) { this.status = status == null ? null : status.getId(); }
     public Course getCourse() { return course; }
     public void setCourse(Course course) { this.course = course; }
+    public Integer getSortOrder() { return sortOrder; }
+    public void setSortOrder(Integer sortOrder) { this.sortOrder = sortOrder; }
     public LessonVersion getCurrentVersion() { return currentVersion; }
     public void setCurrentVersion(LessonVersion currentVersion) { this.currentVersion = currentVersion; }
     public LessonVersion getPublishedVersion() { return publishedVersion; }

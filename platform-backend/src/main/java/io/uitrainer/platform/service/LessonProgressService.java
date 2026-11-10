@@ -9,6 +9,7 @@ import io.uitrainer.platform.entity.LessonAttempt;
 import io.uitrainer.platform.entity.LessonStatus;
 import io.uitrainer.platform.entity.LessonVersion;
 import io.uitrainer.platform.entity.User;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -18,17 +19,22 @@ import java.util.UUID;
 @Service
 public class LessonProgressService {
 
+    private static final String ATTEMPT_UNIQUE = "UQ_UIC_LESSON_ATTEMPT";
+
     private final DataManager dataManager;
     private final TimeSource timeSource;
     private final CurrentUserAccess access;
     private final GroupProgressService groupProgress;
+    private final LessonAttemptInsert attemptInsert;
 
     public LessonProgressService(DataManager dataManager, TimeSource timeSource,
-                                 CurrentUserAccess access, GroupProgressService groupProgress) {
+                                 CurrentUserAccess access, GroupProgressService groupProgress,
+                                 LessonAttemptInsert attemptInsert) {
         this.dataManager = dataManager;
         this.timeSource = timeSource;
         this.access = access;
         this.groupProgress = groupProgress;
+        this.attemptInsert = attemptInsert;
     }
 
     @Transactional
@@ -49,17 +55,21 @@ public class LessonProgressService {
         attempt.setLesson(lesson);
         attempt.setLessonVersion(version);
         attempt.setStartedAt(timeSource.now().toOffsetDateTime());
+        LessonAttempt saved;
         try {
-            LessonAttempt saved = dataManager.save(attempt);
-            groupProgress.recalculateForStudentAndCourse(student, lesson.getCourse());
-            return saved;
-        } catch (RuntimeException ex) {
+            saved = attemptInsert.insert(attempt);
+        } catch (DataIntegrityViolationException ex) {
+            if (!isAttemptUniqueViolation(ex)) {
+                throw ex;
+            }
             LessonAttempt raced = findAttempt(student, lesson);
             if (raced != null) {
                 return raced;
             }
             throw ex;
         }
+        groupProgress.recalculateForStudentAndCourse(student, lesson.getCourse());
+        return saved;
     }
 
     @Transactional
@@ -137,9 +147,20 @@ public class LessonProgressService {
         return user;
     }
 
+    private boolean isAttemptUniqueViolation(Throwable ex) {
+        while (ex != null) {
+            String message = ex.getMessage();
+            if (message != null && message.toUpperCase().contains(ATTEMPT_UNIQUE)) {
+                return true;
+            }
+            ex = ex.getCause();
+        }
+        return false;
+    }
+
     public List<Lesson> publishedLessons(Course course) {
         return dataManager.load(Lesson.class)
-                .query("select l from uic_Lesson l where l.course.id = :c and l.status = :st order by l.createdDate")
+                .query("select l from uic_Lesson l where l.course.id = :c and l.status = :st order by l.sortOrder, l.createdDate")
                 .parameter("c", course.getId())
                 .parameter("st", LessonStatus.PUBLISHED.getId())
                 .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)

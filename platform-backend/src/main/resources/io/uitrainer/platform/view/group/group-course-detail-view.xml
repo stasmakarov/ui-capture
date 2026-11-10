@@ -31,7 +31,6 @@
     <layout>
         <formLayout id="form" dataContainer="groupCourseDc">
             <entityComboBox id="courseField" property="course" itemsContainer="ownerCoursesDc"/>
-            <integerField id="sortOrderField" property="sortOrder"/>
         </formLayout>
         <hbox id="detailActions">
             <button id="saveAndCloseButton" action="saveCloseAction"/>

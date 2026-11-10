@@ -25,6 +25,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
@@ -55,8 +56,41 @@ public class GroupProgressService {
 
     @Transactional
     public void recalculateStudentInGroup(StudyGroup group, User student) {
-        for (GroupCourse gc : orderedCourses(group)) {
-            recalculate(group, student, gc.getCourse());
+        List<GroupCourse> ordered = orderedCourses(group);
+        List<UUID> courseIds = ordered.stream().map(gc -> gc.getCourse().getId()).toList();
+        Map<UUID, Long> published = publishedCounts(courseIds);
+        Map<UUID, Long> completed = completedCounts(student.getId(), courseIds);
+        Set<UUID> started = startedCourses(student.getId(), courseIds);
+        Map<UUID, GroupCourseProgress> stored = progressByCourse(group.getId(), student.getId());
+        SaveContext save = new SaveContext();
+        boolean dirty = false;
+        for (GroupCourse gc : ordered) {
+            Course course = gc.getCourse();
+            GroupCourseProgress progress = stored.get(course.getId());
+            boolean created = progress == null;
+            if (created) {
+                progress = newProgress(group, student, course);
+            }
+            if (!created && progress.getStatus() == CourseProgressStatus.COMPLETED) {
+                continue;
+            }
+            CourseProgressStatus oldStatus = progress.getStatus();
+            OffsetDateTime oldCompletedAt = progress.getCompletedAt();
+            Integer oldCount = progress.getPublishedLessonCountAtCompletion();
+            applyStatus(progress,
+                    published.getOrDefault(course.getId(), 0L),
+                    completed.getOrDefault(course.getId(), 0L),
+                    started.contains(course.getId()) || completed.getOrDefault(course.getId(), 0L) > 0);
+            if (created
+                    || oldStatus != progress.getStatus()
+                    || !Objects.equals(oldCompletedAt, progress.getCompletedAt())
+                    || !Objects.equals(oldCount, progress.getPublishedLessonCountAtCompletion())) {
+                save.saving(progress);
+                dirty = true;
+            }
+        }
+        if (dirty) {
+            dataManager.unconstrained().save(save);
         }
     }
 
@@ -69,17 +103,7 @@ public class GroupProgressService {
         long published = publishedLessonCount(course.getId());
         long completed = completedPublishedLessonCount(student.getId(), course.getId());
         boolean started = completed > 0 || hasStartedLesson(student.getId(), course.getId());
-        if (published > 0 && completed >= published) {
-            progress.setStatus(CourseProgressStatus.COMPLETED);
-            progress.setCompletedAt(now());
-            progress.setPublishedLessonCountAtCompletion((int) published);
-        } else if (started) {
-            progress.setStatus(CourseProgressStatus.STARTED);
-            progress.setCompletedAt(null);
-        } else {
-            progress.setStatus(CourseProgressStatus.NOT_STARTED);
-            progress.setCompletedAt(null);
-        }
+        applyStatus(progress, published, completed, started);
         return dataManager.unconstrained().save(progress);
     }
 
@@ -198,40 +222,25 @@ public class GroupProgressService {
     }
 
     public int nextSortOrder(StudyGroup group) {
-        if (group.getId() == null) {
-            return 1;
-        }
-        Integer max = dataManager.unconstrained().loadValue(
-                        "select max(gc.sortOrder) from uic_GroupCourse gc where gc.group.id = :g", Integer.class)
-                .parameter("g", group.getId())
-                .optional()
-                .orElse(null);
-        return max == null ? 1 : max + 1;
-    }
-
-    @Transactional
-    public void moveCourse(StudyGroup group, GroupCourse selected, int delta) {
-        List<GroupCourse> ordered = orderedCourses(group);
-        int index = -1;
-        for (int i = 0; i < ordered.size(); i++) {
-            if (ordered.get(i).getId().equals(selected.getId())) {
-                index = i;
-                break;
+        int max = 0;
+        if (group.getId() != null) {
+            Integer stored = dataManager.unconstrained().loadValue(
+                            "select max(gc.sortOrder) from uic_GroupCourse gc where gc.group.id = :g", Integer.class)
+                    .parameter("g", group.getId())
+                    .optional()
+                    .orElse(null);
+            if (stored != null) {
+                max = stored;
             }
         }
-        int otherIndex = index + delta;
-        if (index < 0 || otherIndex < 0 || otherIndex >= ordered.size()) {
-            return;
+        if (group.getCourses() != null) {
+            for (GroupCourse gc : group.getCourses()) {
+                if (gc.getSortOrder() != null) {
+                    max = Math.max(max, gc.getSortOrder());
+                }
+            }
         }
-        GroupCourse a = ordered.get(index);
-        GroupCourse b = ordered.get(otherIndex);
-        int aOrder = a.getSortOrder();
-        int bOrder = b.getSortOrder();
-        a.setSortOrder(-Math.abs(a.getId().hashCode()) - 1);
-        dataManager.unconstrained().saveWithoutReload(a);
-        a.setSortOrder(bOrder);
-        b.setSortOrder(aOrder);
-        dataManager.unconstrained().save(new SaveContext().saving(a, b));
+        return max + 1;
     }
 
     @Transactional
@@ -271,17 +280,52 @@ public class GroupProgressService {
         return CourseProgressStatus.NOT_STARTED;
     }
 
+    private void applyStatus(GroupCourseProgress progress, long published, long completed, boolean started) {
+        if (published > 0 && completed >= published) {
+            progress.setStatus(CourseProgressStatus.COMPLETED);
+            progress.setCompletedAt(now());
+            progress.setPublishedLessonCountAtCompletion((int) published);
+        } else if (started) {
+            progress.setStatus(CourseProgressStatus.STARTED);
+            progress.setCompletedAt(null);
+        } else {
+            progress.setStatus(CourseProgressStatus.NOT_STARTED);
+            progress.setCompletedAt(null);
+        }
+    }
+
     private GroupCourseProgress loadOrCreate(StudyGroup group, User student, Course course) {
         GroupCourseProgress existing = findProgress(group, student, course);
         if (existing != null) {
             return existing;
         }
+        return newProgress(group, student, course);
+    }
+
+    private GroupCourseProgress newProgress(StudyGroup group, User student, Course course) {
         GroupCourseProgress created = dataManager.unconstrained().create(GroupCourseProgress.class);
         created.setGroup(group);
         created.setStudent(student);
         created.setCourse(course);
         created.setStatus(CourseProgressStatus.NOT_STARTED);
         return created;
+    }
+
+    private Map<UUID, GroupCourseProgress> progressByCourse(UUID groupId, UUID studentId) {
+        Map<UUID, GroupCourseProgress> result = new HashMap<>();
+        List<GroupCourseProgress> rows = dataManager.unconstrained().load(GroupCourseProgress.class)
+                .query("select p from uic_GroupCourseProgress p where p.group.id = :g and p.student.id = :s")
+                .parameter("g", groupId)
+                .parameter("s", studentId)
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
+                        .add("course", FetchPlan.INSTANCE_NAME)
+                        .add("group", FetchPlan.INSTANCE_NAME)
+                        .add("student", FetchPlan.INSTANCE_NAME))
+                .list();
+        for (GroupCourseProgress row : rows) {
+            result.put(row.getCourse().getId(), row);
+        }
+        return result;
     }
 
     private GroupCourseProgress findProgress(StudyGroup group, User student, Course course) {

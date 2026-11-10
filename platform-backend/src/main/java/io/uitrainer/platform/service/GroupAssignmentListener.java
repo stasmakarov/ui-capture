@@ -57,7 +57,7 @@ public class GroupAssignmentListener {
         if (member.getStudent() == null) {
             return;
         }
-        if (member.getGroup() != null) {
+        if (entityStates.isLoaded(member, "group") && member.getGroup() != null) {
             assertOwner(member.getGroup());
         }
         User student = member.getStudent();
@@ -85,6 +85,12 @@ public class GroupAssignmentListener {
             }
             return;
         }
+        if (event.getType() == EntityChangedEvent.Type.UPDATED) {
+            if (event.getChanges().isChanged("course")) {
+                throw new ConflictException("Нельзя заменить ученика/курс в существующей строке — удалите и добавьте заново");
+            }
+            return;
+        }
         if (event.getType() == EntityChangedEvent.Type.CREATED) {
             GroupCourse line = dataManager.unconstrained().load(event.getEntityId())
                     .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
@@ -104,6 +110,12 @@ public class GroupAssignmentListener {
             UUID studentId = oldId(event, "student");
             if (groupId != null && studentId != null) {
                 groupProgress.deleteProgressForMember(groupId, studentId);
+            }
+            return;
+        }
+        if (event.getType() == EntityChangedEvent.Type.UPDATED) {
+            if (event.getChanges().isChanged("student")) {
+                throw new ConflictException("Нельзя заменить ученика/курс в существующей строке — удалите и добавьте заново");
             }
             return;
         }
@@ -133,17 +145,19 @@ public class GroupAssignmentListener {
     }
 
     private int nextSortOrder(StudyGroup group, GroupCourse current) {
-        if (entityStates.isNew(group) || group.getId() == null) {
-            int max = 0;
-            if (group.getCourses() != null) {
-                for (GroupCourse gc : group.getCourses()) {
-                    if (gc == current || gc.getSortOrder() == null) continue;
-                    max = Math.max(max, gc.getSortOrder());
-                }
-            }
-            return max + 1;
+        int max = 0;
+        if (!entityStates.isNew(group) && group.getId() != null) {
+            max = Math.max(0, groupProgress.nextSortOrder(group) - 1);
         }
-        return groupProgress.nextSortOrder(group);
+        if (group.getCourses() != null) {
+            for (GroupCourse gc : group.getCourses()) {
+                if (gc == current || gc.getSortOrder() == null) {
+                    continue;
+                }
+                max = Math.max(max, gc.getSortOrder());
+            }
+        }
+        return max + 1;
     }
 
     private java.util.List<GroupMember> members(UUID groupId) {

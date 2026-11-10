@@ -8,10 +8,13 @@ import io.jmix.core.EntityStates;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.kit.action.Action;
 import io.jmix.flowui.kit.component.button.JmixButton;
+import io.jmix.flowui.model.CollectionChangeType;
+import io.jmix.flowui.model.CollectionContainer;
 import io.jmix.flowui.model.InstanceContainer;
 import io.jmix.flowui.view.EditedEntityContainer;
 import io.jmix.flowui.view.StandardDetailView;
 import io.jmix.flowui.view.Subscribe;
+import io.jmix.flowui.view.Target;
 import io.jmix.flowui.view.ViewComponent;
 import io.jmix.flowui.view.ViewController;
 import io.jmix.flowui.view.ViewDescriptor;
@@ -24,9 +27,12 @@ import io.uitrainer.platform.security.PlatformViews;
 import io.uitrainer.platform.service.ConflictException;
 import io.uitrainer.platform.service.CurrentUserAccess;
 import io.uitrainer.platform.service.GroupLifecycleService;
-import io.uitrainer.platform.service.GroupProgressService;
+import io.uitrainer.platform.service.SortOrders;
 import io.uitrainer.platform.view.main.MainView;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.ArrayList;
+import java.util.List;
 
 @Route(value = "groups/:id", layout = MainView.class)
 @ViewController(id = PlatformViews.GROUP_DETAIL)
@@ -42,8 +48,6 @@ public class StudyGroupDetailView extends StandardDetailView<StudyGroup> {
     private CurrentUserAccess access;
     @Autowired
     private GroupLifecycleService lifecycle;
-    @Autowired
-    private GroupProgressService groupProgress;
 
     @ViewComponent
     private JmixButton activateButton;
@@ -56,11 +60,15 @@ public class StudyGroupDetailView extends StandardDetailView<StudyGroup> {
     @ViewComponent
     private DataGrid<GroupCourse> coursesDataGrid;
     @ViewComponent
+    private CollectionContainer<GroupCourse> coursesDc;
+    @ViewComponent
     private InstanceContainer<StudyGroup> studyGroupDc;
     @ViewComponent
     private JmixButton moveUpButton;
     @ViewComponent
     private JmixButton moveDownButton;
+
+    private boolean rearrangingCourses;
 
     @Subscribe
     public void onInit(InitEvent event) {
@@ -68,6 +76,7 @@ public class StudyGroupDetailView extends StandardDetailView<StudyGroup> {
         closeGroupButton.addClickListener(e -> changeStatus(false));
         moveUpButton.addClickListener(e -> moveCourse(-1));
         moveDownButton.addClickListener(e -> moveCourse(1));
+        coursesDataGrid.addSelectionListener(e -> refreshMoveButtons());
     }
 
     @Subscribe
@@ -85,6 +94,27 @@ public class StudyGroupDetailView extends StandardDetailView<StudyGroup> {
             hideMutations();
         }
         refreshLifecycleButtons();
+        refreshMoveButtons();
+    }
+
+    @Subscribe
+    public void onBeforeSave(BeforeSaveEvent event) {
+        List<GroupCourse> ordered = SortOrders.sorted(coursesDc.getMutableItems(), GroupCourse::getSortOrder);
+        SortOrders.normalize(ordered, GroupCourse::setSortOrder);
+        replaceCourses(ordered);
+    }
+
+    @Subscribe(id = "coursesDc", target = Target.DATA_CONTAINER)
+    public void onCoursesDcCollectionChange(CollectionContainer.CollectionChangeEvent<GroupCourse> event) {
+        if (rearrangingCourses) {
+            return;
+        }
+        if (event.getChangeType() == CollectionChangeType.REMOVE_ITEMS) {
+            List<GroupCourse> ordered = SortOrders.sorted(coursesDc.getMutableItems(), GroupCourse::getSortOrder);
+            SortOrders.normalize(ordered, GroupCourse::setSortOrder);
+            replaceCourses(ordered);
+        }
+        refreshMoveButtons();
     }
 
     private void changeStatus(boolean activate) {
@@ -125,13 +155,39 @@ public class StudyGroupDetailView extends StandardDetailView<StudyGroup> {
 
     private void moveCourse(int delta) {
         GroupCourse selected = coursesDataGrid.getSingleSelectedItem();
-        StudyGroup group = getEditedEntity();
-        if (selected == null || entityStates.isNew(group)) {
-            Notification.show("Сначала сохраните группу и выберите курс", 4000, Notification.Position.MIDDLE);
+        if (selected == null) {
             return;
         }
-        groupProgress.moveCourse(group, selected, delta);
-        getUI().ifPresent(ui -> ui.getPage().reload());
+        List<GroupCourse> ordered = SortOrders.sorted(coursesDc.getMutableItems(), GroupCourse::getSortOrder);
+        if (!SortOrders.move(ordered, selected, delta)) {
+            return;
+        }
+        SortOrders.normalize(ordered, GroupCourse::setSortOrder);
+        replaceCourses(ordered);
+        coursesDataGrid.select(selected);
+        refreshMoveButtons();
+    }
+
+    private void replaceCourses(List<GroupCourse> ordered) {
+        rearrangingCourses = true;
+        try {
+            List<GroupCourse> mutable = coursesDc.getMutableItems();
+            mutable.clear();
+            mutable.addAll(ordered);
+        } finally {
+            rearrangingCourses = false;
+        }
+    }
+
+    private void refreshMoveButtons() {
+        GroupCourse selected = coursesDataGrid.getSingleSelectedItem();
+        List<GroupCourse> ordered = selected == null
+                ? List.of()
+                : SortOrders.sorted(new ArrayList<>(coursesDc.getItems()), GroupCourse::getSortOrder);
+        int index = selected == null ? -1 : ordered.indexOf(selected);
+        boolean editor = access.isAdmin() || access.isTrainer();
+        moveUpButton.setEnabled(editor && index > 0);
+        moveDownButton.setEnabled(editor && index >= 0 && index < ordered.size() - 1);
     }
 
     private void hideGridActions(DataGrid<?> grid) {

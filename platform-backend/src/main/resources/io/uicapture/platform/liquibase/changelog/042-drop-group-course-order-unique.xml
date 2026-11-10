@@ -1,0 +1,12 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
+  <changeSet id="1" author="ui-capture">
+    <dropUniqueConstraint tableName="UIC_GROUP_COURSE" constraintName="UQ_UIC_GROUP_COURSE_ORDER"/>
+  </changeSet>
+  <changeSet id="2" author="ui-capture">
+    <createIndex tableName="UIC_GROUP_COURSE" indexName="IDX_UIC_GROUP_COURSE_ORDER">
+      <column name="GROUP_ID"/>
+      <column name="SORT_ORDER"/>
+    </createIndex>
+  </changeSet>
+</databaseChangeLog>

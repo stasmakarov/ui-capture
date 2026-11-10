@@ -40,6 +40,9 @@ public class LessonEditView extends StandardDetailView<Lesson> {
         Lesson lesson = event.getEntity();
         lesson.setStatus(LessonStatus.DRAFT);
         lesson.setAuthor(currentUser());
+        if (lesson.getSortOrder() == null || lesson.getSortOrder() == 0) {
+            lesson.setSortOrder(1);
+        }
     }
 
     @Subscribe

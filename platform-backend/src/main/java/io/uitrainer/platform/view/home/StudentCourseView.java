@@ -63,7 +63,7 @@ public class StudentCourseView extends StandardView {
         empty.getStyle().set("color", "var(--lumo-secondary-text-color)");
         grid.setId("studentLessons");
         grid.setWidthFull();
-        grid.addColumn(Lesson::getTitle).setHeader("Урок").setFlexGrow(2);
+        grid.addColumn(this::lessonLabel).setHeader("Урок").setFlexGrow(2);
         grid.addColumn(this::attemptLabel).setHeader("Статус").setFlexGrow(1);
         grid.addComponentColumn(this::actions).setHeader("").setFlexGrow(2);
         getContent().add(title, empty, grid);
@@ -150,6 +150,12 @@ public class StudentCourseView extends StandardView {
             complete.setVisible(false);
         }
         return new HorizontalLayout(start, complete, preview);
+    }
+
+    private String lessonLabel(Lesson lesson) {
+        Integer order = lesson.getSortOrder();
+        String prefix = order == null ? "Урок" : "Урок " + order + ".";
+        return prefix + " " + lesson.getTitle();
     }
 
     private String attemptLabel(Lesson lesson) {

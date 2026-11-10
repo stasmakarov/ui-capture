@@ -153,6 +153,12 @@ public class DemoDataInitializer {
         lesson.setCourse(course);
         lesson.setStatus(status);
         lesson.setSourceSite("zakupki.gov.ru");
+        Integer max = dataManager.loadValue(
+                        "select max(l.sortOrder) from uic_Lesson l where l.course.id = :c", Integer.class)
+                .parameter("c", course.getId())
+                .optional()
+                .orElse(null);
+        lesson.setSortOrder(max == null ? 1 : max + 1);
         return Optional.of(dataManager.save(lesson));
     }
 
