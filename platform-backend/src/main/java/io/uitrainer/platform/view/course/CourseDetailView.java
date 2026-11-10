@@ -6,6 +6,7 @@ import io.jmix.core.DataManager;
 import io.jmix.core.EntityStates;
 import io.jmix.flowui.component.combobox.EntityComboBox;
 import io.jmix.flowui.component.grid.DataGrid;
+import io.jmix.flowui.component.radiobuttongroup.JmixRadioButtonGroup;
 import io.jmix.flowui.kit.action.Action;
 import io.jmix.flowui.kit.component.button.JmixButton;
 import io.jmix.flowui.model.CollectionChangeType;
@@ -18,9 +19,13 @@ import io.jmix.flowui.view.ViewComponent;
 import io.jmix.flowui.view.ViewController;
 import io.jmix.flowui.view.ViewDescriptor;
 import io.uitrainer.platform.entity.Course;
+import io.uitrainer.platform.entity.CourseCoauthor;
+import io.uitrainer.platform.entity.CourseSharedWith;
+import io.uitrainer.platform.entity.CourseSharing;
 import io.uitrainer.platform.entity.Lesson;
 import io.uitrainer.platform.entity.User;
 import io.uitrainer.platform.security.PlatformViews;
+import io.uitrainer.platform.service.CourseAccessService;
 import io.uitrainer.platform.service.CurrentUserAccess;
 import io.uitrainer.platform.service.LessonOrderService;
 import io.uitrainer.platform.service.SortOrders;
@@ -47,6 +52,8 @@ public class CourseDetailView extends StandardDetailView<Course> {
     private CurrentUserAccess access;
     @Autowired
     private LessonOrderService lessonOrder;
+    @Autowired
+    private CourseAccessService courseAccess;
 
     @ViewComponent
     private JmixButton recordInStudio;
@@ -64,14 +71,27 @@ public class CourseDetailView extends StandardDetailView<Course> {
     private JmixButton moveUpButton;
     @ViewComponent
     private JmixButton moveDownButton;
+    @ViewComponent
+    private DataGrid<CourseCoauthor> coauthorsDataGrid;
+    @ViewComponent
+    private DataGrid<CourseSharedWith> sharedWithDataGrid;
+    @ViewComponent
+    private JmixRadioButtonGroup<CourseSharing> sharingField;
+    @ViewComponent
+    private JmixButton createCoauthorButton;
+    @ViewComponent
+    private JmixButton removeCoauthorButton;
+    @ViewComponent
+    private JmixButton createSharedButton;
+    @ViewComponent
+    private JmixButton removeSharedButton;
 
     private boolean rearrangingLessons;
 
     @Subscribe
     public void onInit(InitEvent event) {
-        boolean canRecord = access.isTrainer() || access.isAdmin();
-        recordInStudio.setVisible(canRecord);
-        recordInStudioLocal.setVisible(canRecord);
+        recordInStudio.setVisible(false);
+        recordInStudioLocal.setVisible(false);
         recordInStudio.addClickListener(e -> record(false));
         recordInStudioLocal.addClickListener(e -> record(true));
         moveUpButton.addClickListener(e -> moveLesson(-1));
@@ -82,20 +102,33 @@ public class CourseDetailView extends StandardDetailView<Course> {
     @Subscribe
     public void onInitEntity(InitEntityEvent<Course> event) {
         event.getEntity().setOwner(currentUser());
+        event.getEntity().setSharing(CourseSharing.NONE);
     }
 
     @Subscribe
     public void onBeforeShow(BeforeShowEvent event) {
-        boolean editor = access.isAdmin() || access.isTrainer();
+        Course course = getEditedEntity();
+        boolean editor = courseAccess.canEdit(course);
+        boolean manage = courseAccess.canManageAccess(course);
         if (!editor) {
             setReadOnly(true);
             saveAndCloseButton.setVisible(false);
             hideLessonMutations();
+            hideAccessMutations();
+            refreshSharedVisibility();
             return;
         }
         if (!access.isAdmin()) {
             ownerField.setReadOnly(true);
         }
+        sharingField.setReadOnly(!manage);
+        if (!manage) {
+            hideAccessMutations();
+        }
+        recordInStudio.setVisible(true);
+        recordInStudioLocal.setVisible(true);
+        sharingField.addValueChangeListener(e -> refreshSharedVisibility());
+        refreshSharedVisibility();
         refreshMoveButtons();
     }
 
@@ -150,9 +183,35 @@ public class CourseDetailView extends StandardDetailView<Course> {
                 ? List.of()
                 : SortOrders.sorted(new ArrayList<>(lessonsDc.getItems()), Lesson::getSortOrder);
         int index = selected == null ? -1 : ordered.indexOf(selected);
-        boolean editor = access.isAdmin() || access.isTrainer();
+        boolean editor = courseAccess.canEdit(getEditedEntity());
         moveUpButton.setEnabled(editor && index > 0);
         moveDownButton.setEnabled(editor && index >= 0 && index < ordered.size() - 1);
+    }
+
+    private void refreshSharedVisibility() {
+        boolean selected = getEditedEntity().getSharing() == CourseSharing.SELECTED;
+        sharedWithDataGrid.setVisible(selected);
+        createSharedButton.setVisible(selected && courseAccess.canManageAccess(getEditedEntity()));
+        removeSharedButton.setVisible(selected && courseAccess.canManageAccess(getEditedEntity()));
+    }
+
+    private void hideAccessMutations() {
+        hideGridActions(coauthorsDataGrid);
+        hideGridActions(sharedWithDataGrid);
+        createCoauthorButton.setVisible(false);
+        removeCoauthorButton.setVisible(false);
+        createSharedButton.setVisible(false);
+        removeSharedButton.setVisible(false);
+    }
+
+    private void hideGridActions(DataGrid<?> grid) {
+        for (String id : new String[]{"createAction", "editAction", "removeAction"}) {
+            Action action = grid.getAction(id);
+            if (action != null) {
+                action.setVisible(false);
+                action.setEnabled(false);
+            }
+        }
     }
 
     private void hideLessonMutations() {

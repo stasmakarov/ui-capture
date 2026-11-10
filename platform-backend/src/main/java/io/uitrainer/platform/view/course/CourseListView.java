@@ -15,6 +15,7 @@ import io.jmix.flowui.view.ViewController;
 import io.jmix.flowui.view.ViewDescriptor;
 import io.uitrainer.platform.entity.Course;
 import io.uitrainer.platform.security.PlatformViews;
+import io.uitrainer.platform.service.CourseAccessService;
 import io.uitrainer.platform.service.CurrentUserAccess;
 import io.uitrainer.platform.view.main.MainView;
 import io.uitrainer.platform.view.studio.StudioLaunch;
@@ -33,6 +34,8 @@ public class CourseListView extends StandardListView<Course> {
     private StudioLaunch studioLaunch;
     @Autowired
     private CurrentUserAccess access;
+    @Autowired
+    private CourseAccessService courseAccess;
 
     @ViewComponent
     private DataGrid<Course> coursesDataGrid;
@@ -62,6 +65,7 @@ public class CourseListView extends StandardListView<Course> {
         Action remove = coursesDataGrid.getAction("removeAction");
         if (create != null) create.setVisible(editor);
         if (remove != null) remove.setVisible(editor);
+        coursesDataGrid.addColumn(courseAccess::roleLabel).setHeader("Роль").setKey("accessRole");
         if (!editor && !readOnlyHintAdded) {
             readOnlyHintAdded = true;
             editButton.setText("Открыть");
@@ -69,6 +73,23 @@ public class CourseListView extends StandardListView<Course> {
             hint.setId("coursesReadonlyHint");
             hint.getStyle().set("color", "var(--lumo-secondary-text-color)");
             getContent().addComponentAtIndex(0, hint);
+        }
+        coursesDataGrid.addSelectionListener(e -> refreshSelectionActions());
+        refreshSelectionActions();
+    }
+
+    private void refreshSelectionActions() {
+        Set<Course> selected = coursesDataGrid.getSelectedItems();
+        boolean one = selected.size() == 1;
+        Course course = one ? selected.iterator().next() : null;
+        boolean edit = course != null && courseAccess.canEdit(course);
+        boolean manage = course != null && courseAccess.canManageAccess(course);
+        recordInStudio.setEnabled(edit);
+        recordInStudioLocal.setEnabled(edit);
+        removeButton.setEnabled(manage);
+        Action remove = coursesDataGrid.getAction("removeAction");
+        if (remove != null) {
+            remove.setEnabled(manage);
         }
     }
 
@@ -78,6 +99,11 @@ public class CourseListView extends StandardListView<Course> {
             Notification.show("Выберите курс, для которого записывается урок", 4000, Notification.Position.MIDDLE);
             return;
         }
-        studioLaunch.launch(this, forceFallback, selected.iterator().next().getId());
+        Course course = selected.iterator().next();
+        if (!courseAccess.canEdit(course)) {
+            Notification.show("Курс недоступен для записи", 4000, Notification.Position.MIDDLE);
+            return;
+        }
+        studioLaunch.launch(this, forceFallback, course.getId());
     }
 }

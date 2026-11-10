@@ -1,9 +1,12 @@
 package io.uitrainer.platform.app;
 
 import io.jmix.core.DataManager;
+import io.jmix.core.FetchPlan;
 import io.jmix.core.security.SystemAuthenticator;
 import io.jmix.securitydata.entity.RoleAssignmentEntity;
 import io.uitrainer.platform.entity.Course;
+import io.uitrainer.platform.entity.CourseCoauthor;
+import io.uitrainer.platform.entity.CourseSharing;
 import io.uitrainer.platform.entity.GroupAccessMode;
 import io.uitrainer.platform.entity.GroupCourse;
 import io.uitrainer.platform.entity.GroupMember;
@@ -56,7 +59,7 @@ public class DemoDataInitializer {
             user("admin", "Админ", "Платформы", List.of(AdminRole.CODE), List.of());
             user("reviewer", "Ревьюер", "Проверяющий", List.of(ReviewerRole.CODE, UiMinimalRole.CODE), List.of());
             User trainer = user("trainer", "Тренер", "Иванова", List.of(TrainerRole.CODE, UiMinimalRole.CODE), List.of(TrainerOwnDataRole.CODE));
-            user("trainer2", "Тренер", "Петров", List.of(TrainerRole.CODE, UiMinimalRole.CODE), List.of(TrainerOwnDataRole.CODE));
+            User trainer2 = user("trainer2", "Тренер", "Петров", List.of(TrainerRole.CODE, UiMinimalRole.CODE), List.of(TrainerOwnDataRole.CODE));
             User student = user("student", "Ученик", "Сидоров", List.of(StudentRole.CODE, UiMinimalRole.CODE), List.of(StudentPublishedRole.CODE));
             user("director", "Директор", "Смирнова", List.of(DirectorRole.CODE, UiMinimalRole.CODE), List.of());
             boolean hasCourse = dataManager.load(Course.class).query("select c from uic_Course c where c.code = :c")
@@ -70,10 +73,14 @@ public class DemoDataInitializer {
                 dataManager.save(course);
             }
             Course course = dataManager.load(Course.class).query("select c from uic_Course c where c.code = :c")
-                    .parameter("c", DEMO_COURSE_CODE).one();
+                    .parameter("c", DEMO_COURSE_CODE)
+                    .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("owner", FetchPlan.INSTANCE_NAME))
+                    .one();
             seedCabinetLessons(trainer, course);
             Course course2 = course(DEMO_COURSE_2_CODE, "Демо-курс 2: следующий в группе", trainer);
             createLessonIfAbsent(trainer, course2, "demo2-published", "Демо: урок второго курса", LessonStatus.PUBLISHED);
+            ensureSharing(course, CourseSharing.ALL_TEACHERS);
+            ensureCoauthor(course2, trainer2);
             seedDemoGroup(trainer, student, course, course2);
             log.info("Демо-вход (пароль совпадает с логином): admin, trainer, trainer2, reviewer, student, director");
         });
@@ -98,9 +105,34 @@ public class DemoDataInitializer {
                 });
     }
 
+    private void ensureSharing(Course course, CourseSharing sharing) {
+        if (course.getSharing() == sharing) {
+            return;
+        }
+        course.setSharing(sharing);
+        dataManager.save(course);
+    }
+
+    private void ensureCoauthor(Course course, User trainer) {
+        long count = dataManager.loadValue(
+                        "select count(a) from uic_CourseCoauthor a where a.course = :c and a.trainer = :t", Long.class)
+                .parameter("c", course)
+                .parameter("t", trainer)
+                .one();
+        if (count > 0) {
+            return;
+        }
+        CourseCoauthor row = dataManager.create(CourseCoauthor.class);
+        row.setCourse(course);
+        row.setTrainer(trainer);
+        dataManager.save(row);
+    }
+
     private Course course(String code, String title, User owner) {
         return dataManager.load(Course.class).query("select c from uic_Course c where c.code = :c")
-                .parameter("c", code).optional().orElseGet(() -> {
+                .parameter("c", code)
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("owner", FetchPlan.INSTANCE_NAME))
+                .optional().orElseGet(() -> {
                     Course created = dataManager.create(Course.class);
                     created.setCode(code);
                     created.setTitle(title);

@@ -9,6 +9,8 @@ import io.jmix.securitydata.entity.RoleAssignmentEntity;
 import io.jmix.securityflowui.role.annotation.MenuPolicy;
 import io.jmix.securityflowui.role.annotation.ViewPolicy;
 import io.uitrainer.platform.entity.Course;
+import io.uitrainer.platform.entity.CourseCoauthor;
+import io.uitrainer.platform.entity.CourseSharedWith;
 import io.uitrainer.platform.entity.GroupCourse;
 import io.uitrainer.platform.entity.GroupCourseProgress;
 import io.uitrainer.platform.entity.GroupMember;
@@ -34,6 +36,14 @@ public interface DirectorRole {
     @EntityPolicy(entityClass = Course.class, actions = EntityPolicyAction.READ)
     @EntityAttributePolicy(entityClass = Course.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
     void course();
+
+    @EntityPolicy(entityClass = CourseCoauthor.class, actions = EntityPolicyAction.READ)
+    @EntityAttributePolicy(entityClass = CourseCoauthor.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
+    void courseCoauthor();
+
+    @EntityPolicy(entityClass = CourseSharedWith.class, actions = EntityPolicyAction.READ)
+    @EntityAttributePolicy(entityClass = CourseSharedWith.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
+    void courseSharedWith();
 
     @EntityPolicy(entityClass = Lesson.class, actions = EntityPolicyAction.READ)
     @EntityAttributePolicy(entityClass = Lesson.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
@@ -63,7 +73,7 @@ public interface DirectorRole {
     @EntityAttributePolicy(entityClass = LessonAttempt.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
     void lessonAttempt();
 
-    @ViewPolicy(viewIds = {PlatformViews.DIRECTOR_HOME, PlatformViews.TEACHER_COURSES, PlatformViews.COURSE_DETAIL, PlatformViews.GROUP_LIST, PlatformViews.GROUP_DETAIL, PlatformViews.GROUP_COURSE_DETAIL, PlatformViews.GROUP_MEMBER_DETAIL})
+    @ViewPolicy(viewIds = {PlatformViews.DIRECTOR_HOME, PlatformViews.TEACHER_COURSES, PlatformViews.COURSE_DETAIL, PlatformViews.COURSE_COAUTHOR_DETAIL, PlatformViews.COURSE_SHARED_WITH_DETAIL, PlatformViews.GROUP_LIST, PlatformViews.GROUP_DETAIL, PlatformViews.GROUP_COURSE_DETAIL, PlatformViews.GROUP_MEMBER_DETAIL})
     @MenuPolicy(menuIds = {PlatformViews.DIRECTOR_HOME, PlatformViews.GROUP_LIST})
     void views();
 }

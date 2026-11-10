@@ -24,11 +24,14 @@ public class LessonLifecycleService {
 
     private final DataManager dataManager;
     private final CurrentUserAccess access;
+    private final CourseAccessService courseAccess;
     private final TimeSource timeSource;
 
-    public LessonLifecycleService(DataManager dataManager, CurrentUserAccess access, TimeSource timeSource) {
+    public LessonLifecycleService(DataManager dataManager, CurrentUserAccess access,
+                                  CourseAccessService courseAccess, TimeSource timeSource) {
         this.dataManager = dataManager;
         this.access = access;
+        this.courseAccess = courseAccess;
         this.timeSource = timeSource;
     }
 
@@ -88,7 +91,8 @@ public class LessonLifecycleService {
     String denialReason(Lesson lesson, LessonStatus to) {
         if (access.isAdmin()) return null;
         boolean author = lesson.getAuthor() != null && lesson.getAuthor().getUsername().equals(access.username());
-        boolean trainerAuthor = author && access.isTrainer();
+        boolean courseEditor = lesson.getCourse() != null && courseAccess.canEdit(lesson.getCourse());
+        boolean trainerAuthor = access.isTrainer() && (author || courseEditor);
         boolean reviewer = access.isReviewer();
         LessonStatus from = lesson.getStatus();
         if (from == LessonStatus.DRAFT && to == LessonStatus.PUBLISHED) {
@@ -111,7 +115,8 @@ public class LessonLifecycleService {
 
     private Lesson load(UUID id) {
         return dataManager.unconstrained().load(Lesson.class).id(id)
-                .fetchPlan(fp -> fp.addFetchPlan("_base").add("author", "_base").add("currentVersion", "_base").add("publishedVersion", "_base"))
+                .fetchPlan(fp -> fp.addFetchPlan("_base").add("author", "_base").add("course", "_base")
+                        .add("currentVersion", "_base").add("publishedVersion", "_base"))
                 .one();
     }
 }

@@ -46,6 +46,14 @@ public interface TrainerRole {
     @EntityAttributePolicy(entityClass = Course.class, attributes = "*", action = EntityAttributePolicyAction.MODIFY)
     void course();
 
+    @EntityPolicy(entityClass = CourseCoauthor.class, actions = {EntityPolicyAction.CREATE, EntityPolicyAction.READ, EntityPolicyAction.UPDATE, EntityPolicyAction.DELETE})
+    @EntityAttributePolicy(entityClass = CourseCoauthor.class, attributes = "*", action = EntityAttributePolicyAction.MODIFY)
+    void courseCoauthor();
+
+    @EntityPolicy(entityClass = CourseSharedWith.class, actions = {EntityPolicyAction.CREATE, EntityPolicyAction.READ, EntityPolicyAction.UPDATE, EntityPolicyAction.DELETE})
+    @EntityAttributePolicy(entityClass = CourseSharedWith.class, attributes = "*", action = EntityAttributePolicyAction.MODIFY)
+    void courseSharedWith();
+
     @EntityPolicy(entityClass = User.class, actions = EntityPolicyAction.READ)
     @EntityAttributePolicy(entityClass = User.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
     void user();
@@ -70,7 +78,7 @@ public interface TrainerRole {
     @EntityAttributePolicy(entityClass = LessonAttempt.class, attributes = "*", action = EntityAttributePolicyAction.VIEW)
     void lessonAttempt();
 
-    @ViewPolicy(viewIds = {PlatformViews.TRAINER_HOME, PlatformViews.LESSON_QUEUE, PlatformViews.LESSON_DETAIL, PlatformViews.LESSON_EDIT, PlatformViews.LESSON_PREVIEW, PlatformViews.COURSE_LIST, PlatformViews.COURSE_DETAIL, PlatformViews.GROUP_LIST, PlatformViews.GROUP_DETAIL, PlatformViews.GROUP_COURSE_DETAIL, PlatformViews.GROUP_MEMBER_DETAIL})
+    @ViewPolicy(viewIds = {PlatformViews.TRAINER_HOME, PlatformViews.LESSON_QUEUE, PlatformViews.LESSON_DETAIL, PlatformViews.LESSON_EDIT, PlatformViews.LESSON_PREVIEW, PlatformViews.COURSE_LIST, PlatformViews.COURSE_DETAIL, PlatformViews.COURSE_COAUTHOR_DETAIL, PlatformViews.COURSE_SHARED_WITH_DETAIL, PlatformViews.GROUP_LIST, PlatformViews.GROUP_DETAIL, PlatformViews.GROUP_COURSE_DETAIL, PlatformViews.GROUP_MEMBER_DETAIL})
     @MenuPolicy(menuIds = {PlatformViews.TRAINER_HOME, PlatformViews.COURSE_LIST, PlatformViews.GROUP_LIST})
     void views();
 }

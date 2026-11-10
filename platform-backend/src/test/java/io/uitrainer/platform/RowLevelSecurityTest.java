@@ -2,7 +2,6 @@ package io.uitrainer.platform;
 
 import io.jmix.core.DataManager;
 import io.jmix.core.DeletePolicyException;
-import io.jmix.core.security.AccessDeniedException;
 import io.jmix.core.security.SystemAuthenticator;
 import io.uitrainer.platform.app.DemoDataInitializer;
 import io.uitrainer.platform.entity.Course;
@@ -89,7 +88,8 @@ class RowLevelSecurityTest {
         auth.withUser("trainer", () -> importService.importPackage(TestPackages.validZip(lessonId, "Урок курса"), own.getId(), null));
 
         assertThat(visibleCourseCodes("trainer")).contains(DemoDataInitializer.DEMO_COURSE_CODE, own.getCode()).doesNotContain(other.getCode());
-        assertThat(visibleCourseCodes("trainer2")).contains(other.getCode()).doesNotContain(own.getCode(), DemoDataInitializer.DEMO_COURSE_CODE);
+        assertThat(visibleCourseCodes("trainer2")).contains(other.getCode(), DemoDataInitializer.DEMO_COURSE_CODE, DemoDataInitializer.DEMO_COURSE_2_CODE)
+                .doesNotContain(own.getCode());
         assertThat(visibleCourseCodes("reviewer")).contains(DemoDataInitializer.DEMO_COURSE_CODE, own.getCode(), other.getCode());
         assertThat(visibleCourseCodes("admin")).contains(own.getCode(), other.getCode());
 
@@ -97,7 +97,7 @@ class RowLevelSecurityTest {
         assertThat(auth.withUser("trainer2", () -> dataManager.load(Course.class).id(own.getId()).optional())).isEmpty();
         assertThat(lessonIdsOf(own.getId(), "reviewer")).contains(lessonId);
 
-        assertThatThrownBy(() -> visibleCourseCodes("student")).isInstanceOf(AccessDeniedException.class);
+        assertThat(visibleCourseCodes("student")).doesNotContain(own.getCode(), other.getCode());
     }
 
     @Test

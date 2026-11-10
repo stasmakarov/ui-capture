@@ -6,7 +6,6 @@ import io.jmix.core.SaveContext;
 import io.jmix.core.security.AccessDeniedException;
 import io.uitrainer.platform.entity.Course;
 import io.uitrainer.platform.entity.Lesson;
-import io.uitrainer.platform.entity.User;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,11 +16,11 @@ import java.util.UUID;
 public class LessonOrderService {
 
     private final DataManager dataManager;
-    private final CurrentUserAccess access;
+    private final CourseAccessService courseAccess;
 
-    public LessonOrderService(DataManager dataManager, CurrentUserAccess access) {
+    public LessonOrderService(DataManager dataManager, CourseAccessService courseAccess) {
         this.dataManager = dataManager;
-        this.access = access;
+        this.courseAccess = courseAccess;
     }
 
     public boolean reorder(List<Lesson> items, Lesson selected, int delta) {
@@ -91,15 +90,7 @@ public class LessonOrderService {
     }
 
     private void assertOwnerOrAdmin(Course course) {
-        if (access.isAdmin()) {
-            return;
-        }
-        Course loaded = dataManager.unconstrained().load(Course.class)
-                .id(course.getId())
-                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("owner", FetchPlan.INSTANCE_NAME))
-                .one();
-        User owner = loaded.getOwner();
-        if (owner == null || !access.username().equals(owner.getUsername())) {
+        if (!courseAccess.canEdit(course)) {
             throw new AccessDeniedException("entity", "uic_Lesson", "update");
         }
     }

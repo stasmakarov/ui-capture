@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<databaseChangeLog xmlns="http://www.liquibase.org/xml/ns/dbchangelog" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.liquibase.org/xml/ns/dbchangelog http://www.liquibase.org/xml/ns/dbchangelog/dbchangelog-4.0.xsd">
+  <changeSet id="1" author="ui-capture">
+    <addColumn tableName="UIC_COURSE">
+      <column name="SHARING" type="VARCHAR(20)" defaultValue="NONE">
+        <constraints nullable="false"/>
+      </column>
+    </addColumn>
+  </changeSet>
+  <changeSet id="2" author="ui-capture">
+    <createTable tableName="UIC_COURSE_COAUTHOR">
+      <column name="ID" type="UUID"><constraints primaryKey="true" nullable="false"/></column>
+      <column name="VERSION" type="INT"><constraints nullable="false"/></column>
+      <column name="COURSE_ID" type="UUID"><constraints nullable="false"/></column>
+      <column name="TRAINER_ID" type="UUID"><constraints nullable="false"/></column>
+    </createTable>
+  </changeSet>
+  <changeSet id="3" author="ui-capture">
+    <createTable tableName="UIC_COURSE_SHARED_WITH">
+      <column name="ID" type="UUID"><constraints primaryKey="true" nullable="false"/></column>
+      <column name="VERSION" type="INT"><constraints nullable="false"/></column>
+      <column name="COURSE_ID" type="UUID"><constraints nullable="false"/></column>
+      <column name="TRAINER_ID" type="UUID"><constraints nullable="false"/></column>
+    </createTable>
+  </changeSet>
+  <changeSet id="4" author="ui-capture">
+    <addForeignKeyConstraint baseTableName="UIC_COURSE_COAUTHOR" baseColumnNames="COURSE_ID" constraintName="FK_COURSE_COAUTHOR_COURSE" referencedTableName="UIC_COURSE" referencedColumnNames="ID"/>
+    <addForeignKeyConstraint baseTableName="UIC_COURSE_COAUTHOR" baseColumnNames="TRAINER_ID" constraintName="FK_COURSE_COAUTHOR_TRAINER" referencedTableName="UIC_USER" referencedColumnNames="ID"/>
+    <createIndex tableName="UIC_COURSE_COAUTHOR" indexName="IDX_UIC_COURSE_COAUTHOR_COURSE"><column name="COURSE_ID"/></createIndex>
+    <createIndex tableName="UIC_COURSE_COAUTHOR" indexName="IDX_UIC_COURSE_COAUTHOR_TRAINER"><column name="TRAINER_ID"/></createIndex>
+    <addUniqueConstraint tableName="UIC_COURSE_COAUTHOR" columnNames="COURSE_ID, TRAINER_ID" constraintName="UQ_UIC_COURSE_COAUTHOR"/>
+  </changeSet>
+  <changeSet id="5" author="ui-capture">
+    <addForeignKeyConstraint baseTableName="UIC_COURSE_SHARED_WITH" baseColumnNames="COURSE_ID" constraintName="FK_COURSE_SHARED_COURSE" referencedTableName="UIC_COURSE" referencedColumnNames="ID"/>
+    <addForeignKeyConstraint baseTableName="UIC_COURSE_SHARED_WITH" baseColumnNames="TRAINER_ID" constraintName="FK_COURSE_SHARED_TRAINER" referencedTableName="UIC_USER" referencedColumnNames="ID"/>
+    <createIndex tableName="UIC_COURSE_SHARED_WITH" indexName="IDX_UIC_COURSE_SHARED_COURSE"><column name="COURSE_ID"/></createIndex>
+    <createIndex tableName="UIC_COURSE_SHARED_WITH" indexName="IDX_UIC_COURSE_SHARED_TRAINER"><column name="TRAINER_ID"/></createIndex>
+    <addUniqueConstraint tableName="UIC_COURSE_SHARED_WITH" columnNames="COURSE_ID, TRAINER_ID" constraintName="UQ_UIC_COURSE_SHARED_WITH"/>
+  </changeSet>
+</databaseChangeLog>

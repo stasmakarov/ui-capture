@@ -31,16 +31,19 @@ public class StudioTokenService {
 
     private final DataManager dataManager;
     private final CurrentUserAccess access;
+    private final CourseAccessService courseAccess;
     private final TimeSource timeSource;
     private final SecureRandom random = new SecureRandom();
     private final Duration ticketTtl;
     private final Duration exchangedTokenTtl;
 
-    public StudioTokenService(DataManager dataManager, CurrentUserAccess access, TimeSource timeSource,
+    public StudioTokenService(DataManager dataManager, CurrentUserAccess access, CourseAccessService courseAccess,
+                              TimeSource timeSource,
                               @Value("${uitrainer.studio.ticket-ttl:PT5M}") Duration ticketTtl,
                               @Value("${uitrainer.studio.exchanged-token-ttl:P90D}") Duration exchangedTokenTtl) {
         this.dataManager = dataManager;
         this.access = access;
+        this.courseAccess = courseAccess;
         this.timeSource = timeSource;
         this.ticketTtl = ticketTtl;
         this.exchangedTokenTtl = exchangedTokenTtl;
@@ -106,7 +109,15 @@ public class StudioTokenService {
         String plain = TICKET_PREFIX + randomPart();
         StudioTicket ticket = dataManager.create(StudioTicket.class);
         ticket.setOwner(currentUser());
-        if (courseId != null) ticket.setCourse(dataManager.unconstrained().load(Course.class).id(courseId).one());
+        if (courseId != null) {
+            Course course = dataManager.unconstrained().load(Course.class).id(courseId)
+                    .fetchPlan(fp -> fp.addFetchPlan("_base").add("owner", "_base"))
+                    .one();
+            if (!courseAccess.canEdit(course)) {
+                throw new AccessException("Курс «" + course.getTitle() + "» недоступен для записи");
+            }
+            ticket.setCourse(course);
+        }
         ticket.setTicketHash(LessonPackageReader.sha256(plain.getBytes(StandardCharsets.UTF_8)));
         ticket.setExpiresAt(now().plus(ticketTtl));
         dataManager.unconstrained().save(ticket);

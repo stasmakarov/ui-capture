@@ -53,6 +53,19 @@ public class Course {
     @JoinColumn(name = "OWNER_ID")
     private User owner;
 
+    @Column(name = "SHARING", nullable = false, length = 20)
+    private String sharing = CourseSharing.NONE.getId();
+
+    @Composition
+    @OnDelete(DeletePolicy.CASCADE)
+    @OneToMany(mappedBy = "course")
+    private List<CourseCoauthor> coauthors;
+
+    @Composition
+    @OnDelete(DeletePolicy.CASCADE)
+    @OneToMany(mappedBy = "course")
+    private List<CourseSharedWith> sharedWith;
+
     @Composition
     @OnDelete(DeletePolicy.DENY)
     @OrderBy("sortOrder")
@@ -70,6 +83,12 @@ public class Course {
     public void setDescription(String description) { this.description = description; }
     public User getOwner() { return owner; }
     public void setOwner(User owner) { this.owner = owner; }
+    public CourseSharing getSharing() { return sharing == null ? null : CourseSharing.fromId(sharing); }
+    public void setSharing(CourseSharing sharing) { this.sharing = sharing == null ? null : sharing.getId(); }
+    public List<CourseCoauthor> getCoauthors() { return coauthors; }
+    public void setCoauthors(List<CourseCoauthor> coauthors) { this.coauthors = coauthors; }
+    public List<CourseSharedWith> getSharedWith() { return sharedWith; }
+    public void setSharedWith(List<CourseSharedWith> sharedWith) { this.sharedWith = sharedWith; }
 
     public UUID getId() { return id; }
     public void setId(UUID id) { this.id = id; }

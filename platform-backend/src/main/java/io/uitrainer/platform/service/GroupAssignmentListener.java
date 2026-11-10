@@ -6,7 +6,6 @@ import io.jmix.core.FetchPlan;
 import io.jmix.core.event.EntityChangedEvent;
 import io.jmix.core.event.EntitySavingEvent;
 import io.jmix.securitydata.entity.RoleAssignmentEntity;
-import io.uitrainer.platform.entity.Course;
 import io.uitrainer.platform.entity.GroupCourse;
 import io.uitrainer.platform.entity.GroupMember;
 import io.uitrainer.platform.entity.StudyGroup;
@@ -24,13 +23,16 @@ public class GroupAssignmentListener {
     private final EntityStates entityStates;
     private final CurrentUserAccess access;
     private final GroupProgressService groupProgress;
+    private final CourseAccessService courseAccess;
 
     public GroupAssignmentListener(DataManager dataManager, EntityStates entityStates,
-                                   CurrentUserAccess access, GroupProgressService groupProgress) {
+                                   CurrentUserAccess access, GroupProgressService groupProgress,
+                                   CourseAccessService courseAccess) {
         this.dataManager = dataManager;
         this.entityStates = entityStates;
         this.access = access;
         this.groupProgress = groupProgress;
+        this.courseAccess = courseAccess;
     }
 
     @EventListener
@@ -40,10 +42,8 @@ public class GroupAssignmentListener {
             return;
         }
         StudyGroup group = line.getGroup();
-        UUID courseOwner = ownerId(line.getCourse());
-        UUID groupOwner = ownerId(group);
-        if (courseOwner == null || groupOwner == null || !courseOwner.equals(groupOwner)) {
-            throw new ConflictException("В группу можно добавить только свои курсы");
+        if (!courseAccess.canAssignToGroup(line.getCourse(), group)) {
+            throw new ConflictException(courseAccess.unavailableForGroupMessage(line.getCourse()));
         }
         assertOwner(group);
         if (entityStates.isNew(line) && (line.getSortOrder() == null || line.getSortOrder() == 0)) {
@@ -174,17 +174,6 @@ public class GroupAssignmentListener {
     private UUID oldId(EntityChangedEvent<?> event, String attribute) {
         var ref = event.getChanges().getOldReferenceId(attribute);
         return ref == null ? null : (UUID) ref.getValue();
-    }
-
-    private UUID ownerId(Course course) {
-        if (course.getId() == null) {
-            return null;
-        }
-        Course loaded = dataManager.unconstrained().load(Course.class)
-                .id(course.getId())
-                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("owner", FetchPlan.BASE))
-                .one();
-        return loaded.getOwner() == null ? null : loaded.getOwner().getId();
     }
 
     private UUID ownerId(StudyGroup group) {

@@ -8,6 +8,8 @@ public final class PlatformViews {
     public static final String STUDIO_TOKENS = "uic_StudioToken.list";
     public static final String COURSE_LIST = "uic_Course.list";
     public static final String COURSE_DETAIL = "uic_Course.detail";
+    public static final String COURSE_COAUTHOR_DETAIL = "uic_CourseCoauthor.detail";
+    public static final String COURSE_SHARED_WITH_DETAIL = "uic_CourseSharedWith.detail";
     public static final String TRAINER_HOME = "uic_TrainerHome";
     public static final String REVIEW_QUEUE = "uic_ReviewQueue";
     public static final String ADMIN_HOME = "uic_AdminHome";

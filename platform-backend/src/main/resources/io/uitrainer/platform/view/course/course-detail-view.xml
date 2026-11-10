@@ -10,9 +10,17 @@
                     <property name="currentVersion" fetchPlan="_instance_name"/>
                 </property>
                 <property name="owner" fetchPlan="_instance_name"/>
+                <property name="coauthors" fetchPlan="_base">
+                    <property name="trainer" fetchPlan="_instance_name"/>
+                </property>
+                <property name="sharedWith" fetchPlan="_base">
+                    <property name="trainer" fetchPlan="_instance_name"/>
+                </property>
             </fetchPlan>
             <loader id="courseDl"/>
             <collection id="lessonsDc" property="lessons"/>
+            <collection id="coauthorsDc" property="coauthors"/>
+            <collection id="sharedWithDc" property="sharedWith"/>
         </instance>
         <collection id="usersDc" class="io.uitrainer.platform.entity.User">
             <fetchPlan extends="_instance_name">
@@ -45,6 +53,42 @@
             <textArea id="descriptionField" height="9.5em" property="description"/>
             <entityComboBox id="ownerField" property="owner" itemsContainer="usersDc"/>
         </formLayout>
+        <h4 id="authorsTitle" text="msg://authors"/>
+        <hbox id="coauthorsButtonsPanel" classNames="buttons-panel">
+            <button id="createCoauthorButton" action="coauthorsDataGrid.createAction"/>
+            <button id="removeCoauthorButton" action="coauthorsDataGrid.removeAction"/>
+        </hbox>
+        <dataGrid id="coauthorsDataGrid" dataContainer="coauthorsDc" width="100%" minHeight="8em">
+            <actions>
+                <action id="createAction" type="list_create">
+                    <properties>
+                        <property name="openMode" value="DIALOG"/>
+                    </properties>
+                </action>
+                <action id="removeAction" type="list_remove"/>
+            </actions>
+            <columns>
+                <column property="trainer"/>
+            </columns>
+        </dataGrid>
+        <radioButtonGroup id="sharingField" property="sharing"/>
+        <hbox id="sharedWithButtonsPanel" classNames="buttons-panel">
+            <button id="createSharedButton" action="sharedWithDataGrid.createAction"/>
+            <button id="removeSharedButton" action="sharedWithDataGrid.removeAction"/>
+        </hbox>
+        <dataGrid id="sharedWithDataGrid" dataContainer="sharedWithDc" width="100%" minHeight="8em">
+            <actions>
+                <action id="createAction" type="list_create">
+                    <properties>
+                        <property name="openMode" value="DIALOG"/>
+                    </properties>
+                </action>
+                <action id="removeAction" type="list_remove"/>
+            </actions>
+            <columns>
+                <column property="trainer"/>
+            </columns>
+        </dataGrid>
         <h4 text="msg://io.uitrainer.platform.entity/Course.lessons"/>
         <hbox id="lessonsButtonsPanel" classNames="buttons-panel">
             <button id="recordInStudio" text="msg://recordInStudio" icon="CIRCLE" themeNames="primary"/>

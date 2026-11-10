@@ -30,14 +30,16 @@ public class LessonImportService {
     private final LessonPackageReader reader;
     private final FileStorageLocator fileStorageLocator;
     private final CurrentUserAccess access;
+    private final CourseAccessService courseAccess;
     private final TimeSource timeSource;
 
     public LessonImportService(DataManager dataManager, LessonPackageReader reader, FileStorageLocator fileStorageLocator,
-                               CurrentUserAccess access, TimeSource timeSource) {
+                               CurrentUserAccess access, CourseAccessService courseAccess, TimeSource timeSource) {
         this.dataManager = dataManager;
         this.reader = reader;
         this.fileStorageLocator = fileStorageLocator;
         this.access = access;
+        this.courseAccess = courseAccess;
         this.timeSource = timeSource;
     }
 
@@ -57,7 +59,7 @@ public class LessonImportService {
                 .fetchPlan(fp -> fp.addFetchPlan("_base").add("author", "_base").add("course", "_base"))
                 .optional().orElse(null);
         boolean newLesson = lesson == null;
-        if (!newLesson && !lesson.getAuthor().getUsername().equals(username) && !access.isAdmin()) {
+        if (!newLesson && !mayChangeLesson(lesson, username)) {
             throw new AccessException("Урок «" + lesson.getTitle() + "» принадлежит другому автору (" + lesson.getAuthor().getUsername() + ")");
         }
         SaveContext save = new SaveContext();
@@ -74,8 +76,13 @@ public class LessonImportService {
         lesson.setSourceSite(sourceSite.isEmpty() ? null : sourceSite);
         lesson.setStatus(LessonStatus.DRAFT);
         if (courseId != null) {
-            Course course = dataManager.unconstrained().load(Course.class).id(courseId).optional()
+            Course course = dataManager.unconstrained().load(Course.class).id(courseId)
+                    .fetchPlan(fp -> fp.addFetchPlan("_base").add("owner", "_base"))
+                    .optional()
                     .orElseThrow(() -> new PackageException("Курс " + courseId + " не найден"));
+            if (!courseAccess.canEdit(course)) {
+                throw new AccessException("Курс «" + course.getTitle() + "» недоступен для записи");
+            }
             lesson.setCourse(course);
         }
         if (newLesson) {
@@ -147,6 +154,16 @@ public class LessonImportService {
         saved = dataManager.unconstrained().save(saved);
         LessonVersion savedVersion = dataManager.unconstrained().load(LessonVersion.class).id(version.getId()).one();
         return new ImportResult(saved, savedVersion, newLesson);
+    }
+
+    private boolean mayChangeLesson(Lesson lesson, String username) {
+        if (access.isAdmin()) {
+            return true;
+        }
+        if (lesson.getAuthor() != null && username.equals(lesson.getAuthor().getUsername())) {
+            return true;
+        }
+        return lesson.getCourse() != null && courseAccess.canEdit(lesson.getCourse());
     }
 
     private int nextLessonSortOrder(Course course) {
