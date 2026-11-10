@@ -196,6 +196,196 @@ class CourseAccessTest {
     }
 
     @Test
+    void leadCannotMutateOrMoveLesson() {
+        Course course = auth.withUser("trainer", () -> {
+            Course c = saveCourse("trainer", "Вести урок");
+            c.setSharing(CourseSharing.ALL_TEACHERS);
+            return dataManager.save(c);
+        });
+        UUID lessonId = auth.withUser("trainer", () -> {
+            UUID id = importService.importPackage(TestPackages.validZip(TestPackages.uniqueId("lead-mut"), "l"),
+                    course.getId(), "test").lesson().getId();
+            lifecycle.transition(id, LessonStatus.PUBLISHED, null);
+            return id;
+        });
+        Lesson lesson = dataManager.unconstrained().load(Lesson.class).id(lessonId).one();
+        assertThatThrownBy(() -> auth.withUser("trainer2", () -> {
+            Lesson loaded = dataManager.load(Lesson.class).id(lesson.getId()).one();
+            loaded.setTitle("хак");
+            return dataManager.save(loaded);
+        })).isInstanceOf(AccessDeniedException.class);
+        assertThatThrownBy(() -> auth.withUser("trainer2", () -> {
+            dataManager.remove(dataManager.load(Lesson.class).id(lesson.getId()).one());
+            return null;
+        })).isInstanceOf(AccessDeniedException.class);
+        assertThatThrownBy(() -> auth.withUser("trainer2", () -> {
+            Lesson created = dataManager.create(Lesson.class);
+            created.setExternalId(TestPackages.uniqueId("lead-new"));
+            created.setTitle("новый");
+            created.setAuthor(user("trainer2"));
+            created.setCourse(course);
+            created.setStatus(LessonStatus.DRAFT);
+            return dataManager.save(created);
+        })).isInstanceOf(AccessDeniedException.class);
+        UUID ownId = auth.withUser("trainer2", () -> importService.importPackage(
+                TestPackages.validZip(TestPackages.uniqueId("own-move"), "свой"), null, "test").lesson().getId());
+        assertThatThrownBy(() -> auth.withUser("trainer2", () -> {
+            Lesson own = dataManager.load(Lesson.class).id(ownId).one();
+            own.setCourse(course);
+            return dataManager.save(own);
+        })).isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void onlyOwnerDeletesAccessRows() {
+        Course course = auth.withUser("trainer", () -> saveCourse("trainer", "Связи"));
+        CourseCoauthor coauthor = auth.withUser("trainer", () -> {
+            CourseCoauthor row = dataManager.create(CourseCoauthor.class);
+            row.setCourse(course);
+            row.setTrainer(user("trainer2"));
+            return dataManager.save(row);
+        });
+        CourseSharedWith shared = auth.withUser("trainer", () -> {
+            Course c = dataManager.load(Course.class).id(course.getId()).one();
+            c.setSharing(CourseSharing.SELECTED);
+            dataManager.save(c);
+            CourseSharedWith row = dataManager.create(CourseSharedWith.class);
+            row.setCourse(course);
+            row.setTrainer(user("trainer2"));
+            return dataManager.save(row);
+        });
+        assertThatThrownBy(() -> auth.withUser("trainer2", () -> {
+            dataManager.remove(dataManager.load(CourseCoauthor.class).id(coauthor.getId()).one());
+            return null;
+        })).isInstanceOf(AccessDeniedException.class);
+        assertThatThrownBy(() -> auth.withUser("trainer2", () -> {
+            dataManager.remove(dataManager.load(CourseSharedWith.class).id(shared.getId()).one());
+            return null;
+        })).isInstanceOf(AccessDeniedException.class);
+        auth.withUser("trainer", () -> {
+            dataManager.remove(dataManager.load(CourseCoauthor.class).id(coauthor.getId()).one());
+            dataManager.remove(dataManager.load(CourseSharedWith.class).id(shared.getId()).one());
+            return null;
+        });
+        assertThat(dataManager.unconstrained().load(CourseCoauthor.class).id(coauthor.getId()).optional()).isEmpty();
+        assertThat(dataManager.unconstrained().load(CourseSharedWith.class).id(shared.getId()).optional()).isEmpty();
+    }
+
+    @Test
+    void selectedThenNoneHidesFromTrainer2() {
+        Course course = auth.withUser("trainer", () -> {
+            Course c = saveCourse("trainer", "Выбранным потом нет");
+            c.setSharing(CourseSharing.SELECTED);
+            c = dataManager.save(c);
+            CourseSharedWith row = dataManager.create(CourseSharedWith.class);
+            row.setCourse(c);
+            row.setTrainer(user("trainer2"));
+            dataManager.save(row);
+            return c;
+        });
+        UUID lessonId = auth.withUser("trainer", () -> {
+            UUID id = importService.importPackage(TestPackages.validZip(TestPackages.uniqueId("sel-lsn"), "l"),
+                    course.getId(), "test").lesson().getId();
+            lifecycle.transition(id, LessonStatus.PUBLISHED, null);
+            return id;
+        });
+        assertThat(auth.withUser("trainer2", () -> dataManager.load(Course.class).id(course.getId()).optional())).isPresent();
+        assertThat(auth.withUser("trainer2", () -> dataManager.load(Lesson.class).id(lessonId).optional())).isPresent();
+        auth.withUser("trainer", () -> {
+            Course c = dataManager.load(Course.class).id(course.getId()).one();
+            c.setSharing(CourseSharing.NONE);
+            return dataManager.save(c);
+        });
+        assertThat(auth.withUser("trainer2", () -> dataManager.load(Course.class).id(course.getId()).optional())).isEmpty();
+        assertThat(auth.withUser("trainer2", () -> dataManager.load(Lesson.class).id(lessonId).optional())).isEmpty();
+    }
+
+    @Test
+    void formerCoauthorCannotReimportOrTransition() {
+        Course course = auth.withUser("trainer", () -> saveCourse("trainer", "Бывший соавтор"));
+        String ext = TestPackages.uniqueId("ex-coa");
+        auth.withUser("trainer", () -> {
+            CourseCoauthor row = dataManager.create(CourseCoauthor.class);
+            row.setCourse(course);
+            row.setTrainer(user("trainer2"));
+            return dataManager.save(row);
+        });
+        UUID lessonId = auth.withUser("trainer2", () -> importService.importPackage(
+                TestPackages.validZip(ext, "coa"), course.getId(), "test").lesson().getId());
+        CourseCoauthor row = dataManager.unconstrained().load(CourseCoauthor.class)
+                .query("select a from uic_CourseCoauthor a where a.course = :c and a.trainer.username = :u")
+                .parameter("c", course)
+                .parameter("u", "trainer2")
+                .one();
+        auth.withUser("trainer", () -> {
+            dataManager.remove(dataManager.load(CourseCoauthor.class).id(row.getId()).one());
+            return null;
+        });
+        assertThatThrownBy(() -> auth.withUser("trainer2", () ->
+                importService.importPackage(TestPackages.validZip(ext, "v2"), course.getId(), "test")))
+                .isInstanceOf(AccessException.class);
+        assertThatThrownBy(() -> auth.withUser("trainer2", () -> lifecycle.transition(lessonId, LessonStatus.PUBLISHED, null)))
+                .isInstanceOf(AccessException.class);
+    }
+
+    @Test
+    void ownerDeletesEmptyCourseWithAccessRows() {
+        Course course = auth.withUser("trainer", () -> {
+            Course c = saveCourse("trainer", "Пустой со связями");
+            CourseCoauthor a = dataManager.create(CourseCoauthor.class);
+            a.setCourse(c);
+            a.setTrainer(user("trainer2"));
+            dataManager.save(a);
+            c.setSharing(CourseSharing.SELECTED);
+            c = dataManager.save(c);
+            CourseSharedWith s = dataManager.create(CourseSharedWith.class);
+            s.setCourse(c);
+            s.setTrainer(user("trainer2"));
+            dataManager.save(s);
+            return c;
+        });
+        UUID id = course.getId();
+        auth.withUser("trainer", () -> {
+            dataManager.remove(dataManager.load(Course.class).id(id).one());
+            return null;
+        });
+        assertThat(dataManager.unconstrained().load(Course.class).id(id).optional()).isEmpty();
+        assertThat(dataManager.unconstrained().loadValue(
+                        "select count(a) from uic_CourseCoauthor a where a.course.id = :c", Long.class)
+                .parameter("c", id).one()).isZero();
+        assertThat(dataManager.unconstrained().loadValue(
+                        "select count(s) from uic_CourseSharedWith s where s.course.id = :c", Long.class)
+                .parameter("c", id).one()).isZero();
+    }
+
+    @Test
+    void formerOwnerCannotDeleteAfterAdminReassign() {
+        Course course = auth.withUser("trainer", () -> saveCourse("trainer", "Смена владельца"));
+        auth.withUser("admin", () -> {
+            Course c = dataManager.load(Course.class).id(course.getId())
+                    .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("owner", FetchPlan.INSTANCE_NAME)).one();
+            c.setOwner(user("trainer2"));
+            return dataManager.save(c);
+        });
+        assertThatThrownBy(() -> auth.withUser("trainer", () -> {
+            dataManager.remove(dataManager.unconstrained().load(Course.class).id(course.getId()).one());
+            return null;
+        })).isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void sharingPersists() {
+        Course course = auth.withUser("trainer", () -> saveCourse("trainer", "Sharing save"));
+        auth.withUser("trainer", () -> {
+            Course c = dataManager.load(Course.class).id(course.getId()).one();
+            c.setSharing(CourseSharing.ALL_TEACHERS);
+            return dataManager.save(c);
+        });
+        Course loaded = dataManager.unconstrained().load(Course.class).id(course.getId()).one();
+        assertThat(loaded.getSharing()).isEqualTo(CourseSharing.ALL_TEACHERS);
+    }
+
+    @Test
     void cannotAssignWithoutAccess() {
         Course none = auth.withUser("trainer", () -> saveCourse("trainer", "Чужой none"));
         StudyGroup g2 = auth.withUser("trainer2", () -> emptyGroup("no-access"));

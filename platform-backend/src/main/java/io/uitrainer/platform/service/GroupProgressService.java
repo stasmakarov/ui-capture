@@ -20,6 +20,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.time.OffsetDateTime;
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -181,32 +182,69 @@ public class GroupProgressService {
     }
 
     public GroupSummary summarize(StudyGroup group) {
-        StudyGroup loaded = dataManager.unconstrained().load(StudyGroup.class)
-                .id(group.getId())
-                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE)
-                        .add("members", FetchPlan.BASE)
-                        .add("courses", fp2 -> fp2.addFetchPlan(FetchPlan.BASE).add("course", FetchPlan.BASE)))
-                .one();
-        long members = loaded.getMembers() == null ? 0 : loaded.getMembers().size();
-        List<GroupCourse> ordered = orderedCourses(loaded);
-        List<UUID> courseIds = ordered.stream().map(gc -> gc.getCourse().getId()).toList();
-        Map<UUID, Long> published = publishedCounts(courseIds);
-        List<UUID> contentIds = courseIds.stream().filter(id -> published.getOrDefault(id, 0L) > 0).toList();
-        long totalPairs = members * contentIds.size();
-        long completedPairs = 0;
-        if (!contentIds.isEmpty() && members > 0) {
-            Long completed = dataManager.unconstrained().loadValue(
-                            "select count(p) from uic_GroupCourseProgress p where p.group.id = :g and p.status = :st "
-                                    + "and p.student.id in (select m.student.id from uic_GroupMember m where m.group.id = :g) "
-                                    + "and p.course.id in :ids",
-                            Long.class)
-                    .parameter("g", loaded.getId())
-                    .parameter("st", CourseProgressStatus.COMPLETED.getId())
-                    .parameter("ids", contentIds)
-                    .one();
-            completedPairs = Math.min(completed == null ? 0 : completed, totalPairs);
+        return summarize(List.of(group)).get(group.getId());
+    }
+
+    public Map<UUID, GroupSummary> summarize(Collection<StudyGroup> groups) {
+        Map<UUID, GroupSummary> result = new java.util.LinkedHashMap<>();
+        if (groups == null || groups.isEmpty()) {
+            return result;
         }
-        return new GroupSummary(loaded, members, completedPairs, totalPairs);
+        List<StudyGroup> list = groups.stream().filter(g -> g.getId() != null).toList();
+        if (list.isEmpty()) {
+            return result;
+        }
+        List<UUID> gids = list.stream().map(StudyGroup::getId).toList();
+        Map<UUID, Long> memberCounts = new HashMap<>();
+        for (KeyValueEntity row : dataManager.unconstrained().loadValues(
+                        "select m.group.id, count(m) from uic_GroupMember m where m.group.id in :ids group by m.group.id")
+                .properties("groupId", "cnt")
+                .parameter("ids", gids)
+                .list()) {
+            memberCounts.put(row.getValue("groupId"), ((Number) row.getValue("cnt")).longValue());
+        }
+        Map<UUID, List<UUID>> coursesByGroup = new HashMap<>();
+        Set<UUID> allCourseIds = new HashSet<>();
+        List<GroupCourse> lines = dataManager.unconstrained().load(GroupCourse.class)
+                .query("select gc from uic_GroupCourse gc where gc.group.id in :ids")
+                .parameter("ids", gids)
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("course", FetchPlan.BASE).add("group", FetchPlan.BASE))
+                .list();
+        for (GroupCourse line : lines) {
+            UUID gid = line.getGroup().getId();
+            UUID cid = line.getCourse().getId();
+            coursesByGroup.computeIfAbsent(gid, k -> new ArrayList<>()).add(cid);
+            allCourseIds.add(cid);
+        }
+        Map<UUID, Long> published = publishedCounts(List.copyOf(allCourseIds));
+        Map<String, Long> completedByGroupCourse = new HashMap<>();
+        if (!gids.isEmpty() && !allCourseIds.isEmpty()) {
+            for (KeyValueEntity row : dataManager.unconstrained().loadValues(
+                            "select p.group.id, p.course.id, count(p) from uic_GroupCourseProgress p "
+                                    + "where p.group.id in :gids and p.status = :st "
+                                    + "and p.student.id in (select m.student.id from uic_GroupMember m where m.group.id = p.group.id) "
+                                    + "group by p.group.id, p.course.id")
+                    .properties("groupId", "courseId", "cnt")
+                    .parameter("gids", gids)
+                    .parameter("st", CourseProgressStatus.COMPLETED.getId())
+                    .list()) {
+                completedByGroupCourse.put(row.getValue("groupId") + ":" + row.getValue("courseId"),
+                        ((Number) row.getValue("cnt")).longValue());
+            }
+        }
+        for (StudyGroup group : list) {
+            List<UUID> courseIds = coursesByGroup.getOrDefault(group.getId(), List.of());
+            List<UUID> contentIds = courseIds.stream().filter(id -> published.getOrDefault(id, 0L) > 0).toList();
+            long members = memberCounts.getOrDefault(group.getId(), 0L);
+            long totalPairs = members * contentIds.size();
+            long completedPairs = 0;
+            for (UUID courseId : contentIds) {
+                completedPairs += completedByGroupCourse.getOrDefault(group.getId() + ":" + courseId, 0L);
+            }
+            completedPairs = Math.min(completedPairs, totalPairs);
+            result.put(group.getId(), new GroupSummary(group, members, completedPairs, totalPairs));
+        }
+        return result;
     }
 
     public List<GroupCourse> orderedCourses(StudyGroup group) {

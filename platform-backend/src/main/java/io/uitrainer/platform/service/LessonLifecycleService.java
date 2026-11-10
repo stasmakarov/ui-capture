@@ -90,9 +90,9 @@ public class LessonLifecycleService {
     @Nullable
     String denialReason(Lesson lesson, LessonStatus to) {
         if (access.isAdmin()) return null;
-        boolean author = lesson.getAuthor() != null && lesson.getAuthor().getUsername().equals(access.username());
-        boolean courseEditor = lesson.getCourse() != null && courseAccess.canEdit(lesson.getCourse());
-        boolean trainerAuthor = access.isTrainer() && (author || courseEditor);
+        boolean trainerAuthor = access.isTrainer() && (lesson.getCourse() == null
+                ? lesson.getAuthor() != null && access.username().equals(lesson.getAuthor().getUsername())
+                : courseAccess.canEdit(lesson.getCourse()));
         boolean reviewer = access.isReviewer();
         LessonStatus from = lesson.getStatus();
         if (from == LessonStatus.DRAFT && to == LessonStatus.PUBLISHED) {

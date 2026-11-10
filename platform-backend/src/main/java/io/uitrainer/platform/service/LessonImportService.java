@@ -59,7 +59,7 @@ public class LessonImportService {
                 .fetchPlan(fp -> fp.addFetchPlan("_base").add("author", "_base").add("course", "_base"))
                 .optional().orElse(null);
         boolean newLesson = lesson == null;
-        if (!newLesson && !mayChangeLesson(lesson, username)) {
+        if (!newLesson && !mayChangeLesson(lesson)) {
             throw new AccessException("Урок «" + lesson.getTitle() + "» принадлежит другому автору (" + lesson.getAuthor().getUsername() + ")");
         }
         SaveContext save = new SaveContext();
@@ -156,14 +156,16 @@ public class LessonImportService {
         return new ImportResult(saved, savedVersion, newLesson);
     }
 
-    private boolean mayChangeLesson(Lesson lesson, String username) {
+    private boolean mayChangeLesson(Lesson lesson) {
         if (access.isAdmin()) {
             return true;
         }
-        if (lesson.getAuthor() != null && username.equals(lesson.getAuthor().getUsername())) {
-            return true;
+        if (lesson.getCourse() == null) {
+            return access.isTrainer()
+                    && lesson.getAuthor() != null
+                    && access.username().equals(lesson.getAuthor().getUsername());
         }
-        return lesson.getCourse() != null && courseAccess.canEdit(lesson.getCourse());
+        return courseAccess.canEdit(lesson.getCourse());
     }
 
     private int nextLessonSortOrder(Course course) {

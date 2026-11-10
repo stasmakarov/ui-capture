@@ -20,11 +20,14 @@ import io.uitrainer.platform.entity.GroupStatus;
 import io.uitrainer.platform.entity.StudyGroup;
 import io.uitrainer.platform.security.PlatformViews;
 import io.uitrainer.platform.view.group.StudyGroupListView;
+import io.uitrainer.platform.service.CourseAccessService;
 import io.uitrainer.platform.service.GroupProgressService;
 import io.uitrainer.platform.view.main.MainView;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
+import java.util.Map;
+import java.util.UUID;
 
 /** Кабинет преподавателя: активные группы, курсы и сводка уроков. */
 @Route(value = "cabinet/trainer", layout = MainView.class)
@@ -37,6 +40,8 @@ public class TrainerHomeView extends StandardView {
     private ViewNavigators viewNavigators;
     @Autowired
     private GroupProgressService groupProgress;
+    @Autowired
+    private CourseAccessService courseAccess;
 
     private final Grid<GroupProgressService.GroupSummary> groups = new Grid<>();
     private final Checkbox history = new Checkbox("История закрытых");
@@ -100,16 +105,19 @@ public class TrainerHomeView extends StandardView {
         courses.setId("trainerCourses");
         courses.setWidthFull();
         courses.setMinHeight("12em");
+        List<Course> courseItems = dataManager.load(Course.class)
+                .query("select c from uic_Course c order by c.title")
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("owner", FetchPlan.INSTANCE_NAME))
+                .list();
+        Map<UUID, String> roles = courseAccess.roleLabels(courseItems);
         courses.addColumn(Course::getTitle).setHeader("Курс").setFlexGrow(2);
         courses.addColumn(Course::getCode).setHeader("Код").setFlexGrow(1);
+        courses.addColumn(c -> roles.getOrDefault(c.getId(), "")).setHeader("Роль").setFlexGrow(1);
         courses.addItemClickListener(e -> viewNavigators.detailView(this, Course.class)
                 .editEntity(e.getItem())
                 .withBackwardNavigation(true)
                 .navigate());
-        courses.setItems(dataManager.load(Course.class)
-                .query("select c from uic_Course c order by c.title")
-                .fetchPlan("_base")
-                .list());
+        courses.setItems(courseItems);
 
         H3 groupsTitle = new H3("Мои группы");
         groupsTitle.getStyle().set("margin", "0");
@@ -138,7 +146,7 @@ public class TrainerHomeView extends StandardView {
                     .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE))
                     .list();
         }
-        groups.setItems(list.stream().map(groupProgress::summarize).toList());
+        groups.setItems(groupProgress.summarize(list).values());
     }
 
     private static String statusLabel(GroupStatus status) {

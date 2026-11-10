@@ -52,6 +52,7 @@
             <textField id="codeField" property="code"/>
             <textArea id="descriptionField" height="9.5em" property="description"/>
             <entityComboBox id="ownerField" property="owner" itemsContainer="usersDc"/>
+            <radioButtonGroup id="sharingField" property="sharing" dataContainer="courseDc" colspan="2"/>
         </formLayout>
         <h4 id="authorsTitle" text="msg://authors"/>
         <hbox id="coauthorsButtonsPanel" classNames="buttons-panel">
@@ -71,7 +72,6 @@
                 <column property="trainer"/>
             </columns>
         </dataGrid>
-        <radioButtonGroup id="sharingField" property="sharing"/>
         <hbox id="sharedWithButtonsPanel" classNames="buttons-panel">
             <button id="createSharedButton" action="sharedWithDataGrid.createAction"/>
             <button id="removeSharedButton" action="sharedWithDataGrid.removeAction"/>

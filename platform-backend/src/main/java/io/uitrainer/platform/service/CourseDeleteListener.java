@@ -6,6 +6,7 @@ import io.jmix.core.EntityStates;
 import io.jmix.data.listener.BeforeDeleteEntityListener;
 import io.uitrainer.platform.entity.Course;
 import io.uitrainer.platform.entity.User;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Component;
 
 @Component("uic_CourseDeleteListener")
@@ -14,11 +15,14 @@ public class CourseDeleteListener implements BeforeDeleteEntityListener<Course> 
     private final DataManager dataManager;
     private final EntityStates entityStates;
     private final CurrentUserAccess access;
+    private final JdbcTemplate jdbc;
 
-    public CourseDeleteListener(DataManager dataManager, EntityStates entityStates, CurrentUserAccess access) {
+    public CourseDeleteListener(DataManager dataManager, EntityStates entityStates,
+                                CurrentUserAccess access, JdbcTemplate jdbc) {
         this.dataManager = dataManager;
         this.entityStates = entityStates;
         this.access = access;
+        this.jdbc = jdbc;
     }
 
     @Override
@@ -43,6 +47,8 @@ public class CourseDeleteListener implements BeforeDeleteEntityListener<Course> 
         if (assigned != null && assigned > 0) {
             throw new DeletePolicyException("uic_Course", "uic_GroupCourse");
         }
+        jdbc.update("delete from UIC_COURSE_COAUTHOR where COURSE_ID = ?", course.getId());
+        jdbc.update("delete from UIC_COURSE_SHARED_WITH where COURSE_ID = ?", course.getId());
     }
 
     private boolean mayDelete(Course course) {
@@ -55,6 +61,11 @@ public class CourseDeleteListener implements BeforeDeleteEntityListener<Course> 
                 return true;
             }
         }
-        return course.getCreatedBy() != null && course.getCreatedBy().equals(access.username());
+        String ownerUsername = dataManager.unconstrained().loadValue(
+                        "select o.username from uic_Course c join c.owner o where c.id = :id", String.class)
+                .parameter("id", course.getId())
+                .optional()
+                .orElse(null);
+        return ownerUsername != null && ownerUsername.equals(access.username());
     }
 }

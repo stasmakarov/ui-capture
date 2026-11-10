@@ -14,6 +14,7 @@ import io.jmix.flowui.view.LookupComponent;
 import io.jmix.flowui.view.MessageBundle;
 import io.jmix.flowui.view.StandardListView;
 import io.jmix.flowui.view.Subscribe;
+import io.jmix.flowui.view.Target;
 import io.jmix.flowui.view.ViewComponent;
 import io.jmix.flowui.view.ViewController;
 import io.jmix.flowui.view.ViewDescriptor;
@@ -26,6 +27,10 @@ import io.uitrainer.platform.service.CurrentUserAccess;
 import io.uitrainer.platform.service.GroupProgressService;
 import io.uitrainer.platform.view.main.MainView;
 import org.springframework.beans.factory.annotation.Autowired;
+
+import java.util.HashMap;
+import java.util.Map;
+import java.util.UUID;
 
 @Route(value = "groups", layout = MainView.class)
 @ViewController(id = PlatformViews.GROUP_LIST)
@@ -40,6 +45,8 @@ public class StudyGroupListView extends StandardListView<StudyGroup> {
     @Autowired
     private GroupProgressService groupProgress;
 
+    @ViewComponent
+    private CollectionContainer<StudyGroup> groupsDc;
     @ViewComponent
     private CollectionLoader<StudyGroup> groupsDl;
     @ViewComponent
@@ -58,6 +65,7 @@ public class StudyGroupListView extends StandardListView<StudyGroup> {
     private JmixButton editButton;
     @ViewComponent
     private MessageBundle messageBundle;
+    private Map<UUID, String> progressByGroup = new HashMap<>();
 
     @Subscribe
     public void onInit(InitEvent event) {
@@ -154,6 +162,13 @@ public class StudyGroupListView extends StandardListView<StudyGroup> {
     }
 
     private String progressLabel(StudyGroup group) {
-        return groupProgress.summarize(group).progressLabel();
+        return progressByGroup.getOrDefault(group.getId(), "");
+    }
+
+    @Subscribe(id = "groupsDc", target = Target.DATA_CONTAINER)
+    public void onGroupsDcCollectionChange(CollectionContainer.CollectionChangeEvent<StudyGroup> event) {
+        progressByGroup.clear();
+        groupProgress.summarize(groupsDc.getItems()).forEach((id, summary) ->
+                progressByGroup.put(id, summary.progressLabel()));
     }
 }

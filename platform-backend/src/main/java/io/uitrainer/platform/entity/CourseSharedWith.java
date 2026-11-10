@@ -2,6 +2,7 @@ package io.uitrainer.platform.entity;
 
 import io.jmix.core.DeletePolicy;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
+import io.jmix.core.entity.annotation.Listeners;
 import io.jmix.core.entity.annotation.OnDeleteInverse;
 import io.jmix.core.metamodel.annotation.DependsOnProperties;
 import io.jmix.core.metamodel.annotation.InstanceName;
@@ -19,6 +20,7 @@ import jakarta.persistence.Version;
 import java.util.UUID;
 
 @JmixEntity
+@Listeners("uic_CourseSharedWithDeleteListener")
 @Table(name = "UIC_COURSE_SHARED_WITH", indexes = {
         @Index(name = "IDX_UIC_COURSE_SHARED_COURSE", columnList = "COURSE_ID"),
         @Index(name = "IDX_UIC_COURSE_SHARED_TRAINER", columnList = "TRAINER_ID"),

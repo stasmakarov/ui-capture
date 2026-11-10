@@ -3,6 +3,7 @@ package io.uitrainer.platform.service;
 import io.jmix.core.DataManager;
 import io.jmix.core.EntityStates;
 import io.jmix.core.FetchPlan;
+import io.jmix.core.entity.KeyValueEntity;
 import io.uitrainer.platform.entity.Course;
 import io.uitrainer.platform.entity.CourseSharing;
 import io.uitrainer.platform.entity.StudyGroup;
@@ -10,7 +11,13 @@ import io.uitrainer.platform.entity.User;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 
+import java.util.Collection;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
 import java.util.Objects;
+import java.util.Set;
 import java.util.UUID;
 
 @Service
@@ -72,20 +79,87 @@ public class CourseAccessService {
     }
 
     public String roleLabel(@Nullable Course course) {
-        Course loaded = loaded(course);
-        if (loaded == null) {
+        if (course == null) {
             return "";
         }
-        if (access.isAdmin() || isOwner(loaded)) {
-            return "Автор";
+        return roleLabels(List.of(course)).getOrDefault(course.getId(), "");
+    }
+
+    public Map<UUID, String> roleLabels(Collection<Course> courses) {
+        Map<UUID, String> result = new HashMap<>();
+        if (courses == null || courses.isEmpty()) {
+            return result;
         }
-        if (isCoauthor(loaded)) {
-            return "Соавтор";
+        List<UUID> ids = courses.stream().map(Course::getId).filter(Objects::nonNull).toList();
+        if (ids.isEmpty()) {
+            return result;
         }
-        if (canLead(loaded)) {
-            return "Ведение";
+        if (access.isAdmin()) {
+            for (UUID id : ids) {
+                result.put(id, "Автор");
+            }
+            return result;
         }
-        return "";
+        Set<UUID> owned = ownerIds(ids);
+        Set<UUID> coauthorIds = idSet(
+                "select a.course.id from uic_CourseCoauthor a where a.trainer.username = :u and a.course.id in :ids",
+                ids);
+        Set<UUID> sharedIds = idSet(
+                "select s.course.id from uic_CourseSharedWith s where s.trainer.username = :u and s.course.id in :ids "
+                        + "and s.course.sharing = 'SELECTED'",
+                ids);
+        for (Course course : courses) {
+            UUID id = course.getId();
+            if (id == null) {
+                continue;
+            }
+            if (owned.contains(id)) {
+                result.put(id, "Автор");
+            } else if (coauthorIds.contains(id)) {
+                result.put(id, "Соавтор");
+            } else if (course.getSharing() == CourseSharing.ALL_TEACHERS && access.isTrainer()) {
+                result.put(id, "Ведение");
+            } else if (course.getSharing() == CourseSharing.SELECTED && sharedIds.contains(id) && access.isTrainer()) {
+                result.put(id, "Ведение");
+            } else {
+                result.put(id, "");
+            }
+        }
+        return result;
+    }
+
+    private Set<UUID> ownerIds(List<UUID> ids) {
+        Set<UUID> result = new HashSet<>();
+        List<KeyValueEntity> rows = dataManager.unconstrained().loadValues(
+                        "select c.id, o.username from uic_Course c join c.owner o where c.id in :ids")
+                .properties("courseId", "username")
+                .parameter("ids", ids)
+                .list();
+        for (KeyValueEntity row : rows) {
+            if (access.username().equals(row.getValue("username"))) {
+                result.add(row.getValue("courseId"));
+            }
+        }
+        return result;
+    }
+
+    private Set<UUID> idSet(String query, List<UUID> ids) {
+        Set<UUID> result = new HashSet<>();
+        if (ids.isEmpty()) {
+            return result;
+        }
+        List<KeyValueEntity> rows = dataManager.unconstrained().loadValues(query)
+                .properties("courseId")
+                .parameter("u", access.username())
+                .parameter("ids", ids)
+                .list();
+        for (KeyValueEntity row : rows) {
+            UUID id = row.getValue("courseId");
+            if (id != null) {
+                result.add(id);
+            }
+        }
+        return result;
     }
 
     public String unavailableForGroupMessage(@Nullable Course course) {

@@ -6,10 +6,12 @@ import com.vaadin.flow.router.Route;
 import io.jmix.flowui.component.grid.DataGrid;
 import io.jmix.flowui.kit.action.Action;
 import io.jmix.flowui.kit.component.button.JmixButton;
+import io.jmix.flowui.model.CollectionContainer;
 import io.jmix.flowui.view.DialogMode;
 import io.jmix.flowui.view.LookupComponent;
 import io.jmix.flowui.view.StandardListView;
 import io.jmix.flowui.view.Subscribe;
+import io.jmix.flowui.view.Target;
 import io.jmix.flowui.view.ViewComponent;
 import io.jmix.flowui.view.ViewController;
 import io.jmix.flowui.view.ViewDescriptor;
@@ -21,7 +23,10 @@ import io.uitrainer.platform.view.main.MainView;
 import io.uitrainer.platform.view.studio.StudioLaunch;
 import org.springframework.beans.factory.annotation.Autowired;
 
+import java.util.HashMap;
+import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 
 @Route(value = "courses", layout = MainView.class)
 @ViewController(id = PlatformViews.COURSE_LIST)
@@ -38,6 +43,8 @@ public class CourseListView extends StandardListView<Course> {
     private CourseAccessService courseAccess;
 
     @ViewComponent
+    private CollectionContainer<Course> coursesDc;
+    @ViewComponent
     private DataGrid<Course> coursesDataGrid;
     @ViewComponent
     private JmixButton createButton;
@@ -51,6 +58,7 @@ public class CourseListView extends StandardListView<Course> {
     private JmixButton recordInStudioLocal;
 
     private boolean readOnlyHintAdded;
+    private Map<UUID, String> roleByCourse = new HashMap<>();
 
     @Subscribe
     public void onInit(InitEvent event) {
@@ -65,7 +73,8 @@ public class CourseListView extends StandardListView<Course> {
         Action remove = coursesDataGrid.getAction("removeAction");
         if (create != null) create.setVisible(editor);
         if (remove != null) remove.setVisible(editor);
-        coursesDataGrid.addColumn(courseAccess::roleLabel).setHeader("Роль").setKey("accessRole");
+        refreshRoles();
+        coursesDataGrid.addColumn(c -> roleByCourse.getOrDefault(c.getId(), "")).setHeader("Роль").setKey("accessRole");
         if (!editor && !readOnlyHintAdded) {
             readOnlyHintAdded = true;
             editButton.setText("Открыть");
@@ -84,8 +93,8 @@ public class CourseListView extends StandardListView<Course> {
         Course course = one ? selected.iterator().next() : null;
         boolean edit = course != null && courseAccess.canEdit(course);
         boolean manage = course != null && courseAccess.canManageAccess(course);
-        recordInStudio.setEnabled(edit);
-        recordInStudioLocal.setEnabled(edit);
+        recordInStudio.setVisible((access.isTrainer() || access.isAdmin()) && edit);
+        recordInStudioLocal.setVisible((access.isTrainer() || access.isAdmin()) && edit);
         removeButton.setEnabled(manage);
         Action remove = coursesDataGrid.getAction("removeAction");
         if (remove != null) {
@@ -105,5 +114,14 @@ public class CourseListView extends StandardListView<Course> {
             return;
         }
         studioLaunch.launch(this, forceFallback, course.getId());
+    }
+
+    @Subscribe(id = "coursesDc", target = Target.DATA_CONTAINER)
+    public void onCoursesDcCollectionChange(CollectionContainer.CollectionChangeEvent<Course> event) {
+        refreshRoles();
+    }
+
+    private void refreshRoles() {
+        roleByCourse = courseAccess.roleLabels(coursesDc.getItems());
     }
 }

@@ -3,6 +3,7 @@ package io.uitrainer.platform.entity;
 import io.jmix.core.DeletePolicy;
 import io.jmix.core.FileRef;
 import io.jmix.core.entity.annotation.JmixGeneratedValue;
+import io.jmix.core.entity.annotation.Listeners;
 import io.jmix.core.entity.annotation.OnDeleteInverse;
 import io.jmix.core.metamodel.annotation.InstanceName;
 import io.jmix.core.metamodel.annotation.JmixEntity;
@@ -14,6 +15,7 @@ import java.time.OffsetDateTime;
 import java.util.UUID;
 
 @JmixEntity
+@Listeners("uic_LessonAccessListener")
 @Table(name = "UIC_LESSON", indexes = {@Index(name = "IDX_UIC_LESSON_EXTERNAL_ID", columnList = "EXTERNAL_ID", unique = true)})
 @Entity(name = "uic_Lesson")
 public class Lesson {

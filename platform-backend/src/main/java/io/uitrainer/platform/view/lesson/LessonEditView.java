@@ -14,6 +14,7 @@ import io.uitrainer.platform.entity.Lesson;
 import io.uitrainer.platform.entity.LessonStatus;
 import io.uitrainer.platform.entity.User;
 import io.uitrainer.platform.security.PlatformViews;
+import io.uitrainer.platform.service.CourseAccessService;
 import io.uitrainer.platform.service.CurrentUserAccess;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -29,6 +30,8 @@ public class LessonEditView extends StandardDetailView<Lesson> {
     private EntityStates entityStates;
     @Autowired
     private CurrentUserAccess access;
+    @Autowired
+    private CourseAccessService courseAccess;
 
     @ViewComponent
     private TypedTextField<String> externalIdField;
@@ -52,6 +55,9 @@ public class LessonEditView extends StandardDetailView<Lesson> {
         }
         if (!access.isAdmin()) {
             authorField.setReadOnly(true);
+        }
+        if (!courseAccess.canEdit(getEditedEntity().getCourse()) && !entityStates.isNew(getEditedEntity())) {
+            setReadOnly(true);
         }
     }
 
