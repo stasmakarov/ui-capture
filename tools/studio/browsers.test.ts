@@ -7,10 +7,15 @@ describe('detectBrowsers', () => {
       '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome',
       '/Applications/Yandex.app/Contents/MacOS/Yandex',
     ])
-    const options = detectBrowsers((file) => present.has(file))
+    const options = detectBrowsers((file) => present.has(file), () => true)
     expect(options.find((item) => item.id === 'chrome')).toMatchObject({ available: true })
     expect(options.find((item) => item.id === 'yandex')?.executablePath).toContain('Yandex.app')
     expect(options.find((item) => item.id === 'chromium')?.available).toBe(true)
+  })
+
+  it('помечает встроенный Chromium недоступным, если бинарника нет', () => {
+    const options = detectBrowsers(() => false, () => false)
+    expect(options.find((item) => item.id === 'chromium')?.available).toBe(false)
   })
 
   it('помечает отсутствующий Яндекс Браузер и не даёт его запустить', () => {

@@ -3,6 +3,7 @@ import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import { explainLaunchError, explainOpenError } from './errors.ts';
+import { loadInpageScript } from './inpageBundle.ts';
 import type { CaptureAction, CaptureBundle, CaptureScreen, DescribedElement, SavedAsset } from './types.ts';
 
 const VIEWPORT = { width: 1280, height: 800 };
@@ -112,22 +113,6 @@ type LaunchChoice = {
   channel?: string;
   executablePath?: string;
 };
-
-async function bundleInpage(): Promise<string> {
-  const esbuild = await import('esbuild');
-  const result = await esbuild.build({
-    entryPoints: [path.resolve('tools/capture/inpage-entry.ts')],
-    bundle: true,
-    format: 'iife',
-    platform: 'browser',
-    write: false,
-    target: 'es2022',
-    logLevel: 'silent',
-  });
-  const file = result.outputFiles[0];
-  if (!file) throw new Error('Не удалось собрать скрипт снимка');
-  return file.text;
-}
 
 function assetFileName(url: string, contentType: string): string {
   const hash = createHash('sha1').update(url).digest('hex').slice(0, 10);
@@ -296,7 +281,7 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
   const netDir = path.join(captureDir, 'net');
   await mkdir(path.join(captureDir, 'screens'), { recursive: true });
   await mkdir(netDir, { recursive: true });
-  const script = await bundleInpage();
+  const script = await loadInpageScript();
   const assets: SavedAsset[] = [];
   const browser = await launchBrowser(options);
   const context = await browser.newContext({

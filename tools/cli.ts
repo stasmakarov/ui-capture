@@ -65,9 +65,9 @@ async function main() {
     return
   }
   if (argv[0] === 'studio') {
-    const { startStudio } = await import('./studio/server.ts')
+    const { startStudioDev } = await import('./studio/devStudio.ts')
     const port = Number(flag(argv, '--port') ?? 44731)
-    const studio = await startStudio({
+    const studio = await startStudioDev({
       port,
       open: !has(argv, '--no-open'),
       lessonsDir: path.resolve(flag(argv, '--out') ?? './lessons'),

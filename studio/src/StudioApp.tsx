@@ -22,9 +22,12 @@ type Whisper = {
   totalBytes: number
   file: string
   error: string
+  modelBytes: number
 }
 type BrowserChoice = 'chromium' | 'chrome' | 'yandex' | 'custom'
 type BrowserOption = { id: BrowserChoice; label: string; available: boolean }
+type ChromiumStatus = { phase: 'idle' | 'installing' | 'ready' | 'error'; installed: boolean; error: string }
+type BrowsersPayload = { options: BrowserOption[]; hint: string; chromium: ChromiumStatus }
 
 const MIC_KEY = 'uitrainer-mic'
 const MIC_READY = 'uitrainer-mic-ready'
@@ -48,6 +51,8 @@ export function StudioApp() {
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [studioInfo, setStudioInfo] = useState<StudioInfo | null>(null)
+  const [updateProgress, setUpdateProgress] = useState<{ version: string; percent: number } | null>(null)
+  const [browsersInfo, setBrowsersInfo] = useState<BrowsersPayload | null>(null)
   const dirty = !!editor && JSON.stringify(editor) !== baseline
   const desktop = window.uitrainerDesktop
 
@@ -84,8 +89,15 @@ export function StudioApp() {
     })()
     const source = new EventSource('/api/whisper/events')
     source.onmessage = (event) => setWhisper(JSON.parse(event.data) as Whisper)
-    return () => source.close()
-  }, [])
+    void fetch('/api/browsers').then(async (response) => {
+      setBrowsersInfo(await response.json() as BrowsersPayload)
+    }).catch(() => undefined)
+    const stopUpdates = desktop?.onUpdateProgress(setUpdateProgress)
+    return () => {
+      source.close()
+      stopUpdates?.()
+    }
+  }, [desktop])
 
   return (
     <div className="app">
@@ -97,7 +109,18 @@ export function StudioApp() {
         </div>
         <button type="button" className="tertiary" onClick={() => setSettingsOpen(true)}>Настройки</button>
         <button type="button" className="tertiary" onClick={() => setAboutOpen(true)}>О программе</button>
-        <div className="banner-actions" ref={setBannerHost} />
+        <div className="banner-end">
+          {updateProgress && (
+            <span className="banner-update">Скачиваю обновление {updateProgress.version}… {updateProgress.percent}%</span>
+          )}
+          {platform.connected && (
+            <div className="banner-user" data-testid="studio-user">
+              <span className="banner-avatar" aria-hidden="true">{initial(platform.displayName || platform.username)}</span>
+              <span>{platform.displayName || platform.username}</span>
+            </div>
+          )}
+          <div className="banner-actions" ref={setBannerHost} />
+        </div>
       </header>
       <main className="studio">
         {error && <p className="error" role="alert">{error}</p>}
@@ -119,6 +142,10 @@ export function StudioApp() {
             items={catalog}
             selected={selected}
             whisper={whisper}
+            browsers={browsersInfo}
+            onWhisper={setWhisper}
+            onError={setError}
+            onBrowsers={setBrowsersInfo}
             onSelect={setSelected}
             onNew={() => { setError(null); setView('new') }}
             onOpen={(id) => { setPreviewId(id); setView('preview') }}
@@ -141,7 +168,8 @@ export function StudioApp() {
                 const response = await fetch(`/api/lessons/${id}/publish`, { method: 'POST' })
                 const payload = await response.json() as { error?: string; title?: string; versionNo?: number; adminUrl?: string }
                 if (!response.ok) { setError(payload.error ?? 'Не удалось опубликовать'); return }
-                setNotice(`«${payload.title}» отправлен на платформу черновиком, версия ${payload.versionNo}. ${payload.adminUrl ?? ''}`)
+                const course = platform.connected && platform.courseTitle ? ` Курс: ${platform.courseTitle}.` : ''
+                setNotice(`«${payload.title}» отправлен на платформу черновиком, версия ${payload.versionNo}.${course} ${payload.adminUrl ?? ''}`)
               } finally {
                 setPublishing(null)
               }
@@ -173,6 +201,7 @@ export function StudioApp() {
         {view === 'new' && (
           <NewLesson
             whisper={whisper}
+            courseTitle={platform.connected ? platform.courseTitle : null}
             onCancel={() => setView('catalog')}
             onError={setError}
             onWhisper={setWhisper}
@@ -309,10 +338,14 @@ export function StudioApp() {
   )
 }
 
-function Catalog({ items, selected, whisper, onSelect, onNew, onOpen, onEdit, onDelete, onDownload, onPackage, onImport, platformConnected, publishing, onPublish }: {
+function Catalog({ items, selected, whisper, browsers, onWhisper, onError, onBrowsers, onSelect, onNew, onOpen, onEdit, onDelete, onDownload, onPackage, onImport, platformConnected, publishing, onPublish }: {
   items: CatalogItem[]
   selected: string[]
   whisper: Whisper | null
+  browsers: BrowsersPayload | null
+  onWhisper: (value: Whisper) => void
+  onError: (message: string) => void
+  onBrowsers: (value: BrowsersPayload) => void
   onSelect: (ids: string[]) => void
   onNew: () => void
   onOpen: (id: string) => void
@@ -325,6 +358,7 @@ function Catalog({ items, selected, whisper, onSelect, onNew, onOpen, onEdit, on
   publishing: string | null
   onPublish: (id: string) => void
 }) {
+  const noBrowser = browsers != null && !browsers.chromium.installed && !browsers.options.some((item) => (item.id === 'chrome' || item.id === 'yandex') && item.available)
   return (
     <section>
       <div className="toolbar">
@@ -344,8 +378,19 @@ function Catalog({ items, selected, whisper, onSelect, onNew, onOpen, onEdit, on
           />
         </label>
       </div>
-      {whisper?.ready && <p className="installed">Модель установлена</p>}
-      {whisper && !whisper.ready && <p className="whisper">{whisper.hint}</p>}
+      {whisper?.ready && <p className="installed">Распознавание речи установлено</p>}
+      {whisper && !whisper.ready && (
+        <div className="whisper">
+          <p>{whisper.hint}</p>
+          <SpeechInstallButton whisper={whisper} onWhisper={onWhisper} onError={onError} />
+        </div>
+      )}
+      {noBrowser && (
+        <div className="whisper">
+          <p>Не найден ни Chromium, ни поддерживаемый системный браузер.</p>
+          <ChromiumInstall browsers={browsers} onBrowsers={onBrowsers} />
+        </div>
+      )}
       {items.length === 0 && <p className="muted">Записей пока нет. Создайте первый урок.</p>}
       <div className="cards">
         {items.map((item) => (
@@ -379,17 +424,19 @@ function Catalog({ items, selected, whisper, onSelect, onNew, onOpen, onEdit, on
   )
 }
 
-function NewLesson({ whisper, onCancel, onError, onWhisper, onStarted }: {
+function NewLesson({ whisper, courseTitle, onCancel, onError, onWhisper, onStarted }: {
   whisper: Whisper | null
+  courseTitle: string | null
   onCancel: () => void
   onError: (message: string) => void
   onWhisper: (value: Whisper) => void
   onStarted: () => void
 }) {
-  const [url, setUrl] = useState('https://zakupki.gov.ru/epz/main/public/home.html')
-  const [lessonName, setLessonName] = useState('Найти извещение')
+  const [url, setUrl] = useState('')
+  const [lessonName, setLessonName] = useState('')
   const [mode, setMode] = useState<CaptureMode>('auto')
   const [browsers, setBrowsers] = useState<BrowserOption[]>([])
+  const [chromium, setChromium] = useState<ChromiumStatus | null>(null)
   const [browser, setBrowser] = useState<BrowserChoice>('chromium')
   const [customPath, setCustomPath] = useState('')
   const [browserHint, setBrowserHint] = useState(GOST_HINT)
@@ -418,8 +465,9 @@ function NewLesson({ whisper, onCancel, onError, onWhisper, onStarted }: {
     const onChange = () => { void refreshMics().catch(() => undefined) }
     navigator.mediaDevices?.addEventListener('devicechange', onChange)
     void fetch('/api/browsers').then(async (response) => {
-      const payload = await response.json() as { options: BrowserOption[]; hint: string }
+      const payload = await response.json() as BrowsersPayload
       setBrowsers(payload.options)
+      setChromium(payload.chromium)
       if (payload.hint) setBrowserHint(payload.hint)
     }).catch(() => undefined)
     void fetch('/api/settings').then(async (response) => {
@@ -483,11 +531,14 @@ function NewLesson({ whisper, onCancel, onError, onWhisper, onStarted }: {
     }
   }
 
-  const downloading = whisper?.phase === 'downloading'
+  const missing: string[] = []
+  if (!lessonName.trim()) missing.push('название урока')
+  if (!url.trim()) missing.push('адрес стартовой страницы')
   return (
     <section>
       <h1>Новый урок</h1>
-      <form className="form" onSubmit={async (event) => {
+      {courseTitle && <p className="meta">Курс: {courseTitle}</p>}
+      <form className="form lesson-form" onSubmit={async (event) => {
         event.preventDefault()
         setBusy(true)
         onError('')
@@ -508,11 +559,11 @@ function NewLesson({ whisper, onCancel, onError, onWhisper, onStarted }: {
         if (micId) localStorage.setItem(MIC_KEY, micId)
         onStarted()
       }}>
-        <label>Стартовая страница
-          <input name="url" value={url} onChange={(event) => setUrl(event.target.value)} required />
-        </label>
         <label>Название урока
-          <input name="lessonName" value={lessonName} onChange={(event) => setLessonName(event.target.value)} required />
+          <input name="lessonName" value={lessonName} onChange={(event) => setLessonName(event.target.value)} placeholder="Например: Поиск документа" />
+        </label>
+        <label>Стартовая страница
+          <input name="url" value={url} onChange={(event) => setUrl(event.target.value)} placeholder="Например: https://…" />
         </label>
         <label>Режим захвата
           <select name="mode" value={mode} onChange={(event) => setMode(event.target.value as CaptureMode)}>
@@ -521,14 +572,40 @@ function NewLesson({ whisper, onCancel, onError, onWhisper, onStarted }: {
             <option value="screenshot">Только скриншоты</option>
           </select>
         </label>
-          {!micGranted && (
-          <div className="field">
+        <label>Браузер для записи
+          <select name="browser" value={browser} onChange={(event) => setBrowser(event.target.value as BrowserChoice)}>
+            {browsers.map((item) => (
+              <option key={item.id} value={item.id} disabled={!item.available}>
+                {item.label}{item.available ? '' : ' (не найден)'}
+              </option>
+            ))}
+          </select>
+        </label>
+        {browser === 'custom' && (
+          <label className="wide">Путь к браузеру
+            <input name="executablePath" value={customPath} onChange={(event) => setCustomPath(event.target.value)} placeholder="/Applications/Yandex.app/Contents/MacOS/Yandex" />
+          </label>
+        )}
+        <p className="hint wide">{browserHint}</p>
+        <div className="wide">
+          {chromium && (
+            <ChromiumInstall
+              browsers={{ options: browsers, hint: browserHint, chromium }}
+              onBrowsers={(payload) => {
+                setBrowsers(payload.options)
+                setChromium(payload.chromium)
+              }}
+            />
+          )}
+        </div>
+        {!micGranted && (
+          <div className="field wide">
             <span>Микрофон</span>
             <button type="button" className="primary" onClick={() => void allowMic()}>Разрешить микрофон</button>
           </div>
         )}
         {micGranted && (
-          <label>Микрофон
+          <label className="wide">Микрофон
             <select name="mic" value={micId} onChange={(event) => {
               setMicId(event.target.value)
               localStorage.setItem(MIC_KEY, event.target.value)
@@ -539,7 +616,7 @@ function NewLesson({ whisper, onCancel, onError, onWhisper, onStarted }: {
           </label>
         )}
         {micGranted && (
-          <div>
+          <div className="wide">
             <div
               className="level"
               role="meter"
@@ -554,42 +631,18 @@ function NewLesson({ whisper, onCancel, onError, onWhisper, onStarted }: {
             <p className="hint">Уровень выбранного микрофона. Говорите — полоска должна двигаться до начала записи.</p>
           </div>
         )}
-        <label>Браузер для записи
-          <select name="browser" value={browser} onChange={(event) => setBrowser(event.target.value as BrowserChoice)}>
-            {browsers.map((item) => (
-              <option key={item.id} value={item.id} disabled={!item.available}>
-                {item.label}{item.available ? '' : ' (не найден)'}
-              </option>
-            ))}
-          </select>
-        </label>
-        {browser === 'custom' && (
-          <label>Путь к браузеру
-            <input name="executablePath" value={customPath} onChange={(event) => setCustomPath(event.target.value)} placeholder="/Applications/Yandex.app/Contents/MacOS/Yandex" />
-          </label>
-        )}
-        <p className="hint">{browserHint}</p>
-        <button type="button" className="tertiary" onClick={() => { void fetch('/api/browsers/install-chromium', { method: 'POST' }) }}>
-          Скачать Chromium
-        </button>
-        {whisper?.ready && <p className="installed">Модель установлена</p>}
-        {whisper && !whisper.ready && <p className="whisper">{whisper.hint}</p>}
-        {whisper?.error && <p className="error" role="alert">{whisper.error}</p>}
+        {whisper?.ready && <p className="installed wide">Распознавание речи установлено</p>}
         {whisper && !whisper.ready && (
-          <button type="button" className="tertiary" disabled={downloading} onClick={async () => {
-            onError('')
-            const response = await fetch('/api/whisper/download', { method: 'POST' })
-            const payload = await response.json() as Whisper & { error?: string }
-            if (!response.ok) {
-              onError(payload.error ?? 'Не удалось скачать модель речи. Проверьте интернет и повторите.')
-              return
-            }
-            onWhisper(payload)
-          }}>{downloading ? downloadLabel(whisper.percent, whisper.loadedBytes, whisper.totalBytes) : 'Скачать модель речи'}</button>
+          <div className="whisper wide">
+            <p>{whisper.hint}</p>
+            <SpeechInstallButton whisper={whisper} onWhisper={onWhisper} onError={onError} />
+          </div>
         )}
+        {whisper?.error && <p className="error wide" role="alert">{whisper.error}</p>}
         <div className="action-bar">
-          <button type="submit" className="primary" disabled={busy}>{busy ? 'Открываю браузер…' : 'Начать запись'}</button>
+          <button type="submit" className="primary" disabled={busy || missing.length > 0}>{busy ? 'Открываю браузер…' : 'Начать запись'}</button>
           <button type="button" className="tertiary" onClick={onCancel}>Отмена</button>
+          {missing.length > 0 && <p className="hint">Заполните: {missing.join(', ')}</p>}
         </div>
       </form>
     </section>
@@ -827,20 +880,79 @@ function AboutDialog({ info, desktop, onClose }: { info: StudioInfo; desktop?: W
 
 type PlatformState =
   | { connected: false }
-  | { connected: true; server: string; username: string; courseId: string | null; courseTitle: string | null; tokenPrefix: string; expiresAt: string | null }
+  | { connected: true; server: string; username: string; displayName?: string | null; courseId: string | null; courseTitle: string | null; expiresAt: string | null }
+
+function initial(name: string): string {
+  const ch = name.trim().charAt(0)
+  return ch ? ch.toLocaleUpperCase('ru-RU') : '?'
+}
+
+function speechInstallLabel(whisper: Whisper): string {
+  if (whisper.phase === 'downloading') return downloadLabel(whisper.percent, whisper.loadedBytes, whisper.totalBytes)
+  if (whisper.modelBytes > 0) return `Установить распознавание речи (≈${Math.round(whisper.modelBytes / (1024 * 1024))} МБ)`
+  return 'Установить распознавание речи'
+}
+
+function SpeechInstallButton({ whisper, onWhisper, onError }: {
+  whisper: Whisper
+  onWhisper: (value: Whisper) => void
+  onError: (message: string) => void
+}) {
+  const downloading = whisper.phase === 'downloading'
+  return (
+    <button type="button" className="tertiary" disabled={downloading} onClick={async () => {
+      onError('')
+      const response = await fetch('/api/whisper/download', { method: 'POST' })
+      const payload = await response.json() as Whisper & { error?: string }
+      if (!response.ok) {
+        onError(payload.error ?? 'Не удалось установить распознавание речи. Проверьте интернет и повторите.')
+        return
+      }
+      onWhisper(payload)
+    }}>{speechInstallLabel(whisper)}</button>
+  )
+}
+
+function ChromiumInstall({ browsers, onBrowsers }: {
+  browsers: BrowsersPayload
+  onBrowsers: (value: BrowsersPayload) => void
+}) {
+  const status = browsers.chromium
+  useEffect(() => {
+    if (status.phase !== 'installing') return
+    const timer = window.setInterval(() => {
+      void fetch('/api/browsers').then(async (response) => {
+        onBrowsers(await response.json() as BrowsersPayload)
+      }).catch(() => undefined)
+    }, 2000)
+    return () => window.clearInterval(timer)
+  }, [status.phase])
+
+  if (status.installed || status.phase === 'ready') {
+    return <p className="installed">Chromium установлен</p>
+  }
+  return (
+    <div>
+      <button type="button" className="tertiary" disabled={status.phase === 'installing'} onClick={async () => {
+        const response = await fetch('/api/browsers/install-chromium', { method: 'POST' })
+        onBrowsers(await response.json() as BrowsersPayload)
+      }}>{status.phase === 'installing' ? 'Устанавливаю…' : 'Установить Chromium'}</button>
+      {status.phase === 'error' && <p className="error" role="alert">{status.error}</p>}
+    </div>
+  )
+}
 
 function PlatformBar({ platform, onForget }: { platform: PlatformState; onForget: () => void }) {
   if (!platform.connected) {
     return (
       <p className="muted" data-testid="platform-status">
-        Платформа не подключена. В админке нажмите «Записать в студии» — студия получит доступ сама.
+        Платформа не подключена. В платформе нажмите «Записать в студии» — студия подключится сама.
       </p>
     )
   }
   return (
     <p className="meta" data-testid="platform-status">
-      Платформа: <a href={platform.server} target="_blank" rel="noreferrer">{platform.server}</a> · {platform.username}
-      {platform.courseTitle ? ` · курс «${platform.courseTitle}»` : ''} · токен {platform.tokenPrefix}{' '}
+      Платформа: <a href={platform.server} target="_blank" rel="noreferrer">{platform.server}</a>{' '}
       <button type="button" className="tertiary" onClick={onForget}>Отключить</button>
     </p>
   )

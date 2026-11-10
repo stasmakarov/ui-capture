@@ -27,7 +27,7 @@ describe('студия ↔ платформа', () => {
         if (request.url === '/api/studio/exchange') {
           const ticket = (JSON.parse(body.toString()) as { ticket: string }).ticket
           if (ticket !== 'uictk_good') { response.statusCode = 403; response.end(JSON.stringify({ error: 'Тикет уже использован' })); return }
-          response.end(JSON.stringify({ token: 'uicst_secret-token', username: 'trainer', courseId: 'c-1', courseTitle: 'Демо', expiresAt: null }))
+          response.end(JSON.stringify({ token: 'uicst_secret-token', username: 'trainer', displayName: 'Тренер Иванова', courseId: 'c-1', courseTitle: 'Демо', expiresAt: null }))
           return
         }
         if (request.url === '/api/lessons/import') {
@@ -57,10 +57,14 @@ describe('студия ↔ платформа', () => {
     expect(link.courseId).toBe('c-1')
     const stored = await readPlatformLink(root)
     expect(stored?.token).toBe('uicst_secret-token')
+    expect(stored?.displayName).toBe('Тренер Иванова')
     if (process.platform !== 'win32') {
       expect((await stat(path.join(root, '.studio-platform.json'))).mode & 0o777).toBe(0o600)
     }
-    expect(JSON.stringify(publicLink(stored))).not.toContain('secret-token')
+    const published = publicLink(stored)
+    expect(JSON.stringify(published)).not.toContain('secret-token')
+    expect(JSON.stringify(published)).not.toContain('tokenPrefix')
+    expect(published).toMatchObject({ connected: true, displayName: 'Тренер Иванова', username: 'trainer' })
   })
 
   it('«Опубликовать на сервер» отправляет проверяемый .lesson.zip с Bearer-токеном и курсом', async () => {

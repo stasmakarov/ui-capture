@@ -5,7 +5,7 @@ import path from 'node:path'
 import { afterAll, describe, expect, it } from 'vitest'
 import { chromium } from 'playwright'
 import { lessonIdFromName } from '../capture/interactive.ts'
-import { startStudio } from './server.ts'
+import { startStudioDev } from './devStudio.ts'
 
 const root = await mkdtemp(path.join(tmpdir(), 'ui-studio-'))
 process.env.UITRAINER_HEADLESS = '1'
@@ -59,7 +59,7 @@ describe('студия', () => {
     </body></html>`)
     const site = await siteServer(siteDir)
     const lessons = path.join(root, 'lessons')
-    const studio = await startStudio({ port: 0, open: false, lessonsDir: lessons, capturesDir: path.join(root, 'captures') })
+    const studio = await startStudioDev({ port: 0, open: false, lessonsDir: lessons, capturesDir: path.join(root, 'captures') })
     const browser = await chromium.launch({
       headless: true,
       args: ['--use-fake-device-for-media-stream', '--use-fake-ui-for-media-stream'],
@@ -69,6 +69,9 @@ describe('студия', () => {
     await mkdir(shots, { recursive: true })
     try {
       await page.goto(studio.url)
+      await page.getByTestId('platform-status').waitFor()
+      await page.getByText('Распознавание речи не установлено').waitFor()
+      await page.screenshot({ path: path.join(shots, '00-home-disconnected.png') })
       await page.getByRole('button', { name: 'Новый урок' }).click()
       await page.waitForFunction(() => {
         const select = document.querySelector('select[name="browser"]')
@@ -90,14 +93,14 @@ describe('студия', () => {
       await page.locator('input[name="lessonName"]').fill('Найти извещение')
       await page.locator('select[name="browser"]').selectOption('chromium')
       await page.screenshot({ path: path.join(shots, '01-new-lesson.png') })
-      await page.getByRole('button', { name: 'Скачать модель речи' }).click()
+      await page.getByRole('button', { name: /Установить распознавание речи/ }).click()
       await page.getByRole('button', { name: /Загрузка \d+%/ }).waitFor()
       await page.screenshot({ path: path.join(shots, '05-whisper-progress.png') })
-      await page.getByText('Модель установлена').first().waitFor()
-      expect(await page.getByRole('button', { name: 'Скачать модель речи' }).count()).toBe(0)
+      await page.getByText('Распознавание речи установлено').first().waitFor()
+      expect(await page.getByRole('button', { name: /Установить распознавание речи/ }).count()).toBe(0)
       await page.screenshot({ path: path.join(shots, '06-model-installed.png') })
       await page.reload()
-      await page.getByText('Модель установлена').first().waitFor()
+      await page.getByText('Распознавание речи установлено').first().waitFor()
       await page.getByRole('button', { name: 'Новый урок' }).click()
       const micSelectAgain = page.locator('select[name="mic"]')
       try {

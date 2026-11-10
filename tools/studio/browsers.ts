@@ -1,4 +1,5 @@
 import { existsSync } from 'node:fs'
+import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
 
@@ -44,7 +45,28 @@ export const browserCandidates: Array<{ id: Exclude<BrowserId, 'chromium' | 'cus
   },
 ]
 
-export function detectBrowsers(exists: (file: string) => boolean = existsSync): BrowserOption[] {
+export function playwrightChromiumPath(): string {
+  const require = createRequire(typeof __filename === 'string' ? __filename : import.meta.url)
+  const playwright = require('playwright') as { chromium: { executablePath: () => string } }
+  return playwright.chromium.executablePath()
+}
+
+export function chromiumInstalled(
+  exists: (file: string) => boolean = existsSync,
+  executablePath: () => string = playwrightChromiumPath,
+): boolean {
+  try {
+    const file = executablePath()
+    return Boolean(file) && exists(file)
+  } catch {
+    return false
+  }
+}
+
+export function detectBrowsers(
+  exists: (file: string) => boolean = existsSync,
+  chromiumReady: (existsFn: (file: string) => boolean) => boolean = (existsFn) => chromiumInstalled(existsFn),
+): BrowserOption[] {
   const found = browserCandidates.map((candidate) => {
     const executablePath = candidate.paths.find((file) => exists(file)) ?? ''
     return {
@@ -56,7 +78,7 @@ export function detectBrowsers(exists: (file: string) => boolean = existsSync): 
     }
   })
   return [
-    { id: 'chromium', label: 'Встроенный Chromium', available: true, executablePath: '', channel: '' },
+    { id: 'chromium', label: 'Встроенный Chromium', available: chromiumReady(exists), executablePath: '', channel: '' },
     ...found,
     { id: 'custom', label: 'Другой (путь)', available: true, executablePath: '', channel: '' },
   ]

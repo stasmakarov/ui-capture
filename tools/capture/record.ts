@@ -1,8 +1,8 @@
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
-import * as esbuild from 'esbuild';
 import { chromium, type Locator, type Page } from 'playwright';
+import { loadInpageScript } from './inpageBundle.ts';
 import type { Scenario } from './scenarios.ts';
 import type { CaptureAction, CaptureBundle, CaptureScreen, DescribedElement, SavedAsset } from './types.ts';
 
@@ -35,21 +35,6 @@ function assetFileName(url: string, contentType: string): string {
   if (contentType.includes('gif')) return `${hash}-${base}.gif`;
   if (contentType.includes('webp')) return `${hash}-${base}.webp`;
   return `${hash}-${base}.bin`;
-}
-
-async function bundleInpage(): Promise<string> {
-  const result = await esbuild.build({
-    entryPoints: [path.resolve('tools/capture/inpage-entry.ts')],
-    bundle: true,
-    format: 'iife',
-    platform: 'browser',
-    write: false,
-    target: 'es2022',
-    logLevel: 'silent',
-  });
-  const file = result.outputFiles[0];
-  if (!file) throw new Error('Не удалось собрать скрипт снимка');
-  return file.text;
 }
 
 function trackAssets(page: Page, netDir: string, assets: SavedAsset[]) {
@@ -167,7 +152,7 @@ export async function recordScenario(scenario: Scenario, outRoot = 'captures'): 
   const netDir = path.join(captureDir, 'net');
   await mkdir(path.join(captureDir, 'screens'), { recursive: true });
   await mkdir(netDir, { recursive: true });
-  const script = await bundleInpage();
+  const script = await loadInpageScript();
   const assets: SavedAsset[] = [];
   const browser = await chromium.launch({ headless: true });
   try {
