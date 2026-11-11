@@ -6,13 +6,7 @@ import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.router.Route;
 import io.jmix.core.EntityStates;
 import io.jmix.flowui.component.textfield.TypedTextField;
-import io.jmix.flowui.view.EditedEntityContainer;
-import io.jmix.flowui.view.MessageBundle;
-import io.jmix.flowui.view.StandardDetailView;
-import io.jmix.flowui.view.Subscribe;
-import io.jmix.flowui.view.ViewComponent;
-import io.jmix.flowui.view.ViewController;
-import io.jmix.flowui.view.ViewDescriptor;
+import io.jmix.flowui.view.*;
 import io.uitrainer.platform.entity.User;
 import io.uitrainer.platform.security.PlatformViews;
 import io.uitrainer.platform.view.main.MainView;
@@ -23,6 +17,7 @@ import java.util.Arrays;
 import java.util.Objects;
 import java.util.TimeZone;
 
+@PrimaryDetailView(User.class)
 @Route(value = "users/:id", layout = MainView.class)
 @ViewController(id = PlatformViews.USER_DETAIL)
 @ViewDescriptor(path = "user-detail-view.xml")
