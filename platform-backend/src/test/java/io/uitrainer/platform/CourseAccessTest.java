@@ -13,6 +13,7 @@ import io.uitrainer.platform.entity.CourseSharing;
 import io.uitrainer.platform.entity.CourseSharedWith;
 import io.uitrainer.platform.entity.GroupAccessMode;
 import io.uitrainer.platform.entity.GroupCourse;
+import io.uitrainer.platform.entity.GroupMember;
 import io.uitrainer.platform.entity.GroupStatus;
 import io.uitrainer.platform.entity.Lesson;
 import io.uitrainer.platform.entity.LessonStatus;
@@ -430,6 +431,83 @@ class CourseAccessTest {
             return dataManager.save(loaded);
         });
         assertThat(dataManager.unconstrained().load(Lesson.class).id(lessonId).one().getTitle()).isEqualTo("автор");
+    }
+
+    @Test
+    void cannotStealUnassignedLessonByChangingAuthor() {
+        UUID lessonId = auth.withUser("trainer", () -> {
+            Lesson created = dataManager.create(Lesson.class);
+            created.setExternalId(TestPackages.uniqueId("steal-auth"));
+            created.setTitle("чужой без курса");
+            created.setAuthor(user("trainer"));
+            created.setStatus(LessonStatus.DRAFT);
+            return dataManager.save(created).getId();
+        });
+        assertThatThrownBy(() -> auth.withUser("trainer2", () -> {
+            Lesson loaded = dataManager.unconstrained().load(Lesson.class).id(lessonId)
+                    .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("author", FetchPlan.BASE))
+                    .one();
+            loaded.setAuthor(user("trainer2"));
+            loaded.setTitle("украл");
+            return dataManager.save(loaded);
+        })).isInstanceOf(AccessDeniedException.class);
+        auth.withUser("trainer", () -> {
+            dataManager.remove(dataManager.load(Lesson.class).id(lessonId).one());
+            return null;
+        });
+        assertThat(dataManager.unconstrained().load(Lesson.class).id(lessonId).optional()).isEmpty();
+    }
+
+    @Test
+    void cannotMoveOwnVersionToForeignLesson() {
+        UUID ownId = auth.withUser("trainer2", () -> importService.importPackage(
+                TestPackages.validZip(TestPackages.uniqueId("ver-own"), "свой"), null, "test")
+                .lesson().getId());
+        UUID foreignId = auth.withUser("trainer", () -> importService.importPackage(
+                TestPackages.validZip(TestPackages.uniqueId("ver-frn"), "чужой"), null, "test")
+                .lesson().getId());
+        UUID versionId = dataManager.unconstrained().load(Lesson.class).id(ownId)
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("currentVersion", FetchPlan.BASE))
+                .one().getCurrentVersion().getId();
+        Lesson foreign = dataManager.unconstrained().load(Lesson.class).id(foreignId).one();
+        LessonVersion version = dataManager.unconstrained().load(LessonVersion.class).id(versionId)
+                .fetchPlan(fp -> fp.addFetchPlan(FetchPlan.BASE).add("lesson", FetchPlan.BASE))
+                .one();
+        version.setLesson(foreign);
+        assertThatThrownBy(() -> auth.withUser("trainer2", () -> dataManager.save(version)))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void studentSeesPublishedLessonOfTrainerCourseInTrainer2Group() {
+        Course course = auth.withUser("trainer", () -> {
+            Course c = saveCourse("trainer", "Всем в группе trainer2");
+            c.setSharing(CourseSharing.ALL_TEACHERS);
+            return dataManager.save(c);
+        });
+        String ext = TestPackages.uniqueId("t2-grp");
+        UUID lessonId = auth.withUser("trainer", () -> {
+            UUID id = importService.importPackage(TestPackages.validZip(ext, "урок"), course.getId(), "test")
+                    .lesson().getId();
+            lifecycle.transition(id, LessonStatus.PUBLISHED, null);
+            return id;
+        });
+        auth.withUser("trainer2", () -> {
+            StudyGroup group = emptyGroup("t2-lead");
+            group.setStatus(GroupStatus.ACTIVE);
+            group = dataManager.save(group);
+            GroupMember member = dataManager.create(GroupMember.class);
+            member.setGroup(group);
+            member.setStudent(user("student"));
+            dataManager.save(member);
+            GroupCourse line = dataManager.create(GroupCourse.class);
+            line.setGroup(group);
+            line.setCourse(course);
+            line.setSortOrder(1);
+            dataManager.save(line);
+            return null;
+        });
+        assertThat(auth.withUser("student", () -> dataManager.load(Lesson.class).id(lessonId).optional())).isPresent();
     }
 
     @Test

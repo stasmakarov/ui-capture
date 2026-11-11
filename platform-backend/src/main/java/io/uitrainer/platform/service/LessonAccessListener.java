@@ -47,15 +47,19 @@ public class LessonAccessListener implements BeforeDeleteEntityListener<Lesson> 
     public void onLessonSaving(EntitySavingEvent<Lesson> event) {
         Lesson lesson = event.getEntity();
         boolean isNew = entityStates.isNew(lesson);
-        Lesson stored = isNew || lesson.getId() == null ? null : storedLesson(lesson.getId());
-        Course newCourse = courseOf(lesson);
-        Course oldCourse = stored == null ? null : stored.getCourse();
-        if (courseChanged(oldCourse, newCourse)) {
-            assertCanSave(stored == null ? lesson : stored, oldCourse, false);
-            assertCanSave(lesson, newCourse, isNew);
+        if (isNew) {
+            assertCanSave(lesson, courseOf(lesson), true);
             return;
         }
-        assertCanSave(lesson, newCourse, isNew);
+        Lesson stored = lesson.getId() == null ? null : storedLesson(lesson.getId());
+        if (stored == null) {
+            throw new AccessDeniedException("entity", "uic_Lesson", "update");
+        }
+        assertCanSave(stored, stored.getCourse(), false);
+        Course newCourse = courseOf(lesson);
+        if (courseChanged(stored.getCourse(), newCourse) && newCourse != null) {
+            assertCanSave(stored, newCourse, false);
+        }
     }
 
     @EventListener
@@ -77,7 +81,40 @@ public class LessonAccessListener implements BeforeDeleteEntityListener<Lesson> 
 
     @Override
     public void onBeforeDelete(Lesson lesson) {
-        assertCanMutate(lesson, courseOf(lesson), false);
+        if (access.isAdmin()) {
+            return;
+        }
+        if (entityStates.isLoaded(lesson, "course") && entityStates.isLoaded(lesson, "author")) {
+            assertCanMutate(lesson, lesson.getCourse(), false);
+            return;
+        }
+        if (lesson.getId() == null) {
+            throw new AccessDeniedException("entity", "uic_Lesson", "delete");
+        }
+        UUID courseId = dataManager.unconstrained().loadValue(
+                        "select l.course.id from uic_Lesson l where l.id = :id", UUID.class)
+                .parameter("id", lesson.getId())
+                .optional()
+                .orElse(null);
+        if (courseId == null) {
+            String author = dataManager.unconstrained().loadValue(
+                            "select a.username from uic_Lesson l join l.author a where l.id = :id", String.class)
+                    .parameter("id", lesson.getId())
+                    .optional()
+                    .orElse(null);
+            if (access.isTrainer() && author != null && access.username().equals(author)) {
+                return;
+            }
+            throw new AccessDeniedException("entity", "uic_Lesson", "delete");
+        }
+        Course course = dataManager.unconstrained().load(Course.class)
+                .id(courseId)
+                .fetchPlan(FetchPlan.BASE)
+                .optional()
+                .orElse(null);
+        if (!courseAccess.canEdit(course)) {
+            throw new AccessDeniedException("entity", "uic_Lesson", "delete");
+        }
     }
 
     private Lesson storedLesson(UUID lessonId) {
