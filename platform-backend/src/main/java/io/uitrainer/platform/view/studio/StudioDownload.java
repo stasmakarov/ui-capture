@@ -12,8 +12,12 @@ public final class StudioDownload {
     }
 
     public static Anchor link(StudioRelease release) {
+        return link(release, "Скачать студию");
+    }
+
+    public static Anchor link(StudioRelease release, String caption) {
         String encoded = URLEncoder.encode(release.getFileName(), StandardCharsets.UTF_8).replace("+", "%20");
-        Anchor download = new Anchor("/api/studio/releases/win/" + encoded, "Скачать студию");
+        Anchor download = new Anchor("/api/studio/releases/win/" + encoded, caption);
         download.setId("downloadStudio");
         download.setRouterIgnore(true);
         download.getElement().setAttribute("download", true);

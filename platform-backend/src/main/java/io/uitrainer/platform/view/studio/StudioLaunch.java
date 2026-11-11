@@ -8,9 +8,6 @@ import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.textfield.TextField;
 import com.vaadin.flow.server.VaadinServletRequest;
-import io.jmix.core.DataManager;
-import io.uitrainer.platform.entity.User;
-import io.uitrainer.platform.service.CurrentUserAccess;
 import io.uitrainer.platform.service.StudioReleaseService;
 import io.uitrainer.platform.service.StudioTokenService;
 import jakarta.servlet.http.HttpServletRequest;
@@ -66,24 +63,18 @@ public class StudioLaunch {
             """;
 
     private final StudioTokenService tokenService;
-    private final DataManager dataManager;
-    private final CurrentUserAccess access;
     private final StudioReleaseService releases;
+    private final StudioLocalUrl studioLocalUrl;
     private final String publicUrl;
-    private final String studioUrl;
 
     public StudioLaunch(StudioTokenService tokenService,
-                        DataManager dataManager,
-                        CurrentUserAccess access,
                         StudioReleaseService releases,
-                        @Value("${uitrainer.public-url:}") String publicUrl,
-                        @Value("${uitrainer.studio.local-url:http://127.0.0.1:44731}") String studioUrl) {
+                        StudioLocalUrl studioLocalUrl,
+                        @Value("${uitrainer.public-url:}") String publicUrl) {
         this.tokenService = tokenService;
-        this.dataManager = dataManager;
-        this.access = access;
         this.releases = releases;
+        this.studioLocalUrl = studioLocalUrl;
         this.publicUrl = publicUrl;
-        this.studioUrl = studioUrl;
     }
 
     public static String studioLink(String server, String ticket, String courseId) {
@@ -101,16 +92,7 @@ public class StudioLaunch {
     }
 
     String localStudioUrl() {
-        try {
-            User user = dataManager.unconstrained().load(User.class)
-                    .query("select u from User u where u.username = :u")
-                    .parameter("u", access.username())
-                    .one();
-            if (user.getStudioLocalPort() != null) return "http://127.0.0.1:" + user.getStudioLocalPort();
-        } catch (RuntimeException ignored) {
-            /* нет пользователя в контексте — дефолт */
-        }
-        return studioUrl;
+        return studioLocalUrl.resolve();
     }
 
     private void onLaunchResult(String result, String link, String local) {

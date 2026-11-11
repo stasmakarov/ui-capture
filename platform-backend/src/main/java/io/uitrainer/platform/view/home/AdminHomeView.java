@@ -30,7 +30,8 @@ import io.uitrainer.platform.service.PackageException;
 import io.uitrainer.platform.service.StudioReleaseService;
 import io.uitrainer.platform.service.UserProvisioning;
 import io.uitrainer.platform.view.main.MainView;
-import io.uitrainer.platform.view.studio.StudioDownload;
+import io.uitrainer.platform.view.studio.StudioLocalUrl;
+import io.uitrainer.platform.view.studio.StudioPresence;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.lang.Nullable;
@@ -59,6 +60,8 @@ public class AdminHomeView extends StandardView implements BeforeEnterObserver {
     private StudioReleaseService releases;
     @Autowired
     private CurrentUserAccess access;
+    @Autowired
+    private StudioLocalUrl studioLocalUrl;
     @Autowired(required = false)
     @Nullable
     private BuildProperties buildProperties;
@@ -172,7 +175,7 @@ public class AdminHomeView extends StandardView implements BeforeEnterObserver {
             String uploaded = release.getUploadedAt() == null ? "" : fmt.format(release.getUploadedAt().toLocalDateTime());
             box.add(new Span("Версия " + release.getVersionName() + " · " + uploaded
                     + " · " + release.getUploadedBy() + " · " + size));
-            box.add(StudioDownload.link(release));
+            box.add(new StudioPresence(release, studioLocalUrl.resolve()));
         }
         box.add(uploadForm());
         return box;

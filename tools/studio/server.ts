@@ -15,6 +15,7 @@ import { assertRecordingBrowser, chromiumInstalled, detectBrowsers, gostBrowserH
 import { exchangeTicket, forgetPlatformLink, normalizeServer, publicLink, publishLesson, readPlatformLink } from './platform.ts'
 import { downloadWhisper, onWhisperStatus, refreshWhisperModelBytes, transcribeWav, whisperStatus } from './transcribe.ts'
 import { loadInpageScript } from '../capture/inpageBundle.ts'
+import { handlePresence, sendJson, studioVersionOf } from './presence.ts'
 
 export { loadInpageScript }
 
@@ -117,15 +118,6 @@ function readRaw(request: http.IncomingMessage, limit = 80_000_000): Promise<Buf
     request.on('end', () => resolve(Buffer.concat(chunks)))
     request.on('error', reject)
   })
-}
-
-function sendJson(response: http.ServerResponse, status: number, body: unknown) {
-  const payload = JSON.stringify(body)
-  response.writeHead(status, {
-    'Content-Type': 'application/json; charset=utf-8',
-    'Content-Length': Buffer.byteLength(payload),
-  })
-  response.end(payload)
 }
 
 function readBody(request: http.IncomingMessage, limit = 32_000_000): Promise<string> {
@@ -320,6 +312,9 @@ function openBrowser(url: string) {
 
 async function handleApi(request: http.IncomingMessage, response: http.ServerResponse, url: URL, options: StudioOptions) {
   const { lessonsDir, capturesDir } = options
+  if (url.pathname === '/api/presence') {
+    if (handlePresence(request, response, studioVersionOf(options))) return
+  }
   if (request.method === 'GET' && url.pathname === '/api/health') {
     sendJson(response, 200, { ok: true })
     return
@@ -328,7 +323,7 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
     const link = await readPlatformLink(lessonsDir)
     const platform = link ? await fetchPlatformVersion(link.server) : null
     sendJson(response, 200, {
-      studioVersion: options.studioVersion ?? process.env.UITRAINER_STUDIO_VERSION ?? '0.6.0',
+      studioVersion: studioVersionOf(options),
       studioApiVersion: STUDIO_API_VERSION,
       port: options.port,
       dataDir: path.dirname(lessonsDir),

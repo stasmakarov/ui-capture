@@ -20,13 +20,13 @@ import io.uitrainer.platform.entity.Course;
 import io.uitrainer.platform.entity.GroupStatus;
 import io.uitrainer.platform.entity.StudyGroup;
 import io.uitrainer.platform.security.PlatformViews;
-import io.uitrainer.platform.entity.StudioRelease;
 import io.uitrainer.platform.view.group.StudyGroupListView;
 import io.uitrainer.platform.service.CourseAccessService;
 import io.uitrainer.platform.service.GroupProgressService;
 import io.uitrainer.platform.service.StudioReleaseService;
 import io.uitrainer.platform.view.main.MainView;
-import io.uitrainer.platform.view.studio.StudioDownload;
+import io.uitrainer.platform.view.studio.StudioLocalUrl;
+import io.uitrainer.platform.view.studio.StudioPresence;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -48,6 +48,8 @@ public class TrainerHomeView extends StandardView {
     private CourseAccessService courseAccess;
     @Autowired
     private StudioReleaseService releases;
+    @Autowired
+    private StudioLocalUrl studioLocalUrl;
 
     private final Grid<GroupProgressService.GroupSummary> groups = new Grid<>();
     private final Checkbox history = new Checkbox("История закрытых");
@@ -174,9 +176,8 @@ public class TrainerHomeView extends StandardView {
         if (current.isEmpty()) {
             box.add(new Span("Студия ещё не загружена, обратитесь к администратору"));
         } else {
-            StudioRelease release = current.get();
-            box.add(new Span("Версия " + release.getVersionName()));
-            box.add(StudioDownload.link(release));
+            box.add(new Span("Версия " + current.get().getVersionName()));
+            box.add(new StudioPresence(current.get(), studioLocalUrl.resolve()));
         }
         return box;
     }
