@@ -1,10 +1,12 @@
 package io.uitrainer.platform.view.user;
 
-import com.google.common.base.Strings;
-import io.jmix.flowui.component.combobox.JmixComboBox;
+import com.vaadin.flow.component.combobox.ComboBox;
+import com.vaadin.flow.component.notification.Notification;
+import com.vaadin.flow.component.notification.NotificationVariant;
 import com.vaadin.flow.component.textfield.PasswordField;
 import com.vaadin.flow.router.Route;
 import io.jmix.core.EntityStates;
+import io.jmix.flowui.Notifications;
 import io.jmix.flowui.component.textfield.TypedTextField;
 import io.jmix.flowui.view.*;
 import io.uitrainer.platform.entity.User;
@@ -13,7 +15,7 @@ import io.uitrainer.platform.view.main.MainView;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.security.crypto.password.PasswordEncoder;
 
-import java.util.Arrays;
+import java.util.List;
 import java.util.Objects;
 import java.util.TimeZone;
 
@@ -31,49 +33,61 @@ public class UserDetailView extends StandardDetailView<User> {
     @ViewComponent
     private PasswordField confirmPasswordField;
     @ViewComponent
-    private JmixComboBox<String> timeZoneField;
+    private ComboBox<String> timeZoneField;
     @ViewComponent
     private MessageBundle messageBundle;
+    @Autowired
+    private Notifications notifications;
     @Autowired
     private EntityStates entityStates;
     @Autowired
     private PasswordEncoder passwordEncoder;
 
+    private boolean newEntity;
+
     @Subscribe
-    public void onInit(InitEvent event) {
-        timeZoneField.setItems(Arrays.stream(TimeZone.getAvailableIDs()).sorted().toList());
-        passwordField.setLabel(messageBundle.getMessage("passwordField.label"));
-        confirmPasswordField.setLabel(messageBundle.getMessage("confirmPasswordField.label"));
+    public void onInit(final InitEvent event) {
+        timeZoneField.setItems(List.of(TimeZone.getAvailableIDs()));
     }
 
     @Subscribe
-    public void onReady(ReadyEvent event) {
-        boolean isNew = entityStates.isNew(getEditedEntity());
-        usernameField.setReadOnly(!isNew);
-        passwordField.setVisible(isNew);
-        confirmPasswordField.setVisible(isNew);
+    public void onInitEntity(final InitEntityEvent<User> event) {
+        usernameField.setReadOnly(false);
+        passwordField.setVisible(true);
+        confirmPasswordField.setVisible(true);
     }
 
     @Subscribe
-    public void onValidation(ValidationEvent event) {
-        if (!entityStates.isNew(getEditedEntity())) {
-            return;
+    public void onReady(final ReadyEvent event) {
+        if (entityStates.isNew(getEditedEntity())) {
+            usernameField.focus();
         }
-        if (Strings.isNullOrEmpty(passwordField.getValue())) {
-            event.getErrors().add(messageBundle.getMessage("passwordRequired"));
-        }
-        if (!Objects.equals(passwordField.getValue(), confirmPasswordField.getValue())) {
+    }
+
+    @Subscribe
+    public void onValidation(final ValidationEvent event) {
+        if (entityStates.isNew(getEditedEntity())
+                && !Objects.equals(passwordField.getValue(), confirmPasswordField.getValue())) {
             event.getErrors().add(messageBundle.getMessage("passwordsDoNotMatch"));
         }
     }
 
     @Subscribe
-    public void onBeforeSave(BeforeSaveEvent event) {
-        if (entityStates.isNew(getEditedEntity()) && !Strings.isNullOrEmpty(passwordField.getValue())) {
+    public void onBeforeSave(final BeforeSaveEvent event) {
+        if (entityStates.isNew(getEditedEntity())) {
             getEditedEntity().setPassword(passwordEncoder.encode(passwordField.getValue()));
+            newEntity = true;
         }
-        if (getEditedEntity().getActive() == null) {
-            getEditedEntity().setActive(true);
+    }
+
+    @Subscribe
+    public void onAfterSave(final AfterSaveEvent event) {
+        if (newEntity) {
+            notifications.create(messageBundle.getMessage("noAssignedRolesNotification"))
+                    .withThemeVariant(NotificationVariant.LUMO_WARNING)
+                    .withPosition(Notification.Position.TOP_END)
+                    .show();
+            newEntity = false;
         }
     }
 }

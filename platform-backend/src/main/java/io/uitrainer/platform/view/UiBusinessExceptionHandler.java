@@ -31,6 +31,8 @@ public class UiBusinessExceptionHandler extends AbstractUiExceptionHandler {
             text = "Преподаватель уже в списке выбранных";
         } else if (throwable instanceof AccessDeniedException) {
             text = "Недостаточно прав";
+        } else if (userReferenced(throwable)) {
+            text = "Нельзя удалить пользователя, пока на него ссылаются курсы, уроки или группы";
         } else {
             text = throwable.getMessage();
             if (text == null || text.isBlank()) {
@@ -38,6 +40,30 @@ public class UiBusinessExceptionHandler extends AbstractUiExceptionHandler {
             }
         }
         notifications.create(text).withType(Notifications.Type.ERROR).show();
+    }
+
+    private static boolean userReferenced(Throwable ex) {
+        while (ex != null) {
+            String text = ex.getMessage();
+            if (text != null) {
+                String upper = text.toUpperCase();
+                if (upper.contains("UIC_USER")
+                        || (upper.contains("FK_UIC_") && upper.contains("USER"))
+                        || upper.contains("OWNER_ID")
+                        || upper.contains("AUTHOR_ID")
+                        || (upper.contains("STUDENT_ID") && upper.contains("23503"))) {
+                    return true;
+                }
+            }
+            if (ex instanceof SQLException sql && "23503".equals(sql.getSQLState())) {
+                String msg = sql.getMessage();
+                if (msg != null && msg.toUpperCase().contains("USER")) {
+                    return true;
+                }
+            }
+            ex = ex.getCause();
+        }
+        return false;
     }
 
     private static boolean courseListDuplicate(Throwable ex, String constraint) {

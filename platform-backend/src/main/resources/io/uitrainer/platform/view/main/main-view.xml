@@ -16,6 +16,11 @@
                 <userMenu id="userMenu" themeNames="tertiary" classNames="ms-auto me-m">
                     <items>
                         <actionItem id="changePasswordItem" ref="changePasswordAction" themeNames="non-checkable"/>
+                        <separator/>
+                        <actionItem id="substituteUserMenuItem" themeNames="non-checkable">
+                            <action id="substituteUserAction" type="sec_userMenuSubstituteUser"/>
+                        </actionItem>
+                        <separator/>
                         <actionItem id="logoutMenuItem" ref="logoutAction" themeNames="non-checkable"/>
                     </items>
                 </userMenu>

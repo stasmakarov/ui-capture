@@ -1,30 +1,37 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <view xmlns="http://jmix.io/schema/flowui/view"
-      title="msg://userDetailView.title"
+      title="msg://UserDetailView.title"
       focusComponent="form">
     <data>
-        <instance id="userDc" class="io.uitrainer.platform.entity.User">
+        <instance id="userDc"
+                  class="io.uitrainer.platform.entity.User">
             <fetchPlan extends="_base"/>
-            <loader id="userDl"/>
+            <loader/>
         </instance>
     </data>
-    <facets>
-        <dataLoadCoordinator auto="true"/>
-    </facets>
     <actions>
         <action id="saveCloseAction" type="detail_saveClose"/>
         <action id="closeAction" type="detail_close"/>
     </actions>
+    <facets>
+        <dataLoadCoordinator auto="true"/>
+    </facets>
     <layout>
         <formLayout id="form" dataContainer="userDc">
-            <textField id="usernameField" property="username"/>
+            <textField id="usernameField" property="username" readOnly="true"/>
+            <passwordField id="passwordField"
+                           label="msg://io.uitrainer.platform.entity/User.password"
+                           required="true"
+                           visible="false"/>
+            <passwordField id="confirmPasswordField"
+                           label="msg://confirmPassword"
+                           required="true"
+                           visible="false"/>
             <textField id="firstNameField" property="firstName"/>
             <textField id="lastNameField" property="lastName"/>
             <textField id="emailField" property="email"/>
+            <comboBox id="timeZoneField" property="timeZoneId" clearButtonVisible="true"/>
             <checkbox id="activeField" property="active"/>
-            <comboBox id="timeZoneField" property="timeZoneId"/>
-            <passwordField id="passwordField"/>
-            <passwordField id="confirmPasswordField"/>
         </formLayout>
         <hbox id="detailActions">
             <button id="saveAndCloseButton" action="saveCloseAction"/>

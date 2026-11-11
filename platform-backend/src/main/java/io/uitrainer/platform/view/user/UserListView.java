@@ -11,5 +11,6 @@ import io.uitrainer.platform.view.main.MainView;
 @ViewController(id = PlatformViews.USER_LIST)
 @ViewDescriptor(path = "user-list-view.xml")
 @LookupComponent("usersDataGrid")
+@DialogMode(width = "64em")
 public class UserListView extends StandardListView<User> {
 }
