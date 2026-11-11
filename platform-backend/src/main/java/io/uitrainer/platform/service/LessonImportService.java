@@ -109,7 +109,7 @@ public class LessonImportService {
         version.setContentSha256(LessonPackageReader.sha256(pkg.files().get("lesson.json")));
         version.setPackageSha256(pkg.packageSha256());
         version.setStepCount(pkg.lesson().path("steps").size());
-        version.setUploadedBy(username);
+        version.setUploadedBy(access.authenticatedUsername());
         version.setStudioVersion(studioVersion);
         version.setPackageFile(storage.saveStream(prefix + "package.lesson.zip", new ByteArrayInputStream(archive)));
 

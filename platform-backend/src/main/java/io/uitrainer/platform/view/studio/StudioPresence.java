@@ -17,16 +17,13 @@ public class StudioPresence extends VerticalLayout {
             const timer = setTimeout(() => ctrl.abort(), 1500);
             return fetch(studio + '/api/presence', { cache: 'no-store', signal: ctrl.signal })
               .then(async (response) => {
-                clearTimeout(timer);
                 if (!response.ok) return 'missing';
                 const body = await response.json();
                 if (body.app !== 'uitrainer-studio' || !body.studioVersion) return 'missing';
                 return 'ok:' + body.studioVersion;
               })
-              .catch(() => {
-                clearTimeout(timer);
-                return 'missing';
-              });
+              .catch(() => 'missing')
+              .finally(() => clearTimeout(timer));
             """;
 
     private final StudioRelease release;

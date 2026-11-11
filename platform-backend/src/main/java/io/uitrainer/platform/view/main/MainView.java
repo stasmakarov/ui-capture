@@ -40,7 +40,7 @@ public class MainView extends StandardMainView {
     @Subscribe("changePasswordAction")
     public void onChangePassword(ActionPerformedEvent event) {
         DialogWindow<ChangePasswordView> dialog = dialogWindows.view(this, ChangePasswordView.class).build();
-        dialog.getView().setUsername(access.username());
+        dialog.getView().setUsername(access.authenticatedUsername());
         dialog.getView().setCurrentPasswordRequired(true);
         dialog.open();
     }

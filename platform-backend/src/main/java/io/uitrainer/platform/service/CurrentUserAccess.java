@@ -1,6 +1,7 @@
 package io.uitrainer.platform.service;
 
 import io.jmix.core.security.CurrentAuthentication;
+import io.jmix.core.usersubstitution.CurrentUserSubstitution;
 import io.uitrainer.platform.security.AdminRole;
 import io.uitrainer.platform.security.DirectorRole;
 import io.uitrainer.platform.security.ReviewerRole;
@@ -9,18 +10,26 @@ import io.uitrainer.platform.security.TrainerRole;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.stereotype.Component;
 
-/** Проверка ролей текущего пользователя для бизнес-правил (ЖЦ, импорт). */
+/** Проверка ролей и имени: эффективный пользователь при замещении. */
 @Component
 public class CurrentUserAccess {
 
     private final CurrentAuthentication currentAuthentication;
+    private final CurrentUserSubstitution substitution;
 
-    public CurrentUserAccess(CurrentAuthentication currentAuthentication) {
+    public CurrentUserAccess(CurrentAuthentication currentAuthentication, CurrentUserSubstitution substitution) {
         this.currentAuthentication = currentAuthentication;
+        this.substitution = substitution;
     }
 
+    /** Замещаемый пользователь, если идёт замещение, иначе вошедший. */
     public String username() {
-        return currentAuthentication.getUser().getUsername();
+        return substitution.getEffectiveUser().getUsername();
+    }
+
+    /** Реально вошедший — для аудита и смены своего пароля. */
+    public String authenticatedUsername() {
+        return substitution.getAuthenticatedUser().getUsername();
     }
 
     public boolean hasRole(String code) {

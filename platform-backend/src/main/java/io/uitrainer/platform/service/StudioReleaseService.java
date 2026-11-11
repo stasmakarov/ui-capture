@@ -144,7 +144,7 @@ public class StudioReleaseService {
         release.setExe(exeRef);
         release.setLatestYml(ymlRef);
         release.setUploadedAt(timeSource.now().toOffsetDateTime());
-        release.setUploadedBy(access.username());
+        release.setUploadedBy(access.authenticatedUsername());
         return dataManager.unconstrained().save(release);
     }
 

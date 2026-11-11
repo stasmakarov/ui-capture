@@ -5,7 +5,9 @@ import io.jmix.core.FetchPlan;
 import io.jmix.core.security.AccessDeniedException;
 import io.jmix.core.security.CurrentAuthentication;
 import io.jmix.core.security.SystemAuthenticator;
+import io.jmix.core.usersubstitution.UserSubstitutionManager;
 import io.jmix.securitydata.entity.RoleAssignmentEntity;
+import io.jmix.securitydata.entity.UserSubstitutionEntity;
 import io.uitrainer.platform.app.DemoDataInitializer;
 import io.uitrainer.platform.entity.Course;
 import io.uitrainer.platform.entity.CourseCoauthor;
@@ -23,6 +25,7 @@ import io.uitrainer.platform.entity.User;
 import io.uitrainer.platform.security.ReviewerRole;
 import io.uitrainer.platform.service.AccessException;
 import io.uitrainer.platform.service.ConflictException;
+import io.uitrainer.platform.service.CourseAccessService;
 import io.uitrainer.platform.service.LessonImportService;
 import io.uitrainer.platform.service.LessonLifecycleService;
 import io.uitrainer.platform.service.LessonOrderService;
@@ -33,6 +36,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
 
+import java.util.List;
 import java.util.UUID;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -58,6 +62,10 @@ class CourseAccessTest {
     StudioTokenService tokenService;
     @Autowired
     CurrentAuthentication currentAuthentication;
+    @Autowired
+    CourseAccessService courseAccess;
+    @Autowired
+    UserSubstitutionManager substitutions;
 
     @BeforeEach
     void users() {
@@ -535,6 +543,37 @@ class CourseAccessTest {
         loaded.setLesson(other);
         assertThatThrownBy(() -> auth.withUser("trainer2", () -> dataManager.save(loaded)))
                 .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void substitutingTrainerSeesAndEditsSubstitutedOwnerCourse() {
+        Course courseA = auth.withUser("trainer", () -> saveCourse("trainer", "Курс A"));
+        Course courseB = auth.withUser("trainer2", () -> saveCourse("trainer2", "Курс B"));
+        auth.withUser("admin", () -> {
+            UserSubstitutionEntity row = dataManager.create(UserSubstitutionEntity.class);
+            row.setUsername("trainer");
+            row.setSubstitutedUsername("trainer2");
+            return dataManager.save(row);
+        });
+        auth.withUser("trainer", () -> {
+            assertThat(courseAccess.canEdit(courseA)).isTrue();
+            assertThat(courseAccess.canEdit(courseB)).isFalse();
+            List<UUID> ids = dataManager.load(Course.class).all().list().stream()
+                    .map(Course::getId).toList();
+            assertThat(ids).contains(courseA.getId());
+            assertThat(ids).doesNotContain(courseB.getId());
+            return null;
+        });
+        auth.withUser("trainer", () -> {
+            substitutions.substituteUser("trainer2");
+            assertThat(courseAccess.canEdit(courseB)).isTrue();
+            assertThat(courseAccess.canEdit(courseA)).isFalse();
+            List<UUID> ids = dataManager.load(Course.class).all().list().stream()
+                    .map(Course::getId).toList();
+            assertThat(ids).contains(courseB.getId());
+            assertThat(ids).doesNotContain(courseA.getId());
+            return null;
+        });
     }
 
     @Test

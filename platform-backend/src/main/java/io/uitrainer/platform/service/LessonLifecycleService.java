@@ -79,7 +79,7 @@ public class LessonLifecycleService {
         transition.setLessonVersion(lesson.getCurrentVersion());
         transition.setFromStatus(from);
         transition.setToStatus(to);
-        transition.setActor(access.username());
+        transition.setActor(access.authenticatedUsername());
         transition.setAt(timeSource.now().toOffsetDateTime());
         transition.setComment(text == null || text.isEmpty() ? null : text);
         LessonAccessListener.runLifecycleSave(() ->

@@ -32,7 +32,9 @@ public class UiBusinessExceptionHandler extends AbstractUiExceptionHandler {
         } else if (throwable instanceof AccessDeniedException) {
             text = "Недостаточно прав";
         } else if (userReferenced(throwable)) {
-            text = "Нельзя удалить пользователя, пока на него ссылаются курсы, уроки или группы";
+            text = USER_REFERENCED;
+        } else if (uniqueViolation(throwable)) {
+            text = ALREADY_EXISTS;
         } else {
             text = throwable.getMessage();
             if (text == null || text.isBlank()) {
@@ -42,28 +44,47 @@ public class UiBusinessExceptionHandler extends AbstractUiExceptionHandler {
         notifications.create(text).withType(Notifications.Type.ERROR).show();
     }
 
-    private static boolean userReferenced(Throwable ex) {
+    static final String USER_REFERENCED = "Нельзя удалить пользователя, пока на него ссылаются курсы, уроки или группы";
+    static final String ALREADY_EXISTS = "уже существует";
+
+    static boolean userReferenced(Throwable ex) {
         while (ex != null) {
-            String text = ex.getMessage();
-            if (text != null) {
-                String upper = text.toUpperCase();
-                if (upper.contains("UIC_USER")
-                        || (upper.contains("FK_UIC_") && upper.contains("USER"))
-                        || upper.contains("OWNER_ID")
-                        || upper.contains("AUTHOR_ID")
-                        || (upper.contains("STUDENT_ID") && upper.contains("23503"))) {
-                    return true;
-                }
+            if (ex instanceof SQLException sql && "23503".equals(sql.getSQLState()) && mentionsUser(sql.getMessage())) {
+                return true;
             }
-            if (ex instanceof SQLException sql && "23503".equals(sql.getSQLState())) {
-                String msg = sql.getMessage();
-                if (msg != null && msg.toUpperCase().contains("USER")) {
-                    return true;
-                }
+            String text = ex.getMessage();
+            if (text != null && text.contains("23503") && mentionsUser(text)) {
+                return true;
             }
             ex = ex.getCause();
         }
         return false;
+    }
+
+    static boolean uniqueViolation(Throwable ex) {
+        while (ex != null) {
+            if (ex instanceof SQLException sql && "23505".equals(sql.getSQLState())) {
+                return true;
+            }
+            String text = ex.getMessage();
+            if (text != null && text.contains("23505")) {
+                return true;
+            }
+            ex = ex.getCause();
+        }
+        return false;
+    }
+
+    private static boolean mentionsUser(String text) {
+        if (text == null) {
+            return false;
+        }
+        String upper = text.toUpperCase();
+        return upper.contains("UIC_USER")
+                || (upper.contains("FK_UIC_") && upper.contains("USER"))
+                || upper.contains("OWNER_ID")
+                || upper.contains("AUTHOR_ID")
+                || upper.contains("STUDENT_ID");
     }
 
     private static boolean courseListDuplicate(Throwable ex, String constraint) {
