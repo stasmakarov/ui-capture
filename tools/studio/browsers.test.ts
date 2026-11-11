@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { detectBrowsers, gostBrowserHint, resolveBrowserLaunch, settingsFromSaved } from './browsers.ts'
+import { detectBrowsers, gostBrowserHint, resolveBrowserLaunch, resolveHeadlessLaunch, settingsFromSaved } from './browsers.ts'
 
 describe('detectBrowsers', () => {
   it('находит Chrome и Яндекс Браузер по путям в /Applications', () => {
@@ -22,6 +22,14 @@ describe('detectBrowsers', () => {
     const options = detectBrowsers(() => false)
     expect(options.find((item) => item.id === 'yandex')?.available).toBe(false)
     expect(() => resolveBrowserLaunch('yandex', '', options)).toThrow(/не найден/)
+  })
+})
+
+describe('resolveHeadlessLaunch', () => {
+  it('для сборки урока берёт системный Chrome, если Playwright Chromium нет', () => {
+    const chrome = '/Applications/Google Chrome.app/Contents/MacOS/Google Chrome'
+    const options = detectBrowsers((file) => file === chrome, () => false)
+    expect(resolveHeadlessLaunch({}, options, false)).toEqual({ executablePath: chrome })
   })
 })
 

@@ -42,6 +42,30 @@ export function startUpdater(lessonsDir: string): void {
       if (result.response === 0) autoUpdater.quitAndInstall()
     })
   })
+  autoUpdater.on('error', (error) => {
+    const downloading = pendingVersion.length > 0
+    sendProgress(null)
+    if (!downloading) return
+    pendingVersion = ''
+    const detail = error instanceof Error ? error.message : String(error)
+    const win = BrowserWindow.getAllWindows()[0]
+    const box = win
+      ? dialog.showMessageBox(win, {
+          type: 'warning',
+          buttons: ['Повторить', 'Закрыть'],
+          defaultId: 0,
+          message: `Не удалось скачать обновление: ${detail}`,
+        })
+      : dialog.showMessageBox({
+          type: 'warning',
+          buttons: ['Повторить', 'Закрыть'],
+          defaultId: 0,
+          message: `Не удалось скачать обновление: ${detail}`,
+        })
+    void box.then((result) => {
+      if (result.response === 0) void checkUpdatesNow()
+    })
+  })
   void autoUpdater.checkForUpdates().catch(() => undefined)
   setInterval(() => {
     void autoUpdater.checkForUpdates().catch(() => undefined)

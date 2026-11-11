@@ -2,6 +2,7 @@ import { existsSync } from 'node:fs'
 import { createRequire } from 'node:module'
 import os from 'node:os'
 import path from 'node:path'
+import type { Browser } from 'playwright'
 
 export type BrowserId = 'chromium' | 'chrome' | 'yandex' | 'custom'
 
@@ -84,7 +85,9 @@ export function detectBrowsers(
   ]
 }
 
-export function resolveBrowserLaunch(choice: BrowserId, customPath: string, options = detectBrowsers()): { channel?: string; executablePath?: string } {
+export type BrowserLaunch = { channel?: string; executablePath?: string }
+
+export function resolveBrowserLaunch(choice: BrowserId, customPath: string, options = detectBrowsers()): BrowserLaunch {
   if (choice === 'chromium') return {}
   if (choice === 'custom') {
     if (!customPath.trim()) throw new Error('Укажите путь к браузеру.')
@@ -95,6 +98,87 @@ export function resolveBrowserLaunch(choice: BrowserId, customPath: string, opti
     throw new Error(`${match?.label ?? 'Браузер'} не найден в /Applications. Выберите «Другой» и укажите путь вручную.`)
   }
   return { executablePath: match.executablePath }
+}
+
+function sameLaunch(left: BrowserLaunch, right: BrowserLaunch): boolean {
+  return (left.channel ?? '') === (right.channel ?? '') && (left.executablePath ?? '') === (right.executablePath ?? '')
+}
+
+export function headlessLaunchAttempts(
+  preferred: BrowserLaunch,
+  options = detectBrowsers(),
+  chromiumReady = chromiumInstalled(),
+): BrowserLaunch[] {
+  const attempts: BrowserLaunch[] = []
+  const add = (item: BrowserLaunch) => {
+    if (attempts.some((existing) => sameLaunch(existing, item))) return
+    attempts.push(item)
+  }
+  if (preferred.executablePath || preferred.channel) add(preferred)
+  else if (chromiumReady) add({})
+  if (chromiumReady) add({})
+  const chrome = options.find((item) => item.id === 'chrome' && item.available && item.executablePath)
+  if (chrome) add({ executablePath: chrome.executablePath })
+  add({ channel: 'chrome' })
+  add({ channel: 'msedge' })
+  return attempts
+}
+
+export function resolveHeadlessLaunch(
+  preferred: BrowserLaunch,
+  options = detectBrowsers(),
+  chromiumReady = chromiumInstalled(),
+): BrowserLaunch {
+  const attempts = headlessLaunchAttempts(preferred, options, chromiumReady)
+  if (!chromiumReady) {
+    const system = attempts.find((item) => item.executablePath)
+    if (system) return system
+  }
+  const first = attempts[0]
+  if (!first) throw new Error('Не найден браузер для сборки урока. Установите Chromium или Google Chrome.')
+  return first
+}
+
+export function assertRecordingBrowser(
+  choice: BrowserId,
+  customPath: string,
+  options = detectBrowsers(),
+  chromiumReady = chromiumInstalled(),
+): BrowserLaunch {
+  const system = options.some((item) => (item.id === 'chrome' || item.id === 'yandex') && item.available)
+  if (!chromiumReady && !system && choice !== 'custom') {
+    throw new Error('Не найден браузер для записи. Установите Chromium или Google Chrome.')
+  }
+  if (choice === 'chromium' && !chromiumReady) {
+    throw new Error('Chromium не установлен. Выберите Google Chrome или установите Chromium.')
+  }
+  return resolveBrowserLaunch(choice, customPath, options)
+}
+
+export async function launchHeadless(
+  preferred: BrowserLaunch,
+  options = detectBrowsers(),
+  chromiumReady = chromiumInstalled(),
+): Promise<Browser> {
+  const { chromium } = await import('playwright')
+  const attempts = headlessLaunchAttempts(preferred, options, chromiumReady)
+  let last: unknown
+  for (const attempt of attempts) {
+    try {
+      const launch: { headless: true; channel?: string; executablePath?: string } = { headless: true }
+      if (attempt.channel) launch.channel = attempt.channel
+      if (attempt.executablePath) launch.executablePath = attempt.executablePath
+      return await chromium.launch(launch)
+    } catch (error) {
+      last = error
+    }
+  }
+  const detail = last instanceof Error ? last.message : String(last ?? '')
+  throw new Error(
+    detail
+      ? `Не найден браузер для сборки урока. Установите Chromium или Google Chrome. ${detail}`
+      : 'Не найден браузер для сборки урока. Установите Chromium или Google Chrome.',
+  )
 }
 
 export const gostBrowserHint = 'Если сайт не открывается из-за сертификата (российские сертификаты ГОСТ), выберите Яндекс Браузер.'

@@ -358,7 +358,8 @@ function Catalog({ items, selected, whisper, browsers, onWhisper, onError, onBro
   publishing: string | null
   onPublish: (id: string) => void
 }) {
-  const noBrowser = browsers != null && !browsers.chromium.installed && !browsers.options.some((item) => (item.id === 'chrome' || item.id === 'yandex') && item.available)
+  const systemBrowser = browsers?.options.find((item) => (item.id === 'chrome' || item.id === 'yandex') && item.available)
+  const noBrowser = browsers != null && !browsers.chromium.installed && !systemBrowser
   return (
     <section>
       <div className="toolbar">
@@ -390,6 +391,9 @@ function Catalog({ items, selected, whisper, browsers, onWhisper, onError, onBro
           <p>Не найден ни Chromium, ни поддерживаемый системный браузер.</p>
           <ChromiumInstall browsers={browsers} onBrowsers={onBrowsers} />
         </div>
+      )}
+      {!noBrowser && browsers && !browsers.chromium.installed && systemBrowser && (
+        <p className="muted">Используется браузер: {systemBrowser.label}</p>
       )}
       {items.length === 0 && <p className="muted">Записей пока нет. Создайте первый урок.</p>}
       <div className="cards">
@@ -889,7 +893,7 @@ function initial(name: string): string {
 
 function speechInstallLabel(whisper: Whisper): string {
   if (whisper.phase === 'downloading') return downloadLabel(whisper.percent, whisper.loadedBytes, whisper.totalBytes)
-  if (whisper.modelBytes > 0) return `Установить распознавание речи (≈${Math.round(whisper.modelBytes / (1024 * 1024))} МБ)`
+  if (whisper.modelBytes > 0) return `Установить распознавание речи (около ${Math.round(whisper.modelBytes / (1024 * 1024))} МБ)`
   return 'Установить распознавание речи'
 }
 

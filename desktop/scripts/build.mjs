@@ -75,7 +75,7 @@ const allowed = new Set([
 
 function checkRuntimeRequires(file) {
   const text = readFileSync(file, 'utf8')
-  const re = /require\((['"])([^'"]+)\1\)/g
+  const re = /(?:require|import)\((['"])([^'"]+)\1\)/g
   const bad = new Set()
   let match
   while ((match = re.exec(text))) {

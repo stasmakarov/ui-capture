@@ -11,7 +11,7 @@ import { buildCapture, writeCatalog } from '../builder/build.ts'
 import { serveLessons } from '../builder/staticServer.ts'
 import { packHtml } from '../pack/packHtml.ts'
 import { exportLessonPackage, importLessonPackage } from '../package/lessonPackage.ts'
-import { chromiumInstalled, detectBrowsers, gostBrowserHint, resolveBrowserLaunch, settingsFromSaved, type BrowserId, type StudioSettings } from './browsers.ts'
+import { assertRecordingBrowser, chromiumInstalled, detectBrowsers, gostBrowserHint, launchHeadless, settingsFromSaved, type BrowserId, type BrowserLaunch, type StudioSettings } from './browsers.ts'
 import { exchangeTicket, forgetPlatformLink, normalizeServer, publicLink, publishLesson, readPlatformLink } from './platform.ts'
 import { downloadWhisper, onWhisperStatus, refreshWhisperModelBytes, transcribeWav, whisperStatus } from './transcribe.ts'
 import { loadInpageScript } from '../capture/inpageBundle.ts'
@@ -69,6 +69,7 @@ type Session = {
   steps: LiveStep[]
   listeners: http.ServerResponse[]
   paused: boolean
+  launch: BrowserLaunch
 }
 
 let session: Session | null = null
@@ -531,7 +532,7 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
       executablePath: body.executablePath ?? '',
     }
     await writeFile(settingsFile(lessonsDir), JSON.stringify(settings, null, 2))
-    const launch = resolveBrowserLaunch(settings.browser, settings.executablePath)
+    const launch = assertRecordingBrowser(settings.browser, settings.executablePath)
     const lessonName = body.lessonName?.trim() || new URL(body.url).hostname
     const lessonId = lessonIdFromName(lessonName)
     let controls: RecordingControls | null = null
@@ -559,7 +560,7 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
         },
         onSession: (value) => {
           controls = value
-          session = { controls: value, done, steps: [], listeners: [], paused: false }
+          session = { controls: value, done, steps: [], listeners: [], paused: false, launch }
           broadcast(session, { type: 'ready' })
           resolve()
         },
@@ -596,8 +597,7 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
     await current.controls.stop()
     const captureDir = await current.done
     const preview = await serveLessons(lessonsDir)
-    const { chromium } = await import('playwright')
-    const browser = await chromium.launch({ headless: true })
+    const browser = await launchHeadless(current.launch)
     let lesson: Lesson
     try {
       lesson = await buildCapture(captureDir, browser, preview.url, lessonsDir)
