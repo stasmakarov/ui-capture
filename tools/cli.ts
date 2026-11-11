@@ -26,7 +26,7 @@ const HELP = `uitrainer — запись урока с живого сайта �
   npx uitrainer import <файл.lesson.zip> [--out ./lessons]
 
 Связь с платформой (M2):
-  npx uitrainer open-url "uitrainer://new?course=…&server=…&ticket=…"   обменять тикет из админки на токен
+  npx uitrainer open-url "uitrainer://new?course=…&server=…&ticket=…"   обменять тикет с платформы на токен
   npx uitrainer platform-login http://localhost:8090 --token uicst_…   токен с экрана «Мои токены студии»
   npx uitrainer publish <id> [--out ./lessons]                          отправить урок черновиком на платформу
 

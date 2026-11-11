@@ -3,6 +3,7 @@ package io.uitrainer.platform;
 import io.jmix.core.DataManager;
 import io.jmix.core.DeletePolicyException;
 import io.jmix.core.security.SystemAuthenticator;
+import io.jmix.securitydata.entity.RoleAssignmentEntity;
 import io.uitrainer.platform.app.DemoDataInitializer;
 import io.uitrainer.platform.entity.Course;
 import io.uitrainer.platform.entity.CourseSharing;
@@ -15,9 +16,14 @@ import io.uitrainer.platform.entity.LessonStatus;
 import io.uitrainer.platform.entity.StudioToken;
 import io.uitrainer.platform.entity.StudyGroup;
 import io.uitrainer.platform.entity.User;
+import io.uitrainer.platform.security.TrainerOwnDataRole;
+import io.uitrainer.platform.security.TrainerRole;
+import io.uitrainer.platform.security.UiMinimalRole;
 import io.uitrainer.platform.service.LessonImportService;
 import io.uitrainer.platform.service.LessonLifecycleService;
 import io.uitrainer.platform.service.StudioTokenService;
+import io.uitrainer.platform.service.UserProvisioning;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -47,6 +53,8 @@ class RowLevelSecurityTest {
     DataManager dataManager;
     @Autowired
     DemoDataInitializer demoData;
+    @Autowired
+    PasswordEncoder passwordEncoder;
 
     @BeforeEach
     void users() {
@@ -185,6 +193,44 @@ class RowLevelSecurityTest {
         });
         assertThat(auth.withUser("student", () -> dataManager.load(Lesson.class).id(lessonId).optional())).isPresent();
         assertThat(visibleLessonIds("student")).contains(lessonExt);
+    }
+
+    @Test
+    void assigningTrainerResourceRoleSyncsOwnDataAndHidesForeignDraft() {
+        String login = "sync-" + TestPackages.uniqueId("u");
+        String draftExt = TestPackages.uniqueId("foreign-draft");
+        UUID draftId = auth.withUser("trainer", () ->
+                importService.importPackage(TestPackages.validZip(draftExt, "Чужой черновик"), null, null)
+                        .lesson().getId());
+        auth.withSystem(() -> {
+            User user = dataManager.create(User.class);
+            user.setUsername(login);
+            user.setFirstName("Синх");
+            user.setLastName("Ролей");
+            user.setPassword(passwordEncoder.encode(login));
+            user.setActive(true);
+            dataManager.save(user);
+            RoleAssignmentEntity minimal = dataManager.create(RoleAssignmentEntity.class);
+            minimal.setUsername(login);
+            minimal.setRoleCode(UiMinimalRole.CODE);
+            minimal.setRoleType(UserProvisioning.RESOURCE);
+            dataManager.save(minimal);
+            RoleAssignmentEntity trainer = dataManager.create(RoleAssignmentEntity.class);
+            trainer.setUsername(login);
+            trainer.setRoleCode(TrainerRole.CODE);
+            trainer.setRoleType(UserProvisioning.RESOURCE);
+            dataManager.save(trainer);
+            return null;
+        });
+        boolean ownData = auth.withSystem(() -> dataManager.load(RoleAssignmentEntity.class)
+                .query("select r from sec_RoleAssignmentEntity r where r.username = :u and r.roleCode = :c and r.roleType = :t")
+                .parameter("u", login)
+                .parameter("c", TrainerOwnDataRole.CODE)
+                .parameter("t", UserProvisioning.ROW_LEVEL)
+                .optional()
+                .isPresent());
+        assertThat(ownData).isTrue();
+        assertThat(auth.withUser(login, () -> dataManager.load(Lesson.class).id(draftId).optional())).isEmpty();
     }
 
     @Test

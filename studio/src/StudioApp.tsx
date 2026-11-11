@@ -64,7 +64,7 @@ export function StudioApp() {
   useEffect(() => {
     void reload()
     void (async () => {
-      // Ссылка из админки: ?server=…&ticket=…&course=… (схема uitrainer:// или ручной переход)
+      // Ссылка с платформы: ?server=…&ticket=…&course=… (схема uitrainer:// или ручной переход)
       const params = new URLSearchParams(window.location.search)
       const server = params.get('server')
       const ticket = params.get('ticket')
@@ -833,7 +833,7 @@ function PlatformBar({ platform, onForget }: { platform: PlatformState; onForget
   if (!platform.connected) {
     return (
       <p className="muted" data-testid="platform-status">
-        Платформа не подключена. В админке нажмите «Записать в студии» — студия получит доступ сама.
+        Платформа не подключена. В кабинете платформы нажмите «Записать в студии» — студия получит доступ сама.
       </p>
     )
   }

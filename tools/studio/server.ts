@@ -371,7 +371,7 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
     return
   }
   if (request.method === 'POST' && url.pathname === '/api/platform/link') {
-    // Задание из админки (запасной путь кнопки «Записать в студии») или из ссылки uitrainer://new.
+    // Задание с платформы (запасной путь кнопки «Записать в студии») или из ссылки uitrainer://new.
     // Тело — JSON, но приходит как text/plain из fetch(no-cors), поэтому тип не проверяем.
     const body = JSON.parse(await readBody(request)) as { server?: string; ticket?: string; course?: string }
     if (!body.server || !body.ticket) throw new Error('Нужны server и ticket')

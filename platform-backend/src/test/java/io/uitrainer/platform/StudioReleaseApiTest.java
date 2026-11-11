@@ -5,6 +5,7 @@ import io.jmix.core.FileStorageLocator;
 import io.jmix.core.security.SystemAuthenticator;
 import io.uitrainer.platform.app.DemoDataInitializer;
 import io.uitrainer.platform.entity.StudioRelease;
+import io.jmix.core.security.AccessDeniedException;
 import io.uitrainer.platform.service.PackageException;
 import io.uitrainer.platform.service.StudioReleaseService;
 import io.uitrainer.platform.service.StudioTokenService;
@@ -106,7 +107,9 @@ class StudioReleaseApiTest {
                 .andExpect(status().isConflict());
 
         mvc.perform(get("/api/studio/releases/win/latest.yml")).andExpect(status().isOk());
-        mvc.perform(get("/api/studio/releases/win/" + exeName(version))).andExpect(status().isOk());
+        mvc.perform(get("/api/studio/releases/win/" + exeName(version)))
+                .andExpect(status().isOk())
+                .andExpect(header().string("Content-Disposition", org.hamcrest.Matchers.containsString("filename*=")));
         mvc.perform(get("/api/studio/releases/latest")).andExpect(status().isOk()).andExpect(jsonPath("$.version").value(version));
     }
 
@@ -190,7 +193,7 @@ class StudioReleaseApiTest {
 
         String next = uniqueVersion();
         assertThatThrownBy(() -> systemAuthenticator.withSystem(() -> releases.uploadWin(next, exeName(next),
-                new ByteArrayInputStream(new byte[0]), latestYml(next), "admin")))
+                new ByteArrayInputStream(new byte[0]), latestYml(next))))
                 .isInstanceOf(PackageException.class);
 
         StudioRelease after = current();
@@ -199,6 +202,62 @@ class StudioReleaseApiTest {
         assertThat(storage.fileExists(after.getExe())).isTrue();
         assertThat(storage.fileExists(after.getLatestYml())).isTrue();
         assertThat(countStoredFiles()).isEqualTo(filesBefore);
+    }
+
+    @Test
+    void trainerCannotUploadWin() {
+        demoData.init();
+        String version = uniqueVersion();
+        assertThatThrownBy(() -> systemAuthenticator.withUser("trainer", () -> releases.uploadWin(
+                version, exeName(version), new ByteArrayInputStream(new byte[]{1}), latestYml(version))))
+                .isInstanceOf(AccessDeniedException.class);
+    }
+
+    @Test
+    void rejectsYmlThatDoesNotMatchInstaller() throws Exception {
+        String admin = adminToken();
+        String version = uniqueVersion();
+        String name = exeName(version);
+        byte[] exe = new byte[]{1, 2, 3};
+        MockMultipartFile exePart = new MockMultipartFile("exe", name, "application/octet-stream", exe);
+
+        byte[] otherPath = ("version: " + version + "\npath: other.exe\nfiles:\n  - url: other.exe\n")
+                .getBytes(StandardCharsets.UTF_8);
+        mvc.perform(multipart("/api/studio/releases/win").file(exePart)
+                        .file(new MockMultipartFile("latestYml", "latest.yml", "text/yaml", otherPath))
+                        .param("version", version).header("Authorization", "Bearer " + admin))
+                .andExpect(status().isBadRequest());
+
+        byte[] traversal = ("version: " + version + "\npath: ../evil.exe\nfiles:\n  - url: ../evil.exe\n")
+                .getBytes(StandardCharsets.UTF_8);
+        mvc.perform(multipart("/api/studio/releases/win")
+                        .file(new MockMultipartFile("exe", "../evil.exe", "application/octet-stream", exe))
+                        .file(new MockMultipartFile("latestYml", "latest.yml", "text/yaml", traversal))
+                        .param("version", version).header("Authorization", "Bearer " + admin))
+                .andExpect(status().isBadRequest());
+
+        byte[] commentOnly = ("# " + name + "\nversion: " + version + "\n").getBytes(StandardCharsets.UTF_8);
+        mvc.perform(multipart("/api/studio/releases/win").file(exePart)
+                        .file(new MockMultipartFile("latestYml", "latest.yml", "text/yaml", commentOnly))
+                        .param("version", version).header("Authorization", "Bearer " + admin))
+                .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void rejectsInvalidSemverOnFirstRelease() throws Exception {
+        String admin = adminToken();
+        byte[] yml = "version: 1.0.0-beta\npath: a.exe\nfiles:\n  - url: a.exe\n".getBytes(StandardCharsets.UTF_8);
+        mvc.perform(multipart("/api/studio/releases/win")
+                        .file(new MockMultipartFile("exe", "a.exe", "application/octet-stream", new byte[]{1}))
+                        .file(new MockMultipartFile("latestYml", "latest.yml", "text/yaml", yml))
+                        .header("Authorization", "Bearer " + admin))
+                .andExpect(status().isBadRequest());
+        yml = "version: 1.0\npath: a.exe\nfiles:\n  - url: a.exe\n".getBytes(StandardCharsets.UTF_8);
+        mvc.perform(multipart("/api/studio/releases/win")
+                        .file(new MockMultipartFile("exe", "a.exe", "application/octet-stream", new byte[]{1}))
+                        .file(new MockMultipartFile("latestYml", "latest.yml", "text/yaml", yml))
+                        .header("Authorization", "Bearer " + admin))
+                .andExpect(status().isBadRequest());
     }
 
     private static long countStoredFiles() throws Exception {

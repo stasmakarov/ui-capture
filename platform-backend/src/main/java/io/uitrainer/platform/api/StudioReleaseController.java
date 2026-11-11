@@ -1,5 +1,6 @@
 package io.uitrainer.platform.api;
 
+import io.jmix.core.security.AccessDeniedException;
 import io.jmix.core.security.SystemAuthenticator;
 import io.uitrainer.platform.entity.StudioRelease;
 import io.uitrainer.platform.security.AdminRole;
@@ -16,6 +17,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
 import java.util.LinkedHashMap;
 import java.util.Map;
@@ -61,7 +63,7 @@ public class StudioReleaseController {
         if (current.isEmpty() || !current.get().getFileName().equals(fileName)) return ResponseEntity.notFound().build();
         StudioRelease release = current.get();
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + release.getFileName() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, contentDisposition(release.getFileName()))
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .contentLength(release.getSize())
                 .body(new InputStreamResource(releases.open(release.getExe())));
@@ -81,9 +83,9 @@ public class StudioReleaseController {
                 .body(error(HttpStatus.FORBIDDEN, "Загрузка релиза доступна только администратору"));
         try {
             byte[] yml = latestYml.getBytes();
-            StudioRelease saved = systemAuthenticator.withSystem(() -> {
+            StudioRelease saved = systemAuthenticator.withUser(username.get(), () -> {
                 try (InputStream exeStream = exe.getInputStream()) {
-                    return releases.uploadWin(version, exe.getOriginalFilename(), exeStream, yml, username.get());
+                    return releases.uploadWin(version, exe.getOriginalFilename(), exeStream, yml);
                 } catch (IOException e) {
                     throw new PackageException("Не удалось прочитать файлы");
                 }
@@ -91,9 +93,18 @@ public class StudioReleaseController {
             return ResponseEntity.status(HttpStatus.CREATED).body(VersionController.summary(saved));
         } catch (ConflictException e) {
             return ResponseEntity.status(HttpStatus.CONFLICT).body(error(HttpStatus.CONFLICT, e.getMessage()));
+        } catch (AccessDeniedException e) {
+            return ResponseEntity.status(HttpStatus.FORBIDDEN)
+                    .body(error(HttpStatus.FORBIDDEN, "Загрузка релиза доступна только администратору"));
         } catch (PackageException e) {
             return ResponseEntity.badRequest().body(error(HttpStatus.BAD_REQUEST, e.getMessage()));
         }
+    }
+
+    static String contentDisposition(String fileName) {
+        String ascii = fileName.replaceAll("[^\\x20-\\x7E]", "_").replace("\"", "");
+        String encoded = URLEncoder.encode(fileName, StandardCharsets.UTF_8).replace("+", "%20");
+        return "attachment; filename=\"" + ascii + "\"; filename*=UTF-8''" + encoded;
     }
 
     private static String bearer(HttpServletRequest request) {

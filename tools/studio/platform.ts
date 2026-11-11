@@ -5,7 +5,7 @@ import { buildPackageBytes, collectLessonFiles } from '../package/lessonPackage.
 import { packHtml } from '../pack/packHtml.ts'
 import { assertApiCompatible, fetchPlatformVersion, type PlatformVersionInfo } from './apiVersion.ts'
 
-/** Связь студии с платформой (M2): токен студии, сервер и курс, выданные по тикету из админки. */
+/** Связь студии с платформой (M2): токен студии, сервер и курс, выданные по тикету с платформы. */
 export type PlatformLink = {
   server: string
   token: string
@@ -142,7 +142,7 @@ export async function loginWithToken(lessonsDir: string, serverValue: string, to
   return link
 }
 
-/** Собрать пакет урока для платформы: файлы урока + trainer.html этого урока (для предпросмотра в админке). */
+/** Собрать пакет урока для платформы: файлы урока + trainer.html этого урока (для предпросмотра на платформе). */
 export async function buildPublishPackage(lessonsDir: string, id: string, options: { withTrainer?: boolean } = {}): Promise<Uint8Array> {
   const files = await collectLessonFiles(path.join(lessonsDir, id))
   if (options.withTrainer !== false) {
@@ -152,7 +152,7 @@ export async function buildPublishPackage(lessonsDir: string, id: string, option
       await packHtml({ lessonsDir, outFile, ids: [id] })
       files.set('trainer.html', new Uint8Array(await readFile(outFile)))
     } catch {
-      /* без trainer.html предпросмотр в админке недоступен, но урок принимается */
+      /* без trainer.html предпросмотр на платформе недоступен, но урок принимается */
     } finally {
       await rm(dir, { recursive: true, force: true })
     }
@@ -163,7 +163,7 @@ export async function buildPublishPackage(lessonsDir: string, id: string, option
 /** «Опубликовать на сервер»: .lesson.zip → POST /api/lessons/import, на платформе появляется черновик. */
 export async function publishLesson(lessonsDir: string, id: string, options: { withTrainer?: boolean; studioVersion?: string } = {}): Promise<PublishResult> {
   const link = await readPlatformLink(lessonsDir)
-  if (!link) throw new Error('Студия не связана с платформой. Нажмите «Записать в студии» в админке или выполните npx uitrainer platform-login')
+  if (!link) throw new Error('Студия не связана с платформой. Нажмите «Записать в студии» в кабинете платформы или выполните npx uitrainer platform-login')
   const bytes = await buildPublishPackage(lessonsDir, id, options)
   const headers: Record<string, string> = {
     'Content-Type': 'application/zip',

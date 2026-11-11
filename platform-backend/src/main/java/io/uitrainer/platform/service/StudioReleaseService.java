@@ -5,12 +5,14 @@ import io.jmix.core.FileRef;
 import io.jmix.core.FileStorage;
 import io.jmix.core.FileStorageLocator;
 import io.jmix.core.TimeSource;
+import io.jmix.core.security.AccessDeniedException;
 import io.uitrainer.platform.entity.StudioRelease;
 import org.springframework.lang.Nullable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionSynchronization;
 import org.springframework.transaction.support.TransactionSynchronizationManager;
+import org.yaml.snakeyaml.Yaml;
 
 import java.io.ByteArrayInputStream;
 import java.io.FilterInputStream;
@@ -23,21 +25,30 @@ import java.security.NoSuchAlgorithmException;
 import java.util.ArrayList;
 import java.util.Base64;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
+import java.util.regex.Pattern;
 
 @Service
 public class StudioReleaseService {
 
     public static final String WIN = "win";
+    private static final Pattern SEMVER = Pattern.compile("^\\d+\\.\\d+\\.\\d+$");
+    private static final Pattern EXE_NAME = Pattern.compile("^[A-Za-z0-9._ -]+\\.exe$");
+    private static final String VERSION_HINT = "Версия должна быть X.Y.Z без суффикса";
+    private static final String YML_MISMATCH = "latest.yml не соответствует установщику";
 
     private final DataManager dataManager;
     private final FileStorageLocator fileStorageLocator;
     private final TimeSource timeSource;
+    private final CurrentUserAccess access;
 
-    public StudioReleaseService(DataManager dataManager, FileStorageLocator fileStorageLocator, TimeSource timeSource) {
+    public StudioReleaseService(DataManager dataManager, FileStorageLocator fileStorageLocator,
+                                TimeSource timeSource, CurrentUserAccess access) {
         this.dataManager = dataManager;
         this.fileStorageLocator = fileStorageLocator;
         this.timeSource = timeSource;
+        this.access = access;
     }
 
     public Optional<StudioRelease> current(String platform) {
@@ -69,7 +80,10 @@ public class StudioReleaseService {
      * Старые файлы удаляются только после коммита, при откате удаляются только что сохранённые новые.
      */
     @Transactional
-    public StudioRelease uploadWin(String version, @Nullable String exeName, InputStream exe, byte[] latestYml, String uploadedBy) {
+    public StudioRelease uploadWin(@Nullable String version, @Nullable String exeName, InputStream exe, byte[] latestYml) {
+        if (!access.isAdmin()) {
+            throw new AccessDeniedException("entity", "uic_StudioRelease", "create");
+        }
         FileStorage storage = fileStorageLocator.getDefault();
         List<FileRef> created = new ArrayList<>();
         List<FileRef> replaced = new ArrayList<>();
@@ -83,22 +97,27 @@ public class StudioReleaseService {
 
         if (exe == null) throw new PackageException("Нужен файл .exe");
         if (latestYml == null || latestYml.length == 0) throw new PackageException("Нужен файл latest.yml");
-        String yml = new String(latestYml, StandardCharsets.UTF_8);
-        String ver = ymlValue(yml, "version:");
-        if (ver == null || ver.isBlank()) throw new PackageException("В latest.yml нет version");
-        if (ver.contains("-")) throw new PackageException("Пре-релизы не принимаются. Укажите версию без суффикса в desktop/package.json");
-        if (version != null && !version.isBlank() && !ver.equals(version.trim())) {
-            throw new PackageException("latest.yml должен ссылаться на загруженный .exe и совпадать по version");
+        String name = basename(exeName);
+        ReleaseManifest manifest = parseLatestYml(latestYml);
+        if (name == null) {
+            name = manifest.path();
         }
-        String name = exeName == null || exeName.isBlank() ? "uitrainer-Studio-Setup-" + ver + ".exe" : exeName;
-        if (!name.toLowerCase().endsWith(".exe")) throw new PackageException("Ожидается файл .exe");
-        if (!yml.contains(name)) {
-            throw new PackageException("latest.yml должен ссылаться на загруженный .exe и совпадать по version");
+        requireExeName(name);
+        if (!name.equals(manifest.path()) || !name.equals(manifest.fileUrl())) {
+            throw new PackageException(YML_MISMATCH);
         }
+        requireSemver(manifest.version());
+        if (version != null && !version.isBlank() && !manifest.version().equals(version.trim())) {
+            throw new PackageException(YML_MISMATCH);
+        }
+        String ver = manifest.version();
         Optional<StudioRelease> existing = current(WIN);
-        if (existing.isPresent() && compareVersions(ver, existing.get().getVersionName()) <= 0) {
-            throw new ConflictException("Текущая версия " + existing.get().getVersionName()
-                    + ". Загружаемая " + ver + " не новее — увеличьте версию в desktop/package.json");
+        if (existing.isPresent()) {
+            requireSemver(existing.get().getVersionName());
+            if (compareVersions(ver, existing.get().getVersionName()) <= 0) {
+                throw new ConflictException("Текущая версия " + existing.get().getVersionName()
+                        + ". Загружаемая " + ver + " не новее — увеличьте версию в desktop/package.json");
+            }
         }
 
         MessageDigest digest = sha512Digest();
@@ -125,8 +144,95 @@ public class StudioReleaseService {
         release.setExe(exeRef);
         release.setLatestYml(ymlRef);
         release.setUploadedAt(timeSource.now().toOffsetDateTime());
-        release.setUploadedBy(uploadedBy);
+        release.setUploadedBy(access.username());
         return dataManager.unconstrained().save(release);
+    }
+
+    public static ReleaseManifest parseLatestYml(byte[] latestYml) {
+        Object loaded;
+        try {
+            loaded = new Yaml().load(new String(latestYml, StandardCharsets.UTF_8));
+        } catch (RuntimeException e) {
+            throw new PackageException(YML_MISMATCH);
+        }
+        if (!(loaded instanceof Map<?, ?> map)) {
+            throw new PackageException(YML_MISMATCH);
+        }
+        String ver = string(map.get("version"));
+        String path = string(map.get("path"));
+        String url = null;
+        Object files = map.get("files");
+        if (files instanceof List<?> list && !list.isEmpty() && list.get(0) instanceof Map<?, ?> first) {
+            url = string(first.get("url"));
+        }
+        if (ver == null || path == null || url == null) {
+            throw new PackageException(YML_MISMATCH);
+        }
+        requireSemver(ver);
+        requireExeName(path);
+        requireExeName(url);
+        return new ReleaseManifest(ver, path, url);
+    }
+
+    public static void requireSemver(String version) {
+        if (version == null || !SEMVER.matcher(version).matches()) {
+            throw new PackageException(VERSION_HINT);
+        }
+        String[] parts = version.split("\\.");
+        for (String part : parts) {
+            try {
+                Long.parseLong(part);
+            } catch (NumberFormatException e) {
+                throw new PackageException(VERSION_HINT);
+            }
+        }
+    }
+
+    /** 1 если a новее b, 0 если равны, -1 если старше. Только после requireSemver. */
+    public static int compareVersions(String a, String b) {
+        requireSemver(a);
+        requireSemver(b);
+        String[] left = a.split("\\.");
+        String[] right = b.split("\\.");
+        for (int i = 0; i < 3; i++) {
+            long x = Long.parseLong(left[i]);
+            long y = Long.parseLong(right[i]);
+            if (x != y) {
+                return Long.compare(x, y);
+            }
+        }
+        return 0;
+    }
+
+    private static void requireExeName(String name) {
+        if (name == null || !EXE_NAME.matcher(name).matches()
+                || name.contains("/") || name.contains("\\") || name.contains("..")
+                || name.indexOf('"') >= 0) {
+            throw new PackageException(YML_MISMATCH);
+        }
+        for (int i = 0; i < name.length(); i++) {
+            if (Character.isISOControl(name.charAt(i))) {
+                throw new PackageException(YML_MISMATCH);
+            }
+        }
+    }
+
+    @Nullable
+    private static String basename(@Nullable String exeName) {
+        if (exeName == null || exeName.isBlank()) {
+            return null;
+        }
+        String name = exeName.replace('\\', '/');
+        int slash = name.lastIndexOf('/');
+        if (slash >= 0) {
+            name = name.substring(slash + 1);
+        }
+        return name;
+    }
+
+    @Nullable
+    private static String string(Object value) {
+        return value == null ? null : String.valueOf(value).trim();
     }
 
     private static void removeQuietly(FileStorage storage, @Nullable FileRef ref) {
@@ -135,39 +241,6 @@ public class StudioReleaseService {
             storage.removeFile(ref);
         } catch (RuntimeException ignored) {
             /* файл мог уже отсутствовать */
-        }
-    }
-
-    public static String ymlValue(String yml, String key) {
-        for (String line : yml.split("\\R")) {
-            String trimmed = line.trim();
-            if (trimmed.startsWith(key)) {
-                return trimmed.substring(key.length()).trim().replace("\"", "").replace("'", "");
-            }
-        }
-        return null;
-    }
-
-    /** 1 если a новее b, 0 если равны, -1 если старше. Сегменты — целые числа. */
-    public static int compareVersions(String a, String b) {
-        String[] left = a.split("\\.");
-        String[] right = b.split("\\.");
-        int n = Math.max(left.length, right.length);
-        for (int i = 0; i < n; i++) {
-            long x = i < left.length ? parseSegment(left[i]) : 0;
-            long y = i < right.length ? parseSegment(right[i]) : 0;
-            if (x != y) {
-                return Long.compare(x, y);
-            }
-        }
-        return 0;
-    }
-
-    private static long parseSegment(String part) {
-        try {
-            return Long.parseLong(part);
-        } catch (NumberFormatException e) {
-            return 0;
         }
     }
 
@@ -181,6 +254,9 @@ public class StudioReleaseService {
 
     public List<StudioRelease> all() {
         return dataManager.unconstrained().load(StudioRelease.class).all().list();
+    }
+
+    public record ReleaseManifest(String version, String path, String fileUrl) {
     }
 
     /** Считает фактически прочитанные байты. */

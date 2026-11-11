@@ -54,7 +54,7 @@ public class StaffList extends VerticalLayout {
         grid.addColumn(StaffRow::username).setHeader("Логин").setFlexGrow(1);
         grid.addColumn(StaffRow::role).setHeader("Роль").setFlexGrow(1);
         grid.addColumn(StaffRow::courses).setHeader("Курсы").setWidth("8em").setFlexGrow(0);
-        grid.addColumn(StaffRow::groups).setHeader("Группы").setWidth("8em").setFlexGrow(0);
+        grid.addColumn(StaffRow::groups).setHeader("Активные группы").setWidth("10em").setFlexGrow(0);
         grid.addColumn(row -> row.active() ? "да" : "нет").setHeader("Активен").setWidth("8em").setFlexGrow(0);
         grid.addComponentColumn(this::actions).setHeader("").setAutoWidth(true).setFlexGrow(0);
         Button create = new Button("Создать", e -> TeacherDialogs.createStaff(provisioning, this::reload));

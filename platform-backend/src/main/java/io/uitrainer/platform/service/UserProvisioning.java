@@ -11,6 +11,7 @@ import io.uitrainer.platform.security.StudentRole;
 import io.uitrainer.platform.security.TrainerOwnDataRole;
 import io.uitrainer.platform.security.TrainerRole;
 import io.uitrainer.platform.security.UiMinimalRole;
+import org.springframework.lang.Nullable;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -99,29 +100,39 @@ public class UserProvisioning {
             }
         }
         desired.add(UiMinimalRole.CODE);
-        Set<String> desiredRows = new HashSet<>();
-        if (desired.contains(TrainerRole.CODE)) desiredRows.add(TrainerOwnDataRole.CODE);
-        if (desired.contains(StudentRole.CODE)) desiredRows.add(StudentPublishedRole.CODE);
 
         for (RoleAssignmentEntity row : assignments(username)) {
             boolean dropResource = RESOURCE.equals(row.getRoleType())
                     && managedResource(row.getRoleCode())
                     && !desired.contains(row.getRoleCode());
-            boolean dropRow = ROW_LEVEL.equals(row.getRoleType())
-                    && managedRow(row.getRoleCode())
-                    && !desiredRows.contains(row.getRoleCode());
-            if (dropResource || dropRow) dataManager.remove(row);
+            if (dropResource) dataManager.remove(row);
         }
         for (String code : desired) ensure(username, code, RESOURCE);
-        for (String code : desiredRows) ensure(username, code, ROW_LEVEL);
+        syncRowLevels(username);
+    }
+
+    /** Row-level роли строго по resource trainer/student. Идемпотентно. */
+    public void syncRowLevels(String username) {
+        syncRowLevels(username, null);
+    }
+
+    void syncRowLevels(String username, @Nullable String extraResourceCode) {
+        Set<String> resource = resourceRoles(username);
+        if (extraResourceCode != null) resource.add(extraResourceCode);
+        if (resource.contains(TrainerRole.CODE)) {
+            ensure(username, TrainerOwnDataRole.CODE, ROW_LEVEL);
+        } else {
+            drop(username, TrainerOwnDataRole.CODE, ROW_LEVEL);
+        }
+        if (resource.contains(StudentRole.CODE)) {
+            ensure(username, StudentPublishedRole.CODE, ROW_LEVEL);
+        } else {
+            drop(username, StudentPublishedRole.CODE, ROW_LEVEL);
+        }
     }
 
     private boolean managedResource(String code) {
         return BUSINESS_ROLES.contains(code) || UiMinimalRole.CODE.equals(code);
-    }
-
-    private boolean managedRow(String code) {
-        return TrainerOwnDataRole.CODE.equals(code) || StudentPublishedRole.CODE.equals(code);
     }
 
     private List<RoleAssignmentEntity> assignments(String username) {
@@ -129,6 +140,14 @@ public class UserProvisioning {
                 .query("select r from sec_RoleAssignmentEntity r where r.username = :u")
                 .parameter("u", username)
                 .list();
+    }
+
+    private void drop(String username, String code, String type) {
+        for (RoleAssignmentEntity row : assignments(username)) {
+            if (type.equals(row.getRoleType()) && code.equals(row.getRoleCode())) {
+                dataManager.remove(row);
+            }
+        }
     }
 
     private void ensure(String username, String code, String type) {

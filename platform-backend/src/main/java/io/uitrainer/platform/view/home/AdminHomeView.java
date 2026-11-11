@@ -38,7 +38,6 @@ import org.springframework.lang.Nullable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
-import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
@@ -202,8 +201,11 @@ public class AdminHomeView extends StandardView implements BeforeEnterObserver {
         AtomicReference<byte[]> ymlBytes = new AtomicReference<>();
         Upload yml = new Upload(UploadHandler.inMemory((metadata, data) -> {
             ymlBytes.set(data);
-            String ver = StudioReleaseService.ymlValue(new String(data, StandardCharsets.UTF_8), "version:");
-            parsed.setText(ver == null || ver.isBlank() ? "" : "Будет загружена версия " + ver);
+            try {
+                parsed.setText("Будет загружена версия " + StudioReleaseService.parseLatestYml(data).version());
+            } catch (PackageException ex) {
+                parsed.setText(ex.getMessage());
+            }
         }));
         yml.setAcceptedFileTypes(".yml", ".yaml");
         yml.setMaxFiles(1);
@@ -217,7 +219,7 @@ public class AdminHomeView extends StandardView implements BeforeEnterObserver {
             }
             try {
                 try (InputStream exeStream = new FileInputStream(file)) {
-                    releases.uploadWin(null, exeName.get(), exeStream, ymlBytes.get(), access.username());
+                    releases.uploadWin(null, exeName.get(), exeStream, ymlBytes.get());
                 }
                 exeFile.set(null);
                 deleteQuietly(file);

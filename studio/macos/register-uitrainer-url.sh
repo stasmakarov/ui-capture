@@ -1,6 +1,6 @@
 #!/bin/sh
 # Скелет регистрации uitrainer:// на macOS.
-# Ссылка из админки Jmix: uitrainer://new?course=…&server=…&ticket=…
+# Ссылка с платформы Jmix: uitrainer://new?course=…&server=…&ticket=…
 set -eu
 echo "Схема: uitrainer"
 echo "Команда: uitrainer://new?course=…&server=…&ticket=…"
