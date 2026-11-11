@@ -133,12 +133,7 @@ public class StudioLaunch {
                             + "<li>Установите и откройте студию, затем нажмите «Записать в студии» ещё раз.</li>"
                             + "<li>Или выполните <code>npx uitrainer open-url \"…\"</code> со ссылкой ниже.</li></ol>"),
                     linkField);
-            releases.current(StudioReleaseService.WIN).ifPresent(release -> {
-                com.vaadin.flow.component.html.Anchor download = new com.vaadin.flow.component.html.Anchor(
-                        "/api/studio/releases/win/" + release.getFileName(), "Скачать студию");
-                download.setId("downloadStudio");
-                dialog.add(download);
-            });
+            releases.current(StudioReleaseService.WIN).ifPresent(release -> dialog.add(StudioDownload.link(release)));
             dialog.setWidth("40em");
             dialog.getFooter().add(new Button("Закрыть", e -> dialog.close()));
             dialog.open();

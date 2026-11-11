@@ -48,9 +48,9 @@ class StudioReleaseApiTest {
     @Autowired
     FileStorageLocator fileStorageLocator;
 
-    /** База тестов живёт между запусками, поэтому версия каждый раз новая. */
+    /** База тестов живёт между запусками, поэтому версия каждый раз новая и строго больше прежней. */
     private static String uniqueVersion() {
-        return "9.9." + System.nanoTime();
+        return "99." + System.currentTimeMillis() + "." + System.nanoTime();
     }
 
     private static String exeName(String version) {
@@ -118,6 +118,23 @@ class StudioReleaseApiTest {
         mvc.perform(multipart("/api/studio/releases/win").file(exePart).file(ymlPart).param("version", version)
                         .header("Authorization", "Bearer " + adminToken()))
                 .andExpect(status().isBadRequest());
+    }
+
+    @Test
+    void rejectsOlderStudioVersion() throws Exception {
+        String admin = adminToken();
+        String first = uniqueVersion();
+        mvc.perform(multipart("/api/studio/releases/win")
+                        .file(new MockMultipartFile("exe", exeName(first), "application/octet-stream", new byte[]{1}))
+                        .file(new MockMultipartFile("latestYml", "latest.yml", "text/yaml", latestYml(first)))
+                        .param("version", first).header("Authorization", "Bearer " + admin))
+                .andExpect(status().isCreated());
+        String older = "0.1.0";
+        mvc.perform(multipart("/api/studio/releases/win")
+                        .file(new MockMultipartFile("exe", exeName(older), "application/octet-stream", new byte[]{2}))
+                        .file(new MockMultipartFile("latestYml", "latest.yml", "text/yaml", latestYml(older)))
+                        .param("version", older).header("Authorization", "Bearer " + admin))
+                .andExpect(status().isConflict());
     }
 
     @Test

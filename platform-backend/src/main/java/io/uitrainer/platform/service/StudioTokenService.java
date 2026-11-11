@@ -147,7 +147,7 @@ public class StudioTokenService {
             owner.setStudioLocalPort(studioPort);
             dataManager.unconstrained().save(owner);
         }
-        IssuedToken issued = issueFor(ticket.getOwner(), "Студия (по ссылке из админки)", exchangedTokenTtl);
+        IssuedToken issued = issueFor(ticket.getOwner(), "Студия (по ссылке с платформы)", exchangedTokenTtl);
         Course course = ticket.getCourse();
         return new Exchange(issued.plainText(), ticket.getOwner().getUsername(),
                 course == null ? null : course.getId(), course == null ? null : course.getTitle(),

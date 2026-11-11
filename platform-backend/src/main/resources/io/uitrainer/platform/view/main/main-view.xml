@@ -2,6 +2,7 @@
 <mainView xmlns="http://jmix.io/schema/flowui/main-view"
           title="msg://MainView.title">
     <actions>
+        <action id="changePasswordAction" text="msg://changePasswordAction.text"/>
         <action id="logoutAction" type="logout" text="Выйти"/>
     </actions>
     <appLayout>
@@ -14,6 +15,7 @@
                 <h1 id="viewTitle" classNames="jmix-main-view-title"/>
                 <userMenu id="userMenu" themeNames="tertiary" classNames="ms-auto me-m">
                     <items>
+                        <actionItem id="changePasswordItem" ref="changePasswordAction" themeNames="non-checkable"/>
                         <actionItem id="logoutMenuItem" ref="logoutAction" themeNames="non-checkable"/>
                     </items>
                 </userMenu>

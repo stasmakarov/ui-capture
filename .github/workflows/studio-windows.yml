@@ -21,7 +21,10 @@ jobs:
         run: |
           VERSION=${GITHUB_REF_NAME#studio-v}
           PKG=$(node -p "require('./desktop/package.json').version")
-          test "$VERSION" = "$PKG"
+          if [ "$VERSION" != "$PKG" ]; then
+            echo "Тег studio-v$VERSION не совпадает с version в desktop/package.json ($PKG)"
+            exit 1
+          fi
       - run: npm run build --workspace @uitrainer/desktop
       - name: electron-builder
         working-directory: desktop

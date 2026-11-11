@@ -39,12 +39,20 @@ public class UserProvisioning {
 
     @Transactional
     public void createTeacher(String username, String firstName, String lastName, String password) {
+        createUser(username, firstName, lastName, password, TrainerRole.CODE);
+    }
+
+    @Transactional
+    public User createUser(String username, String firstName, String lastName, String password, String role) {
         String login = username == null ? "" : username.trim();
         if (login.isEmpty() || login.chars().anyMatch(Character::isWhitespace)) {
             throw new IllegalArgumentException("Укажите логин без пробелов");
         }
         if (firstName == null || firstName.isBlank() || lastName == null || lastName.isBlank()) {
             throw new IllegalArgumentException("Укажите имя и фамилию");
+        }
+        if (!BUSINESS_ROLES.contains(role)) {
+            throw new IllegalArgumentException("Неизвестная роль");
         }
         boolean exists = dataManager.load(User.class)
                 .query("select u from User u where u.username = :u")
@@ -60,7 +68,18 @@ public class UserProvisioning {
         user.setPassword(passwordEncoder.encode(raw));
         user.setActive(true);
         dataManager.save(user);
-        saveResourceRoles(login, Set.of(TrainerRole.CODE));
+        saveResourceRoles(login, Set.of(role));
+        return user;
+    }
+
+    @Transactional
+    public void setActive(String username, boolean active) {
+        User user = dataManager.load(User.class)
+                .query("select u from User u where u.username = :u")
+                .parameter("u", username)
+                .one();
+        user.setActive(active);
+        dataManager.save(user);
     }
 
     public Set<String> resourceRoles(String username) {

@@ -18,6 +18,7 @@ public final class PlatformViews {
     public static final String LESSON_QUEUE = "uic_LessonQueue";
     public static final String TEACHER_COURSES = "uic_TeacherCourses";
     public static final String USER_LIST = "uic_User.list";
+    public static final String USER_DETAIL = "uic_User.detail";
     public static final String GROUP_LIST = "uic_StudyGroup.list";
     public static final String GROUP_DETAIL = "uic_StudyGroup.detail";
     public static final String GROUP_COURSE_DETAIL = "uic_GroupCourse.detail";

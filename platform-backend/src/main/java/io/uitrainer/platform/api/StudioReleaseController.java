@@ -69,7 +69,7 @@ public class StudioReleaseController {
 
     @PostMapping(value = "/win", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<Map<String, Object>> upload(
-            @RequestParam("version") String version,
+            @RequestParam(value = "version", required = false) String version,
             @RequestParam("exe") MultipartFile exe,
             @RequestParam("latestYml") MultipartFile latestYml,
             HttpServletRequest request) throws IOException {

@@ -2,21 +2,22 @@ package io.uitrainer.platform.view.home;
 
 import com.vaadin.flow.component.button.Button;
 import com.vaadin.flow.component.button.ButtonVariant;
-import com.vaadin.flow.component.html.Anchor;
 import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.notification.Notification;
 import com.vaadin.flow.component.notification.NotificationVariant;
-import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
 import com.vaadin.flow.component.orderedlayout.VerticalLayout;
-import com.vaadin.flow.component.textfield.TextField;
+import com.vaadin.flow.component.tabs.Tab;
+import com.vaadin.flow.component.tabs.TabSheet;
 import com.vaadin.flow.component.upload.Upload;
+import com.vaadin.flow.router.BeforeEnterEvent;
+import com.vaadin.flow.router.BeforeEnterObserver;
+import com.vaadin.flow.router.QueryParameters;
 import com.vaadin.flow.router.Route;
-import com.vaadin.flow.router.RouteParameters;
+import com.vaadin.flow.router.RouteConfiguration;
 import com.vaadin.flow.server.streams.UploadHandler;
 import io.jmix.core.DataManager;
-import io.jmix.core.TimeSource;
 import io.jmix.flowui.ViewNavigators;
 import io.jmix.flowui.view.StandardView;
 import io.jmix.flowui.view.ViewController;
@@ -25,13 +26,11 @@ import io.uitrainer.platform.entity.StudioRelease;
 import io.uitrainer.platform.security.PlatformViews;
 import io.uitrainer.platform.service.ConflictException;
 import io.uitrainer.platform.service.CurrentUserAccess;
-import io.uitrainer.platform.service.LessonLifecycleService;
 import io.uitrainer.platform.service.PackageException;
 import io.uitrainer.platform.service.StudioReleaseService;
 import io.uitrainer.platform.service.UserProvisioning;
 import io.uitrainer.platform.view.main.MainView;
-import io.uitrainer.platform.view.user.TeacherDialogs;
-import io.uitrainer.platform.view.user.UserListView;
+import io.uitrainer.platform.view.studio.StudioDownload;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.info.BuildProperties;
 import org.springframework.lang.Nullable;
@@ -39,20 +38,20 @@ import org.springframework.lang.Nullable;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicReference;
 
-/** Кабинет платформы: преподаватели, пользователи, роли и очередь проверки. Токены — в меню администрирования. */
+/** Кабинет платформы: преподаватели и директора, студенты, студия. */
 @Route(value = "cabinet/admin", layout = MainView.class)
 @ViewController(id = PlatformViews.ADMIN_HOME)
-public class AdminHomeView extends StandardView {
+public class AdminHomeView extends StandardView implements BeforeEnterObserver {
 
     @Autowired
     private DataManager dataManager;
-    @Autowired
-    private LessonLifecycleService lifecycle;
-    @Autowired
-    private TimeSource timeSource;
     @Autowired
     private UserProvisioning provisioning;
     @Autowired
@@ -65,7 +64,14 @@ public class AdminHomeView extends StandardView {
     @Nullable
     private BuildProperties buildProperties;
 
-    private TeacherList teachers;
+    private TabSheet tabs;
+    private Tab teachersTab;
+    private Tab studentsTab;
+    private Tab studioTab;
+    private StaffList staff;
+    private StudentList students;
+    private boolean applyingTab;
+    private String pendingTab = "teachers";
 
     public AdminHomeView() {
         getContent().setWidthFull();
@@ -78,43 +84,79 @@ public class AdminHomeView extends StandardView {
         return "Кабинет платформы";
     }
 
+    @Override
+    public void beforeEnter(BeforeEnterEvent event) {
+        pendingTab = event.getLocation().getQueryParameters().getSingleParameter("tab").orElse("teachers");
+        selectTab(pendingTab);
+    }
+
     @io.jmix.flowui.view.Subscribe
     public void onInit(InitEvent event) {
         H2 title = new H2("Кабинет платформы");
         title.getStyle().set("margin", "0");
-        Span lead = new Span("Преподаватели — это пользователи с ролью тренера. Отдельного справочника проверяющих нет.");
+        Span lead = new Span("Пользователи кабинета и загрузка студии. Пароль и роли — в карточке пользователя.");
         lead.getStyle().set("color", "var(--lumo-secondary-text-color)");
 
-        Button create = new Button("Создать преподавателя", e -> TeacherDialogs.createTeacher(provisioning, this::reloadTeachers));
-        create.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        create.setId("createTeacher");
-        Button users = new Button("Пользователи", e -> viewNavigators.view(this, UserListView.class).navigate());
-        users.setId("openUsers");
-        Button roles = new Button("Роли", e -> viewNavigators.view(this, "sec_ResourceRoleModel.list").navigate());
-        roles.setId("openRoles");
-        Button rowRoles = new Button("Роли уровня строк", e -> viewNavigators.view(this, "sec_RowLevelRoleModel.list").navigate());
-        rowRoles.setId("openRowRoles");
-        HorizontalLayout links = new HorizontalLayout(create, users, roles, rowRoles);
-        links.setWidthFull();
-        links.getStyle().set("flex-wrap", "wrap");
+        staff = new StaffList(dataManager, provisioning, access, viewNavigators, this);
+        staff.reload();
+        students = new StudentList(dataManager, provisioning, access, viewNavigators, this);
+        students.reload();
 
-        teachers = new TeacherList(dataManager, row -> getUI().ifPresent(ui -> ui.navigate(
-                TeacherCoursesView.class, new RouteParameters("username", row.username()))));
-        teachers.reload();
-
-        H3 teachersTitle = new H3("Преподаватели");
-        teachersTitle.getStyle().set("margin", "0");
-        H3 queueTitle = new H3("Очередь проверки");
-        queueTitle.getStyle().set("margin", "0");
-        getContent().add(title, lead, links, versionsBlock(), teachersTitle, teachers, queueTitle,
-                new ReviewQueuePanel(dataManager, lifecycle, timeSource));
+        tabs = new TabSheet();
+        tabs.setWidthFull();
+        teachersTab = tabs.add("Преподаватели и директора", staff);
+        studentsTab = tabs.add("Студенты", students);
+        studioTab = tabs.add("Студия", studioPane());
+        tabs.addSelectedChangeListener(e -> {
+            if (applyingTab) {
+                return;
+            }
+            writeTab(keyOf(e.getSelectedTab()));
+        });
+        getContent().add(title, lead, tabs);
+        selectTab(pendingTab);
     }
 
-    private VerticalLayout versionsBlock() {
+    private void selectTab(String key) {
+        if (tabs == null) {
+            return;
+        }
+        applyingTab = true;
+        try {
+            Tab tab = switch (key) {
+                case "students" -> studentsTab;
+                case "studio" -> studioTab;
+                default -> teachersTab;
+            };
+            tabs.setSelectedTab(tab);
+        } finally {
+            applyingTab = false;
+        }
+    }
+
+    private String keyOf(Tab tab) {
+        if (tab == studentsTab) {
+            return "students";
+        }
+        if (tab == studioTab) {
+            return "studio";
+        }
+        return "teachers";
+    }
+
+    private void writeTab(String key) {
+        getUI().ifPresent(ui -> {
+            String path = RouteConfiguration.forSessionScope().getUrl(AdminHomeView.class);
+            ui.getPage().getHistory().replaceState(null,
+                    path + "?" + new QueryParameters(Map.of("tab", List.of(key))).getQueryString());
+        });
+    }
+
+    private VerticalLayout studioPane() {
         VerticalLayout box = new VerticalLayout();
         box.setPadding(false);
         box.setSpacing(true);
-        H3 heading = new H3("Версии");
+        H3 heading = new H3("Студия для Windows");
         heading.getStyle().set("margin", "0");
         String platformVersion = buildProperties == null ? "0.6.0" : buildProperties.getVersion();
         box.add(heading, new Span("Платформа " + platformVersion + " · API " + ApiVersion.CURRENT));
@@ -123,13 +165,15 @@ public class AdminHomeView extends StandardView {
             Button download = new Button("Скачать студию");
             download.setId("downloadStudio");
             download.setEnabled(false);
-            download.getElement().setAttribute("title", "Релиз студии ещё не загружен");
             box.add(new Span("Релиз студии ещё не загружен"), download);
         } else {
             StudioRelease release = current.get();
-            Anchor download = new Anchor("/api/studio/releases/win/" + release.getFileName(), "Скачать студию");
-            download.setId("downloadStudio");
-            box.add(new Span("Студия " + release.getVersionName()), download);
+            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+            String size = release.getSize() == null ? "" : String.format("%.1f МБ", release.getSize() / (1024.0 * 1024.0));
+            String uploaded = release.getUploadedAt() == null ? "" : fmt.format(release.getUploadedAt().toLocalDateTime());
+            box.add(new Span("Версия " + release.getVersionName() + " · " + uploaded
+                    + " · " + release.getUploadedBy() + " · " + size));
+            box.add(StudioDownload.link(release));
         }
         box.add(uploadForm());
         return box;
@@ -140,10 +184,11 @@ public class AdminHomeView extends StandardView {
         form.setPadding(false);
         form.setSpacing(true);
         form.add(new Span("Загрузить релиз"));
-        TextField version = new TextField("version");
-        version.setId("studioReleaseVersion");
-        version.setWidth("16em");
-        // .exe (~150 МБ) пишется во временный файл и отдаётся сервису потоком, в памяти не держим.
+        Span hint = new Span("Артефакт CI uitrainer-studio-windows: файл «uitrainer Studio Setup X.Y.Z.exe» и latest.yml.");
+        hint.getStyle().set("color", "var(--lumo-secondary-text-color)");
+        form.add(hint);
+        Span parsed = new Span();
+        parsed.setId("studioParsedVersion");
         AtomicReference<File> exeFile = new AtomicReference<>();
         AtomicReference<String> exeName = new AtomicReference<>();
         Upload exe = new Upload(UploadHandler.toTempFile((metadata, file) -> {
@@ -153,11 +198,17 @@ public class AdminHomeView extends StandardView {
         }));
         exe.setAcceptedFileTypes(".exe");
         exe.setMaxFiles(1);
+        Span exeCaption = new Span("Установщик (.exe)");
         AtomicReference<byte[]> ymlBytes = new AtomicReference<>();
-        Upload yml = new Upload(UploadHandler.inMemory((metadata, data) -> ymlBytes.set(data)));
+        Upload yml = new Upload(UploadHandler.inMemory((metadata, data) -> {
+            ymlBytes.set(data);
+            String ver = StudioReleaseService.ymlValue(new String(data, StandardCharsets.UTF_8), "version:");
+            parsed.setText(ver == null || ver.isBlank() ? "" : "Будет загружена версия " + ver);
+        }));
         yml.setAcceptedFileTypes(".yml", ".yaml");
         yml.setMaxFiles(1);
-        Button send = new Button("Загрузить", e -> {
+        Span ymlCaption = new Span("Файл обновлений (latest.yml)");
+        Button send = new Button("Загрузить релиз", e -> {
             File file = exeFile.get();
             if (file == null) {
                 Notification.show("Нужен файл .exe", 5000, Notification.Position.TOP_CENTER)
@@ -166,13 +217,14 @@ public class AdminHomeView extends StandardView {
             }
             try {
                 try (InputStream exeStream = new FileInputStream(file)) {
-                    releases.uploadWin(version.getValue(), exeName.get(), exeStream, ymlBytes.get(), access.username());
+                    releases.uploadWin(null, exeName.get(), exeStream, ymlBytes.get(), access.username());
                 }
                 exeFile.set(null);
                 deleteQuietly(file);
                 Notification.show("Релиз загружен", 4000, Notification.Position.TOP_CENTER)
                         .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                getUI().ifPresent(ui -> ui.getPage().reload());
+                getUI().ifPresent(ui -> ui.navigate(AdminHomeView.class,
+                        QueryParameters.simple(Map.of("tab", "studio"))));
             } catch (ConflictException ex) {
                 Notification.show(ex.getMessage(), 5000, Notification.Position.TOP_CENTER)
                         .addThemeVariants(NotificationVariant.LUMO_ERROR);
@@ -183,7 +235,7 @@ public class AdminHomeView extends StandardView {
         });
         send.setId("uploadStudioRelease");
         send.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        form.add(version, exe, yml, send);
+        form.add(exeCaption, exe, ymlCaption, yml, parsed, send);
         form.addDetachListener(ev -> {
             File left = exeFile.getAndSet(null);
             if (left != null) deleteQuietly(left);
@@ -197,9 +249,5 @@ public class AdminHomeView extends StandardView {
         } catch (java.io.IOException ignored) {
             /* временный файл удалит ОС */
         }
-    }
-
-    private void reloadTeachers() {
-        if (teachers != null) teachers.reload();
     }
 }

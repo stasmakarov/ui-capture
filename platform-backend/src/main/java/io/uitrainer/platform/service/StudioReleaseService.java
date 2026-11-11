@@ -81,19 +81,24 @@ public class StudioReleaseService {
             }
         });
 
-        if (version == null || version.isBlank()) throw new PackageException("Укажите version");
         if (exe == null) throw new PackageException("Нужен файл .exe");
         if (latestYml == null || latestYml.length == 0) throw new PackageException("Нужен файл latest.yml");
-        String ver = version.trim();
+        String yml = new String(latestYml, StandardCharsets.UTF_8);
+        String ver = ymlValue(yml, "version:");
+        if (ver == null || ver.isBlank()) throw new PackageException("В latest.yml нет version");
+        if (ver.contains("-")) throw new PackageException("Пре-релизы не принимаются. Укажите версию без суффикса в desktop/package.json");
+        if (version != null && !version.isBlank() && !ver.equals(version.trim())) {
+            throw new PackageException("latest.yml должен ссылаться на загруженный .exe и совпадать по version");
+        }
         String name = exeName == null || exeName.isBlank() ? "uitrainer-Studio-Setup-" + ver + ".exe" : exeName;
         if (!name.toLowerCase().endsWith(".exe")) throw new PackageException("Ожидается файл .exe");
-        String yml = new String(latestYml, StandardCharsets.UTF_8);
-        if (!ymlContains(yml, "version:", ver) || !yml.contains(name)) {
+        if (!yml.contains(name)) {
             throw new PackageException("latest.yml должен ссылаться на загруженный .exe и совпадать по version");
         }
         Optional<StudioRelease> existing = current(WIN);
-        if (existing.isPresent() && ver.equals(existing.get().getVersionName())) {
-            throw new ConflictException("Релиз этой версии уже загружен");
+        if (existing.isPresent() && compareVersions(ver, existing.get().getVersionName()) <= 0) {
+            throw new ConflictException("Текущая версия " + existing.get().getVersionName()
+                    + ". Загружаемая " + ver + " не новее — увеличьте версию в desktop/package.json");
         }
 
         MessageDigest digest = sha512Digest();
@@ -133,15 +138,37 @@ public class StudioReleaseService {
         }
     }
 
-    private static boolean ymlContains(String yml, String key, String value) {
+    public static String ymlValue(String yml, String key) {
         for (String line : yml.split("\\R")) {
             String trimmed = line.trim();
             if (trimmed.startsWith(key)) {
-                String rest = trimmed.substring(key.length()).trim().replace("\"", "").replace("'", "");
-                if (rest.equals(value)) return true;
+                return trimmed.substring(key.length()).trim().replace("\"", "").replace("'", "");
             }
         }
-        return false;
+        return null;
+    }
+
+    /** 1 если a новее b, 0 если равны, -1 если старше. Сегменты — целые числа. */
+    public static int compareVersions(String a, String b) {
+        String[] left = a.split("\\.");
+        String[] right = b.split("\\.");
+        int n = Math.max(left.length, right.length);
+        for (int i = 0; i < n; i++) {
+            long x = i < left.length ? parseSegment(left[i]) : 0;
+            long y = i < right.length ? parseSegment(right[i]) : 0;
+            if (x != y) {
+                return Long.compare(x, y);
+            }
+        }
+        return 0;
+    }
+
+    private static long parseSegment(String part) {
+        try {
+            return Long.parseLong(part);
+        } catch (NumberFormatException e) {
+            return 0;
+        }
     }
 
     private static MessageDigest sha512Digest() {

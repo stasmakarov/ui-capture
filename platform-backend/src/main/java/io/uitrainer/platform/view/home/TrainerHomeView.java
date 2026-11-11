@@ -8,6 +8,7 @@ import com.vaadin.flow.component.html.H2;
 import com.vaadin.flow.component.html.H3;
 import com.vaadin.flow.component.html.Span;
 import com.vaadin.flow.component.orderedlayout.HorizontalLayout;
+import com.vaadin.flow.component.orderedlayout.VerticalLayout;
 import com.vaadin.flow.router.Route;
 import com.vaadin.flow.router.RouteParameters;
 import io.jmix.core.DataManager;
@@ -19,10 +20,13 @@ import io.uitrainer.platform.entity.Course;
 import io.uitrainer.platform.entity.GroupStatus;
 import io.uitrainer.platform.entity.StudyGroup;
 import io.uitrainer.platform.security.PlatformViews;
+import io.uitrainer.platform.entity.StudioRelease;
 import io.uitrainer.platform.view.group.StudyGroupListView;
 import io.uitrainer.platform.service.CourseAccessService;
 import io.uitrainer.platform.service.GroupProgressService;
+import io.uitrainer.platform.service.StudioReleaseService;
 import io.uitrainer.platform.view.main.MainView;
+import io.uitrainer.platform.view.studio.StudioDownload;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.util.List;
@@ -42,6 +46,8 @@ public class TrainerHomeView extends StandardView {
     private GroupProgressService groupProgress;
     @Autowired
     private CourseAccessService courseAccess;
+    @Autowired
+    private StudioReleaseService releases;
 
     private final Grid<GroupProgressService.GroupSummary> groups = new Grid<>();
     private final Checkbox history = new Checkbox("История закрытых");
@@ -127,7 +133,7 @@ public class TrainerHomeView extends StandardView {
         groupsHeader.setAlignItems(com.vaadin.flow.component.orderedlayout.FlexComponent.Alignment.BASELINE);
         H3 coursesTitle = new H3("Курсы");
         coursesTitle.getStyle().set("margin", "0");
-        getContent().add(title, lead, actions, counters, groupsHeader, history, groups, coursesTitle, courses);
+        getContent().add(title, lead, actions, counters, groupsHeader, history, groups, coursesTitle, courses, studioBlock());
         getContent().expand(courses);
     }
 
@@ -155,6 +161,24 @@ public class TrainerHomeView extends StandardView {
             case ACTIVE -> "Активна";
             case CLOSED -> "Закрыта";
         };
+    }
+
+    private VerticalLayout studioBlock() {
+        VerticalLayout box = new VerticalLayout();
+        box.setPadding(false);
+        box.setSpacing(true);
+        H3 heading = new H3("Студия");
+        heading.getStyle().set("margin", "0");
+        box.add(heading);
+        var current = releases.current(StudioReleaseService.WIN);
+        if (current.isEmpty()) {
+            box.add(new Span("Студия ещё не загружена, обратитесь к администратору"));
+        } else {
+            StudioRelease release = current.get();
+            box.add(new Span("Версия " + release.getVersionName()));
+            box.add(StudioDownload.link(release));
+        }
+        return box;
     }
 
     private Button counter(String bucket) {
