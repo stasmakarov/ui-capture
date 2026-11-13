@@ -23,12 +23,14 @@ class AppVersionServiceTest {
         Properties build = new Properties();
         build.setProperty("version", "0.7.0");
         build.setProperty("jmixVersion", "2.8.6");
-        build.setProperty("time", Instant.parse("2026-01-01T00:00:00Z").toString());
+        Instant buildTime = Instant.parse("2026-01-01T00:00:00Z");
+        Instant commitTime = Instant.parse("2026-11-11T10:00:00Z");
+        build.setProperty("time", buildTime.toString());
         Properties git = new Properties();
         git.setProperty("branch", "main");
         git.setProperty("commit.id", "abc1234def567");
         git.setProperty("commit.id.abbrev", "abc1234");
-        git.setProperty("commit.time", "2026-11-11T10:00:00Z");
+        git.setProperty("commit.time", commitTime.toString());
         AppVersionService service = new AppVersionService(
                 provider(new BuildProperties(build)),
                 provider(new GitProperties(git)),
@@ -38,7 +40,8 @@ class AppVersionServiceTest {
         assertThat(info.version()).isEqualTo("0.7.0");
         assertThat(info.commit()).isEqualTo("abc1234");
         assertThat(info.branch()).isEqualTo("main");
-        assertThat(info.date()).isNotNull();
+        assertThat(info.date()).isEqualTo(buildTime);
+        assertThat(info.date()).isNotEqualTo(commitTime);
         assertThat(info.jmixVersion()).isEqualTo("2.8.6");
         assertThat(info.apiVersion()).isEqualTo(1);
         assertThat(info.studioVersion()).isEqualTo("0.6.2");
@@ -69,6 +72,19 @@ class AppVersionServiceTest {
         AppVersionService.Info info = service.current();
         assertThat(info.commit()).isNull();
         assertThat(info.date()).isEqualTo(Instant.parse("2026-02-02T12:00:00Z"));
+    }
+
+    @Test
+    void withoutBuildTimeUsesGitCommitTime() {
+        Instant commitTime = Instant.parse("2026-11-11T10:00:00Z");
+        Properties git = new Properties();
+        git.setProperty("commit.id.abbrev", "abc1234");
+        git.setProperty("commit.time", commitTime.toString());
+        AppVersionService service = new AppVersionService(
+                provider(null),
+                provider(new GitProperties(git)),
+                studio(null));
+        assertThat(service.current().date()).isEqualTo(commitTime);
     }
 
     private static StudioReleaseService studio(String version) {

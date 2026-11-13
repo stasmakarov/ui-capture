@@ -21,13 +21,15 @@ class StudioUploadStateTest {
     void newerThanServerIsEnabled() {
         StudioUploadState.Decision d = StudioUploadState.of(true, yml("0.6.3"), "0.6.2");
         assertThat(d.enabled()).isTrue();
-        assertThat(d.reason()).isEmpty();
+        assertThat(d.reason()).isEqualTo("Будет загружена версия 0.6.3");
     }
 
     @Test
     void firstReleaseWithValidSemverIsEnabled() {
         assertThat(StudioUploadState.of(true, yml("0.6.2"), null).enabled()).isTrue();
+        assertThat(StudioUploadState.of(true, yml("0.6.2"), null).reason()).isEqualTo("Будет загружена версия 0.6.2");
         assertThat(StudioUploadState.of(true, yml("0.6.2"), "").enabled()).isTrue();
+        assertThat(StudioUploadState.of(true, yml("0.6.2"), "").reason()).isEqualTo("Будет загружена версия 0.6.2");
     }
 
     @Test
@@ -55,6 +57,7 @@ class StudioUploadStateTest {
     void afterResetLooksLikeNoFiles() {
         StudioUploadState.Decision loaded = StudioUploadState.of(true, yml("0.7.0"), "0.6.2");
         assertThat(loaded.enabled()).isTrue();
+        assertThat(loaded.reason()).isEqualTo("Будет загружена версия 0.7.0");
         StudioUploadState.Decision reset = StudioUploadState.of(false, null, "0.7.0");
         assertThat(reset.enabled()).isFalse();
         assertThat(reset.reason()).isEqualTo("Выберите оба файла");

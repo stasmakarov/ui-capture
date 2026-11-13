@@ -22,7 +22,7 @@ public final class StudioUploadState {
             return new Decision(false, ex.getMessage() == null ? "latest.yml не разобран" : ex.getMessage());
         }
         if (currentServerVersion == null || currentServerVersion.isBlank()) {
-            return new Decision(true, "");
+            return new Decision(true, "Будет загружена версия " + ver);
         }
         int cmp;
         try {
@@ -36,6 +36,6 @@ public final class StudioUploadState {
         if (cmp < 0) {
             return new Decision(false, "Версия " + ver + " старше загруженной " + currentServerVersion);
         }
-        return new Decision(true, "");
+        return new Decision(true, "Будет загружена версия " + ver);
     }
 }

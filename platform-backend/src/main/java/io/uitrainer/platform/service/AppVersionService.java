@@ -40,9 +40,9 @@ public class AppVersionService {
         GitProperties git = gitProperties.getIfAvailable();
         String commit = git != null ? git.getShortCommitId() : null;
         String branch = git != null ? git.getBranch() : null;
-        Instant date = git != null ? git.getCommitTime() : null;
-        if (date == null && build != null) {
-            date = build.getTime();
+        Instant date = build != null ? build.getTime() : null;
+        if (date == null && git != null) {
+            date = git.getCommitTime();
         }
         String jmix = build != null ? build.get("jmixVersion") : null;
         String studio = releases.current(StudioReleaseService.WIN)

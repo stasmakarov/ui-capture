@@ -32,6 +32,8 @@ import io.uitrainer.platform.service.UserProvisioning;
 import io.uitrainer.platform.view.main.MainView;
 import io.uitrainer.platform.view.studio.StudioLocalUrl;
 import io.uitrainer.platform.view.studio.StudioPresence;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import java.io.File;
@@ -48,6 +50,7 @@ import java.util.concurrent.atomic.AtomicReference;
 @ViewController(id = PlatformViews.ADMIN_HOME)
 public class AdminHomeView extends StandardView implements BeforeEnterObserver {
 
+    private static final Logger log = LoggerFactory.getLogger(AdminHomeView.class);
     private static final DateTimeFormatter UPLOADED_AT = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
 
     @Autowired
@@ -211,10 +214,10 @@ public class AdminHomeView extends StandardView implements BeforeEnterObserver {
             File previous = exeFile.getAndSet(file);
             if (previous != null) deleteQuietly(previous);
             exeName.set(metadata.fileName());
+            refreshUploadState();
         }));
         exeUpload.setAcceptedFileTypes(".exe");
         exeUpload.setMaxFiles(1);
-        exeUpload.addSucceededListener(e -> refreshUploadState());
         exeUpload.addFileRemovedListener(e -> {
             File left = exeFile.getAndSet(null);
             if (left != null) deleteQuietly(left);
@@ -222,10 +225,12 @@ public class AdminHomeView extends StandardView implements BeforeEnterObserver {
             refreshUploadState();
         });
         Span exeCaption = new Span("Установщик (.exe)");
-        ymlUpload = new Upload(UploadHandler.inMemory((metadata, data) -> ymlBytes.set(data)));
+        ymlUpload = new Upload(UploadHandler.inMemory((metadata, data) -> {
+            ymlBytes.set(data);
+            refreshUploadState();
+        }));
         ymlUpload.setAcceptedFileTypes(".yml", ".yaml");
         ymlUpload.setMaxFiles(1);
-        ymlUpload.addSucceededListener(e -> refreshUploadState());
         ymlUpload.addFileRemovedListener(e -> {
             ymlBytes.set(null);
             refreshUploadState();
@@ -288,6 +293,11 @@ public class AdminHomeView extends StandardView implements BeforeEnterObserver {
             String text = ex.getMessage() == null || ex.getMessage().isBlank() ? "Не удалось загрузить" : ex.getMessage();
             uploadError.setText(text);
             Notification.show(text, 5000, Notification.Position.TOP_CENTER)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+        } catch (RuntimeException ex) {
+            log.warn("Не удалось загрузить релиз студии", ex);
+            uploadError.setText("Не удалось загрузить релиз");
+            Notification.show("Не удалось загрузить релиз", 5000, Notification.Position.TOP_CENTER)
                     .addThemeVariants(NotificationVariant.LUMO_ERROR);
         }
     }
