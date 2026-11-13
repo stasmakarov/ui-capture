@@ -122,8 +122,10 @@ describe('студия', () => {
       await page.getByRole('button', { name: 'Править шаги' }).click()
       await page.getByRole('heading', { name: 'Найти извещение' }).waitFor()
       await page.locator('.screen-preview img').first().waitFor()
+      await page.locator('.step-select').filter({ hasText: 'введите' }).first().click()
       const expected = page.getByLabel('Ожидаемый ввод')
-      if (await expected.count()) await expected.fill('0123456789')
+      await expected.fill('999888777')
+      expect(await page.getByLabel('Инструкция').inputValue()).toContain('999888777')
       await page.getByLabel('Подсказка').fill('Подсказка из редактора')
       await page.getByText('Есть несохранённые изменения').waitFor()
       await page.getByRole('button', { name: 'Переместить шаг ниже' }).first().waitFor()
@@ -136,7 +138,12 @@ describe('студия', () => {
       await page.getByRole('button', { name: 'Сохранить' }).click()
       await page.getByText('Есть несохранённые изменения').waitFor({ state: 'hidden' })
       await page.getByRole('button', { name: 'К просмотру' }).click()
-      const saved = JSON.parse(await readFile(path.join(lessons, lessonIdFromName('Найти извещение'), 'lesson.json'), 'utf8')) as { steps: Array<{ hint: string; audio?: string }> }
+      const saved = JSON.parse(await readFile(path.join(lessons, lessonIdFromName('Найти извещение'), 'lesson.json'), 'utf8')) as {
+        steps: Array<{ hint: string; audio?: string; action: string; expectedValue: string; instruction: string }>
+      }
+      const inputStep = saved.steps.find((step) => step.action === 'input')
+      expect(inputStep?.expectedValue).toBe('999888777')
+      expect(inputStep?.instruction).toContain('999888777')
       expect(saved.steps.some((step) => step.hint === 'Подсказка из редактора')).toBe(true)
       expect(saved.steps.some((step) => step.audio?.endsWith('.wav'))).toBe(true)
       const wav = await readFile(path.join(lessons, lessonIdFromName('Найти извещение'), saved.steps.find((step) => step.audio)?.audio ?? ''))

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { CaptureAction, CaptureScreen } from './types.ts'
-import { undoLastAction } from './undo.ts'
+import { shouldRecaptureAfterUndo, undoLastAction } from './undo.ts'
 
 function screen(id: string): CaptureScreen {
   return {
@@ -63,5 +63,11 @@ describe('undoLastAction', () => {
     expect(result.actions).toHaveLength(0)
     expect(result.removedScreen?.id).toBe('s2')
     expect(result.screens.map((item) => item.id)).toEqual(['s1'])
+  })
+
+  it('просит новый снимок, если живая страница не совпала с отпечатком предыдущего экрана', () => {
+    expect(shouldRecaptureAfterUndo('s1-print', 's2-still-open')).toBe(true)
+    expect(shouldRecaptureAfterUndo('s1-print', 's1-print')).toBe(false)
+    expect(shouldRecaptureAfterUndo(undefined, 'live')).toBe(true)
   })
 })

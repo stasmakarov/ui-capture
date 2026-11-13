@@ -6,7 +6,10 @@ import {
   judge,
   parseLesson,
   reduceLesson,
+  instructionForStep,
+  instructionIsCustom,
   selectOptionValues,
+  selectValueKnown,
   syncInstructionIfDefault,
   type Lesson,
   type LessonStep,
@@ -204,9 +207,33 @@ describe('syncInstructionIfDefault', () => {
     expect(result.instruction).toBe('Свой текст');
   });
 
-  it('читает опции select из html', () => {
-    expect(selectOptionValues('<select id="kind"><option value="a">А</option><option>б</option></select>', '#kind'))
-      .toEqual(['a', 'б']);
+  it('считает инструкцию правленной вручную, пока текст не совпадает со сгенерированным', () => {
+    const current = step({
+      action: 'input',
+      hotspotId: 'field',
+      expectedValue: 'старое',
+      confirm: 'match',
+      nextScreenId: null,
+      instruction: 'Свой текст',
+    });
+    const lesson = lessonWith([current]);
+    expect(instructionIsCustom(lesson, current)).toBe(true);
+    const restored = { ...current, instruction: instructionForStep(lesson, current) };
+    expect(instructionIsCustom(lesson, restored)).toBe(false);
+  });
+
+  it('считает вариант списка известным по тексту и по value', () => {
+    const html = '<select id="kind"><option value="a">А</option><option>б</option><option value="c">&nbsp;В&nbsp;</option></select>';
+    expect(selectValueKnown(html, '#kind', 'А')).toBe(true);
+    expect(selectValueKnown(html, '#kind', 'a')).toBe(true);
+    expect(selectValueKnown(html, '#kind', 'Б')).toBe(false);
+    expect(selectValueKnown(html, '#kind', 'б')).toBe(true);
+    expect(selectValueKnown(html, '#kind', 'В')).toBe(true);
+    expect(selectOptionValues(html, '#kind')).toEqual([
+      { value: 'a', text: 'А' },
+      { value: 'б', text: 'б' },
+      { value: 'c', text: ' В ' },
+    ]);
   });
 });
 

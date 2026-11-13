@@ -31,6 +31,10 @@ export function undoLastAction(actions: CaptureAction[], screens: CaptureScreen[
   return { undone: true, actions: nextActions, screens, removedScreen: null };
 }
 
+export function shouldRecaptureAfterUndo(savedPrint: string | undefined, livePrint: string): boolean {
+  return savedPrint === undefined || savedPrint !== livePrint;
+}
+
 export async function removeScreenFiles(captureDir: string, screen: CaptureScreen): Promise<void> {
   for (const relative of [screen.screenshotFile, screen.rrwebFile, screen.frozenHtmlFile]) {
     await rm(path.join(captureDir, relative), { force: true });

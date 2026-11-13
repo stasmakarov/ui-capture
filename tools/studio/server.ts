@@ -480,7 +480,8 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
       session.listeners.push(response)
     }
     request.on('close', () => {
-      if (session) session.listeners = session.listeners.filter((item) => item !== response)
+      if (!session) return
+      session.listeners = session.listeners.filter((item) => item !== response)
     })
     return
   }
@@ -553,6 +554,11 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
     if (!session) throw new Error('Запись не идёт')
     const current = session
     session = null
+    broadcast(current, { type: 'reset', steps: [] })
+    for (const listener of current.listeners) {
+      if (!listener.writableEnded) listener.end()
+    }
+    current.listeners = []
     await current.controls.stop()
     await current.done.catch(() => undefined)
     await rm(path.join(capturesDir, current.lessonId), { recursive: true, force: true })
@@ -562,7 +568,7 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
       mode: current.mode,
       launch: current.launch,
       capturesDir,
-      listeners: current.listeners,
+      listeners: [],
       event: 'reset',
     })
     sendJson(response, 200, { ok: true, lessonId })
@@ -572,7 +578,12 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
     if (!session) throw new Error('Запись не идёт')
     const result = await session.controls.undoLast()
     if (result.undone) session.steps.pop()
-    broadcast(session, { type: 'undo', steps: session.steps, removedScreenId: result.removedScreenId })
+    broadcast(session, {
+      type: 'undo',
+      steps: session.steps,
+      removedScreenId: result.removedScreenId,
+      recapturedScreenId: result.recapturedScreenId,
+    })
     sendJson(response, 200, { ok: true, undone: result.undone, steps: session.steps })
     return
   }

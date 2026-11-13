@@ -703,6 +703,7 @@ function Recording({ bannerHost, onError, onStopped, onResetFailed, onRestart }:
   const [seconds, setSeconds] = useState(0)
   const [level, setLevel] = useState(0)
   const [micOn, setMicOn] = useState(false)
+  const [undoing, setUndoing] = useState(false)
   const marks = useRef<StepMark[]>([])
   const started = useRef(performance.now())
   const audioOrigin = useRef(performance.now())
@@ -713,13 +714,17 @@ function Recording({ bannerHost, onError, onStopped, onResetFailed, onRestart }:
   const frameRef = useRef(0)
   const busy = stopping || resetting
 
+  function closeAudio(context: AudioContext | null) {
+    if (context && context.state !== 'closed') void context.close()
+  }
+
   function releaseMic() {
     cancelAnimationFrame(frameRef.current)
     frameRef.current = 0
     streamRef.current?.getTracks().forEach((track) => track.stop())
     streamRef.current = null
     if (contextRef.current) {
-      void contextRef.current.close()
+      closeAudio(contextRef.current)
       contextRef.current = null
     }
     if (recorder.current && recorder.current.state !== 'inactive') recorder.current.stop()
@@ -762,7 +767,7 @@ function Recording({ bannerHost, onError, onStopped, onResetFailed, onRestart }:
       await context.resume()
       if (cancelled) {
         stream.getTracks().forEach((track) => track.stop())
-        await context.close()
+        if (context.state !== 'closed') await context.close()
         return
       }
       const node = context.createMediaStreamSource(stream)
@@ -789,7 +794,9 @@ function Recording({ bannerHost, onError, onStopped, onResetFailed, onRestart }:
       media.ondataavailable = (event) => { if (event.data.size) chunks.current.push(event.data) }
       media.start(1000)
       recorder.current = media
-    }).catch(() => onError('Микрофон недоступен. Запись шагов продолжится без голоса.'))
+    }).catch(() => {
+      if (!cancelled) onError('Микрофон недоступен. Запись шагов продолжится без голоса.')
+    })
     return () => {
       cancelled = true
       window.clearInterval(timer)
@@ -852,11 +859,16 @@ function Recording({ bannerHost, onError, onStopped, onResetFailed, onRestart }:
   }
 
   async function undoLast() {
-    if (busy || steps.length === 0) return
-    const response = await fetch('/api/record/undo', { method: 'POST' })
-    if (!response.ok) {
-      const payload = await response.json() as { error?: string }
-      onError(payload.error ?? 'Не удалось отменить шаг')
+    if (busy || undoing || steps.length === 0) return
+    setUndoing(true)
+    try {
+      const response = await fetch('/api/record/undo', { method: 'POST' })
+      if (!response.ok) {
+        const payload = await response.json() as { error?: string }
+        onError(payload.error ?? 'Не удалось отменить шаг')
+      }
+    } finally {
+      setUndoing(false)
     }
   }
 
@@ -893,10 +905,20 @@ function Recording({ bannerHost, onError, onStopped, onResetFailed, onRestart }:
           else recorder.current?.pause()
         }}>{paused ? 'Продолжить' : 'Пауза'}</button>
         <button type="button" className="tertiary" disabled={busy} onClick={() => setConfirmReset(true)}>Сбросить урок</button>
-        <button type="button" className="tertiary" disabled={busy || steps.length === 0} onClick={() => void undoLast()}>Отменить последний шаг</button>
+        <div>
+          <button
+            type="button"
+            className="tertiary"
+            title="Отменяется только запись шага. Страница в браузере не откатывается: если шаг открыл другой экран, студия снимет текущий экран заново — при желании вернитесь в браузере назад."
+            disabled={busy || undoing || !steps.length}
+            onClick={() => void undoLast()}
+          >
+            Отменить последний шаг
+          </button>
+          <p className="hint">Отменяется только запись шага. Страница в браузере не откатывается: если шаг открыл другой экран, студия снимет текущий экран заново — при желании вернитесь в браузере назад.</p>
+        </div>
         {!bannerHost && stopButton}
       </div>
-      <p className="hint">Страница в браузере останется как есть</p>
       {confirmReset && (
         <ConfirmDialog
           title="Сбросить урок?"

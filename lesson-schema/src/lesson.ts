@@ -161,25 +161,50 @@ export function instructionForStep(lesson: Lesson, step: LessonStep, value = ste
   });
 }
 
+export function instructionIsCustom(lesson: Lesson, step: LessonStep): boolean {
+  return step.instruction !== instructionForStep(lesson, step);
+}
+
 /** Если автор не правил инструкцию вручную — пересобрать под новое expectedValue. */
 export function syncInstructionIfDefault(lesson: Lesson, step: LessonStep, nextValue: string): {
   instruction: string;
   instructionLocked: boolean;
 } {
-  const generated = instructionForStep(lesson, step, step.expectedValue);
-  if (step.instruction === generated) {
-    return { instruction: instructionForStep(lesson, step, nextValue), instructionLocked: false };
+  if (instructionIsCustom(lesson, step)) {
+    return { instruction: step.instruction, instructionLocked: true };
   }
-  return { instruction: step.instruction, instructionLocked: true };
+  return { instruction: instructionForStep(lesson, step, nextValue), instructionLocked: false };
 }
 
-export function selectOptionValues(html: string, selector: string): string[] {
+export type SelectOption = { value: string; text: string };
+
+export function selectOptionValues(html: string, selector: string): SelectOption[] {
   const inner = selectInnerHtml(html, selector);
   return [...inner.matchAll(/<option\b([^>]*)>([\s\S]*?)<\/option>/gi)].map((item) => {
-    const value = item[1]?.match(/\bvalue\s*=\s*["']([^"']*)["']/i)?.[1];
-    const text = (item[2] ?? '').replace(/<[^>]+>/g, '').trim();
-    return (value !== undefined && value !== '' ? value : text).trim();
-  }).filter(Boolean);
+    const rawValue = item[1]?.match(/\bvalue\s*=\s*["']([^"']*)["']/i)?.[1];
+    const text = decodeEntities((item[2] ?? '').replace(/<[^>]+>/g, ''));
+    const value = rawValue !== undefined ? decodeEntities(rawValue) : text;
+    return { value, text };
+  }).filter((item) => item.text !== '' || item.value !== '');
+}
+
+export function selectValueKnown(html: string, selector: string, expected: string): boolean {
+  const needle = normalizeText(expected);
+  if (!needle) return false;
+  return selectOptionValues(html, selector).some(
+    (option) => normalizeText(option.text) === needle || normalizeText(option.value) === needle,
+  );
+}
+
+function decodeEntities(value: string): string {
+  return value
+    .replace(/\u00a0/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&#160;/g, ' ')
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"');
 }
 
 function selectInnerHtml(html: string, selector: string): string {

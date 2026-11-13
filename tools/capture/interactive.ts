@@ -5,7 +5,7 @@ import { chromium, type Browser, type BrowserContext, type Page } from 'playwrig
 import { explainLaunchError, explainOpenError } from './errors.ts';
 import { loadInpageScript } from './inpageBundle.ts';
 import type { CaptureAction, CaptureBundle, CaptureScreen, DescribedElement, SavedAsset } from './types.ts';
-import { removeScreenFiles, undoLastAction } from './undo.ts';
+import { removeScreenFiles, shouldRecaptureAfterUndo, undoLastAction } from './undo.ts';
 
 const VIEWPORT = { width: 1280, height: 800 };
 
@@ -272,7 +272,7 @@ export type RecordOptions = {
   onSession?: (controls: RecordingControls) => void;
 };
 
-export type UndoResult = { undone: boolean; removedScreenId: string | null };
+export type UndoResult = { undone: boolean; removedScreenId: string | null; recapturedScreenId: string | null };
 
 export type RecordingControls = {
   stop: () => Promise<void>;
@@ -314,6 +314,7 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
   let chain = Promise.resolve();
   let schedule = () => {};
   let nextScreenSeq = 1;
+  const prints = new Map<string, string>();
   const rememberEvent = (from: Page, payload: Reported) => {
     if (!payload?.id || seen.has(payload.id)) return;
     seen.add(payload.id);
@@ -350,7 +351,7 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
     for (const item of batch) rememberEvent(target, item);
   };
 
-  const adopt = async (target: Page) => {
+  const adopt = async (target: Page, options?: { linkPrevious?: boolean }) => {
     if (target.isClosed()) return null;
     await target.waitForLoadState('domcontentloaded', { timeout: 8000 }).catch(() => undefined);
     nextScreenSeq += 1;
@@ -361,10 +362,11 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
     if (!next) return null;
     screens.push(next);
     const previous = actions[actions.length - 1];
-    if (previous && previous.nextScreenId === null) previous.nextScreenId = next.id;
+    if (options?.linkPrevious !== false && previous && previous.nextScreenId === null) previous.nextScreenId = next.id;
     current = next;
     currentPage = target;
     currentPrint = await fingerprint(target).catch(() => target.url());
+    prints.set(next.id, currentPrint);
     return next;
   };
 
@@ -453,6 +455,7 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
     screens.push(current);
     currentPage = page;
     currentPrint = await fingerprint(page).catch(() => page.url());
+    prints.set(current.id, currentPrint);
     if (pending.length) schedule();
     console.log(`Стартовый экран: «${current.title}»`);
     options.onSession?.({
@@ -467,26 +470,33 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
           for (const target of [...pages]) await pullQueue(target);
           await flush();
           const result = undoLastAction(actions, screens);
-          if (!result.undone) return { undone: false, removedScreenId: null };
+          if (!result.undone) return { undone: false, removedScreenId: null, recapturedScreenId: null };
           actions.length = 0;
           actions.push(...result.actions);
           if (result.removedScreen) {
             screens.length = 0;
             screens.push(...result.screens);
             await removeScreenFiles(captureDir, result.removedScreen);
+            prints.delete(result.removedScreen.id);
             current = screens.at(-1) ?? null;
             const target = currentPage && !currentPage.isClosed() ? currentPage : active;
+            let recapturedScreenId: string | null = null;
             if (current && target && !target.isClosed()) {
               currentPage = target;
-              currentPrint = await fingerprint(target).catch(() => target.url());
+              currentPrint = prints.get(current.id) ?? currentPrint;
               await target.evaluate(() => {
                 const setBaseline = (window as Window & { __trainerSetBaseline?: () => void }).__trainerSetBaseline;
                 setBaseline?.();
               }).catch(() => undefined);
+              const livePrint = await fingerprint(target).catch(() => target.url());
+              if (shouldRecaptureAfterUndo(currentPrint, livePrint)) {
+                const recaptured = await adopt(target, { linkPrevious: false });
+                recapturedScreenId = recaptured?.id ?? null;
+              }
             }
-            return { undone: true, removedScreenId: result.removedScreen.id };
+            return { undone: true, removedScreenId: result.removedScreen.id, recapturedScreenId };
           }
-          return { undone: true, removedScreenId: null };
+          return { undone: true, removedScreenId: null, recapturedScreenId: null };
         };
         const pending = chain.then(run);
         chain = pending.then(() => undefined, () => undefined);

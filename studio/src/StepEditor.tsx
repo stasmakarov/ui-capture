@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Lesson, LessonStep } from '../../shared/lesson.ts'
-import { selectOptionValues, syncInstructionIfDefault } from '../../shared/lesson.ts'
+import { instructionIsCustom, selectValueKnown, syncInstructionIfDefault } from '../../shared/lesson.ts'
 import { ConfirmDialog } from './ConfirmDialog.tsx'
 import { IconAudio, IconDown, IconHint, IconUp } from './icons.tsx'
 
@@ -26,7 +26,6 @@ export function StepEditor({
   const [dragOver, setDragOver] = useState<number | null>(null)
   const [expectedDraft, setExpectedDraft] = useState('')
   const [expectedError, setExpectedError] = useState('')
-  const [instructionLocked, setInstructionLocked] = useState(false)
   const [selectHtml, setSelectHtml] = useState('')
   const index = Math.min(selected, Math.max(0, lesson.steps.length - 1))
   const step = lesson.steps[index]
@@ -71,16 +70,16 @@ export function StepEditor({
   const hotspot = screen?.hotspots.find((item) => item.id === step?.hotspotId)
   const viewport = screen?.viewport ?? lesson.viewport
   const showExpected = step?.action === 'input' || step?.action === 'select'
-  const selectOptions = step?.action === 'select' && hotspot ? selectOptionValues(selectHtml, hotspot.selector) : []
-  const unknownSelect = step?.action === 'select' && expectedDraft.trim() !== '' && selectOptions.length > 0
-    && !selectOptions.includes(expectedDraft.trim())
+  const instructionLocked = !!step && showExpected && instructionIsCustom(lesson, step)
+  const unknownSelect = step?.action === 'select' && hotspot && expectedDraft.trim() !== ''
+    && selectHtml !== ''
+    && !selectValueKnown(selectHtml, hotspot.selector, expectedDraft)
 
   useEffect(() => {
     if (!step) return
     setExpectedDraft(step.expectedValue)
     setExpectedError('')
-    setInstructionLocked(false)
-  }, [step?.id, step?.expectedValue])
+  }, [step?.id])
 
   useEffect(() => {
     if (!step || step.action !== 'select' || !screen?.html) {
@@ -106,7 +105,6 @@ export function StepEditor({
     }
     setExpectedError('')
     const synced = syncInstructionIfDefault(lesson, step, next.trim())
-    setInstructionLocked(synced.instructionLocked)
     update({ expectedValue: next.trim(), instruction: synced.instruction })
   }
 
