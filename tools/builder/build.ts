@@ -281,6 +281,7 @@ export async function buildCapture(
       console.log(
         `  ${screen.id}: ${chosen.name}, сходство ${Math.round(score * 1000) / 10}% (rrweb ${fmt(rrweb?.similarity ?? null)}, freeze ${fmt(freeze?.similarity ?? null)})`,
       );
+      await new Promise<void>((resolve) => setImmediate(resolve));
     }
   } finally {
     await page.close();

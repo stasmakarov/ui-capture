@@ -1,10 +1,11 @@
-import { mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, rm, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { createHash } from 'node:crypto';
 import { chromium, type Browser, type BrowserContext, type Page } from 'playwright';
 import { explainLaunchError, explainOpenError } from './errors.ts';
 import { loadInpageScript } from './inpageBundle.ts';
 import type { CaptureAction, CaptureBundle, CaptureScreen, DescribedElement, SavedAsset } from './types.ts';
+import { removeScreenFiles, undoLastAction } from './undo.ts';
 
 const VIEWPORT = { width: 1280, height: 800 };
 
@@ -271,16 +272,25 @@ export type RecordOptions = {
   onSession?: (controls: RecordingControls) => void;
 };
 
+export type UndoResult = { undone: boolean; removedScreenId: string | null };
+
 export type RecordingControls = {
   stop: () => Promise<void>;
   setPaused: (paused: boolean) => void;
+  undoLast: () => Promise<UndoResult>;
 };
 
-export async function recordInteractive(options: RecordOptions): Promise<string> {
-  const captureDir = path.join(options.capturesDir, options.lessonId);
-  const netDir = path.join(captureDir, 'net');
+export async function prepareCaptureDir(capturesDir: string, lessonId: string): Promise<string> {
+  const captureDir = path.join(capturesDir, lessonId);
+  await rm(captureDir, { recursive: true, force: true });
   await mkdir(path.join(captureDir, 'screens'), { recursive: true });
-  await mkdir(netDir, { recursive: true });
+  await mkdir(path.join(captureDir, 'net'), { recursive: true });
+  return captureDir;
+}
+
+export async function recordInteractive(options: RecordOptions): Promise<string> {
+  const captureDir = await prepareCaptureDir(options.capturesDir, options.lessonId);
+  const netDir = path.join(captureDir, 'net');
   const script = await loadInpageScript();
   const assets: SavedAsset[] = [];
   const browser = await launchBrowser(options);
@@ -303,6 +313,7 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
   let timer: NodeJS.Timeout | undefined;
   let chain = Promise.resolve();
   let schedule = () => {};
+  let nextScreenSeq = 1;
   const rememberEvent = (from: Page, payload: Reported) => {
     if (!payload?.id || seen.has(payload.id)) return;
     seen.add(payload.id);
@@ -342,7 +353,8 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
   const adopt = async (target: Page) => {
     if (target.isClosed()) return null;
     await target.waitForLoadState('domcontentloaded', { timeout: 8000 }).catch(() => undefined);
-    const next = await captureScreen(target, captureDir, `s${screens.length + 1}`, flushAssets).catch((error: unknown) => {
+    nextScreenSeq += 1;
+    const next = await captureScreen(target, captureDir, `s${nextScreenSeq}`, flushAssets).catch((error: unknown) => {
       console.error('Не удалось снять экран', target.url(), error instanceof Error ? error.message : error);
       return null;
     });
@@ -449,6 +461,36 @@ export async function recordInteractive(options: RecordOptions): Promise<string>
       },
       setPaused: (value) => {
         paused = value;
+      },
+      undoLast: () => {
+        const run = async (): Promise<UndoResult> => {
+          for (const target of [...pages]) await pullQueue(target);
+          await flush();
+          const result = undoLastAction(actions, screens);
+          if (!result.undone) return { undone: false, removedScreenId: null };
+          actions.length = 0;
+          actions.push(...result.actions);
+          if (result.removedScreen) {
+            screens.length = 0;
+            screens.push(...result.screens);
+            await removeScreenFiles(captureDir, result.removedScreen);
+            current = screens.at(-1) ?? null;
+            const target = currentPage && !currentPage.isClosed() ? currentPage : active;
+            if (current && target && !target.isClosed()) {
+              currentPage = target;
+              currentPrint = await fingerprint(target).catch(() => target.url());
+              await target.evaluate(() => {
+                const setBaseline = (window as Window & { __trainerSetBaseline?: () => void }).__trainerSetBaseline;
+                setBaseline?.();
+              }).catch(() => undefined);
+            }
+            return { undone: true, removedScreenId: result.removedScreen.id };
+          }
+          return { undone: true, removedScreenId: null };
+        };
+        const pending = chain.then(run);
+        chain = pending.then(() => undefined, () => undefined);
+        return pending;
       },
     });
 

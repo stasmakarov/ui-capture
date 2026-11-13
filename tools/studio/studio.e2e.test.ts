@@ -122,6 +122,8 @@ describe('студия', () => {
       await page.getByRole('button', { name: 'Править шаги' }).click()
       await page.getByRole('heading', { name: 'Найти извещение' }).waitFor()
       await page.locator('.screen-preview img').first().waitFor()
+      const expected = page.getByLabel('Ожидаемый ввод')
+      if (await expected.count()) await expected.fill('0123456789')
       await page.getByLabel('Подсказка').fill('Подсказка из редактора')
       await page.getByText('Есть несохранённые изменения').waitFor()
       await page.getByRole('button', { name: 'Переместить шаг ниже' }).first().waitFor()

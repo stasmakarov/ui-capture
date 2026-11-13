@@ -6,6 +6,8 @@ import {
   judge,
   parseLesson,
   reduceLesson,
+  selectOptionValues,
+  syncInstructionIfDefault,
   type Lesson,
   type LessonStep,
 } from './lesson.ts';
@@ -162,6 +164,49 @@ describe('reduceLesson', () => {
     expect(state.status).toBe('done');
     expect(state.firstTryCorrect).toBe(1);
     expect(state.mistakes).toBe(1);
+  });
+});
+
+describe('syncInstructionIfDefault', () => {
+  it('пересобирает инструкцию, если её не правили вручную', () => {
+    const current = step({
+      action: 'input',
+      hotspotId: 'field',
+      expectedValue: 'старое',
+      confirm: 'match',
+      nextScreenId: null,
+      instruction: buildInstruction({
+        screenTitle: 'Главная',
+        action: 'input',
+        label: 'Поиск',
+        value: 'старое',
+        nextTitle: null,
+        confirm: 'match',
+      }),
+    });
+    const lesson = lessonWith([current]);
+    const result = syncInstructionIfDefault(lesson, current, 'новое');
+    expect(result.instructionLocked).toBe(false);
+    expect(result.instruction).toContain('«новое»');
+  });
+
+  it('не трогает инструкцию, если автор менял текст', () => {
+    const current = step({
+      action: 'input',
+      hotspotId: 'field',
+      expectedValue: 'старое',
+      confirm: 'match',
+      nextScreenId: null,
+      instruction: 'Свой текст',
+    });
+    const result = syncInstructionIfDefault(lessonWith([current]), current, 'новое');
+    expect(result.instructionLocked).toBe(true);
+    expect(result.instruction).toBe('Свой текст');
+  });
+
+  it('читает опции select из html', () => {
+    expect(selectOptionValues('<select id="kind"><option value="a">А</option><option>б</option></select>', '#kind'))
+      .toEqual(['a', 'б']);
   });
 });
 

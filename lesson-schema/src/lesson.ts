@@ -147,6 +147,57 @@ export function buildInstruction(input: {
   return `${place} нажмите «${input.label}».${next}`;
 }
 
+export function instructionForStep(lesson: Lesson, step: LessonStep, value = step.expectedValue): string {
+  const screen = lesson.screens.find((item) => item.id === step.screenId);
+  const next = step.nextScreenId ? lesson.screens.find((item) => item.id === step.nextScreenId) : undefined;
+  const hotspot = screen?.hotspots.find((item) => item.id === step.hotspotId);
+  return buildInstruction({
+    screenTitle: screen?.title ?? '',
+    action: step.action,
+    label: hotspot?.label ?? '',
+    value,
+    nextTitle: next?.title ?? null,
+    confirm: step.confirm,
+  });
+}
+
+/** Если автор не правил инструкцию вручную — пересобрать под новое expectedValue. */
+export function syncInstructionIfDefault(lesson: Lesson, step: LessonStep, nextValue: string): {
+  instruction: string;
+  instructionLocked: boolean;
+} {
+  const generated = instructionForStep(lesson, step, step.expectedValue);
+  if (step.instruction === generated) {
+    return { instruction: instructionForStep(lesson, step, nextValue), instructionLocked: false };
+  }
+  return { instruction: step.instruction, instructionLocked: true };
+}
+
+export function selectOptionValues(html: string, selector: string): string[] {
+  const inner = selectInnerHtml(html, selector);
+  return [...inner.matchAll(/<option\b([^>]*)>([\s\S]*?)<\/option>/gi)].map((item) => {
+    const value = item[1]?.match(/\bvalue\s*=\s*["']([^"']*)["']/i)?.[1];
+    const text = (item[2] ?? '').replace(/<[^>]+>/g, '').trim();
+    return (value !== undefined && value !== '' ? value : text).trim();
+  }).filter(Boolean);
+}
+
+function selectInnerHtml(html: string, selector: string): string {
+  if (typeof DOMParser !== 'undefined') {
+    try {
+      const doc = new DOMParser().parseFromString(html, 'text/html');
+      const node = doc.querySelector(selector);
+      if (node) return node.innerHTML;
+    } catch {
+      /* разбор как текст */
+    }
+  }
+  const id = selector.startsWith('#') ? selector.slice(1) : '';
+  if (!id) return '';
+  const match = html.match(new RegExp(`<select\\b[^>]*\\bid\\s*=\\s*["']${id.replace(/[.*+?^${}()|[\\]\\\\]/g, '\\$&')}["'][^>]*>([\\s\\S]*?)</select>`, 'i'));
+  return match?.[1] ?? '';
+}
+
 export function judge(step: LessonStep, attempt: Attempt): Verdict {
   if (attempt.hotspotId !== step.hotspotId) {
     if (attempt.type === 'input' && attempt.confirm === 'input') return 'ignore';

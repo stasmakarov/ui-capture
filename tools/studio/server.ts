@@ -13,6 +13,7 @@ import { packHtml } from '../pack/packHtml.ts'
 import { exportLessonPackage, importLessonPackage } from '../package/lessonPackage.ts'
 import { assertRecordingBrowser, chromiumInstalled, detectBrowsers, gostBrowserHint, launchHeadless, settingsFromSaved, type BrowserId, type BrowserLaunch, type StudioSettings } from './browsers.ts'
 import { exchangeTicket, forgetPlatformLink, normalizeServer, publicLink, publishLesson, readPlatformLink } from './platform.ts'
+import { attachStepAudio, lessonFile } from './attachAudio.ts'
 import { downloadWhisper, onWhisperStatus, refreshWhisperModelBytes, transcribeWav, whisperStatus } from './transcribe.ts'
 import { loadInpageScript } from '../capture/inpageBundle.ts'
 import { handlePresence, sendJson, studioVersionOf } from './presence.ts'
@@ -71,6 +72,10 @@ type Session = {
   listeners: http.ServerResponse[]
   paused: boolean
   launch: BrowserLaunch
+  url: string
+  lessonName: string
+  mode: 'dom' | 'screenshot' | 'auto'
+  lessonId: string
 }
 
 let session: Session | null = null
@@ -166,40 +171,6 @@ async function lessonList(lessonsDir: string) {
   }
   items.sort((a, b) => a.title.localeCompare(b.title, 'ru'))
   return items
-}
-
-function lessonFile(lessonsDir: string, id: string): string {
-  if (!/^[a-z0-9-]{2,48}$/.test(id)) throw new Error('Некорректный идентификатор урока')
-  return path.join(lessonsDir, id, 'lesson.json')
-}
-
-async function attachAudio(lessonsDir: string, id: string, clips: Array<{ stepId: string; wavBase64: string }>) {
-  const file = lessonFile(lessonsDir, id)
-  const lesson = parseLesson(JSON.parse(await readFile(file, 'utf8')))
-  const warnings: string[] = []
-  const audioDir = path.join(lessonsDir, id, 'audio')
-  await mkdir(audioDir, { recursive: true })
-  for (const clip of clips) {
-    const step = lesson.steps.find((item) => item.id === clip.stepId)
-    if (!step || !clip.wavBase64) continue
-    const wav = Buffer.from(clip.wavBase64, 'base64')
-    if (wav.length < 44) continue
-    const relative = `audio/${step.id}.wav`
-    const target = path.join(lessonsDir, id, relative)
-    await writeFile(target, wav)
-    step.audio = relative
-    try {
-      const text = await transcribeWav(target)
-      if (text.trim()) {
-        step.narration = text.trim()
-        if (!step.hint.trim()) step.hint = text.trim()
-      }
-    } catch (error) {
-      warnings.push(error instanceof Error ? error.message : String(error))
-    }
-  }
-  await writeFile(file, JSON.stringify(lesson, null, 2))
-  return { lesson, warnings: [...new Set(warnings)] }
 }
 
 const STATIC_TYPES: Record<string, string> = {
@@ -468,9 +439,10 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
       sendJson(response, 200, { ok: true })
       return
     }
-    if (request.method === 'POST' && rest === '/audio') {
-      const body = JSON.parse(await readBody(request)) as { clips?: Array<{ stepId: string; wavBase64: string }> }
-      sendJson(response, 200, await attachAudio(lessonsDir, id, body.clips ?? []))
+    const audioMatch = rest.match(/^\/steps\/([^/]+)\/audio$/)
+    if (request.method === 'POST' && audioMatch) {
+      const stepId = decodeURIComponent(audioMatch[1] ?? '')
+      sendJson(response, 200, await attachStepAudio(lessonsDir, id, stepId, await readRaw(request)))
       return
     }
     const transcribeMatch = rest.match(/^\/steps\/([^/]+)\/transcribe$/)
@@ -529,42 +501,15 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
     await writeFile(settingsFile(lessonsDir), JSON.stringify(settings, null, 2))
     const launch = assertRecordingBrowser(settings.browser, settings.executablePath)
     const lessonName = body.lessonName?.trim() || new URL(body.url).hostname
-    const lessonId = lessonIdFromName(lessonName)
-    let controls: RecordingControls | null = null
-    const ready = new Promise<void>((resolve, reject) => {
-      const done = recordInteractive({
-        url: body.url!,
-        lessonName,
-        lessonId,
-        mode: body.mode ?? 'auto',
-        capturesDir,
-        headless: process.env.UITRAINER_HEADLESS === '1',
-        channel: launch.channel,
-        executablePath: launch.executablePath,
-        onAction: (action) => {
-          if (!session) return
-          const step: LiveStep = {
-            id: `live-${session.steps.length + 1}`,
-            label: action.label,
-            kind: action.kind,
-            value: action.value,
-            at: Date.now(),
-          }
-          session.steps.push(step)
-          broadcast(session, { type: 'step', step })
-        },
-        onSession: (value) => {
-          controls = value
-          session = { controls: value, done, steps: [], listeners: [], paused: false, launch }
-          broadcast(session, { type: 'ready' })
-          resolve()
-        },
-      })
-      done.catch((error: unknown) => {
-        if (!controls) reject(error)
-      })
+    const lessonId = await openRecording({
+      url: body.url,
+      lessonName,
+      mode: body.mode ?? 'auto',
+      launch,
+      capturesDir,
+      listeners: [],
+      event: 'ready',
     })
-    await ready
     sendJson(response, 200, { ok: true, lessonId })
     return
   }
@@ -604,7 +549,93 @@ async function handleApi(request: http.IncomingMessage, response: http.ServerRes
     sendJson(response, 200, { id: lesson.id, steps: lesson.steps.map(summarizeStep) })
     return
   }
+  if (request.method === 'POST' && url.pathname === '/api/record/reset') {
+    if (!session) throw new Error('Запись не идёт')
+    const current = session
+    session = null
+    await current.controls.stop()
+    await current.done.catch(() => undefined)
+    await rm(path.join(capturesDir, current.lessonId), { recursive: true, force: true })
+    const lessonId = await openRecording({
+      url: current.url,
+      lessonName: current.lessonName,
+      mode: current.mode,
+      launch: current.launch,
+      capturesDir,
+      listeners: current.listeners,
+      event: 'reset',
+    })
+    sendJson(response, 200, { ok: true, lessonId })
+    return
+  }
+  if (request.method === 'POST' && url.pathname === '/api/record/undo') {
+    if (!session) throw new Error('Запись не идёт')
+    const result = await session.controls.undoLast()
+    if (result.undone) session.steps.pop()
+    broadcast(session, { type: 'undo', steps: session.steps, removedScreenId: result.removedScreenId })
+    sendJson(response, 200, { ok: true, undone: result.undone, steps: session.steps })
+    return
+  }
   sendJson(response, 404, { error: 'Неизвестный запрос' })
+}
+
+async function openRecording(input: {
+  url: string
+  lessonName: string
+  mode: 'dom' | 'screenshot' | 'auto'
+  launch: BrowserLaunch
+  capturesDir: string
+  listeners: http.ServerResponse[]
+  event: 'ready' | 'reset'
+}): Promise<string> {
+  const lessonId = lessonIdFromName(input.lessonName)
+  let controls: RecordingControls | null = null
+  const ready = new Promise<void>((resolve, reject) => {
+    const done = recordInteractive({
+      url: input.url,
+      lessonName: input.lessonName,
+      lessonId,
+      mode: input.mode,
+      capturesDir: input.capturesDir,
+      headless: process.env.UITRAINER_HEADLESS === '1',
+      channel: input.launch.channel,
+      executablePath: input.launch.executablePath,
+      onAction: (action) => {
+        if (!session) return
+        const step: LiveStep = {
+          id: `live-${session.steps.length + 1}`,
+          label: action.label,
+          kind: action.kind,
+          value: action.value,
+          at: Date.now(),
+        }
+        session.steps.push(step)
+        broadcast(session, { type: 'step', step })
+      },
+      onSession: (value) => {
+        controls = value
+        session = {
+          controls: value,
+          done,
+          steps: [],
+          listeners: input.listeners,
+          paused: false,
+          launch: input.launch,
+          url: input.url,
+          lessonName: input.lessonName,
+          mode: input.mode,
+          lessonId,
+        }
+        broadcast(session, { type: input.event, steps: [] })
+        resolve()
+      },
+    })
+    done.catch((error: unknown) => {
+      if (!controls) reject(error)
+    })
+  })
+  await ready
+  return lessonId
 }
 
 function summarizeStep(step: LessonStep) {

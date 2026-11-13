@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react'
 import type { Lesson, LessonStep } from '../../shared/lesson.ts'
+import { selectOptionValues, syncInstructionIfDefault } from '../../shared/lesson.ts'
 import { ConfirmDialog } from './ConfirmDialog.tsx'
 import { IconAudio, IconDown, IconHint, IconUp } from './icons.tsx'
 
@@ -23,6 +24,10 @@ export function StepEditor({
   const [selected, setSelected] = useState(0)
   const [confirm, setConfirm] = useState<ConfirmKind>(null)
   const [dragOver, setDragOver] = useState<number | null>(null)
+  const [expectedDraft, setExpectedDraft] = useState('')
+  const [expectedError, setExpectedError] = useState('')
+  const [instructionLocked, setInstructionLocked] = useState(false)
+  const [selectHtml, setSelectHtml] = useState('')
   const index = Math.min(selected, Math.max(0, lesson.steps.length - 1))
   const step = lesson.steps[index]
 
@@ -65,6 +70,45 @@ export function StepEditor({
   const screen = step ? lesson.screens.find((item) => item.id === step.screenId) : undefined
   const hotspot = screen?.hotspots.find((item) => item.id === step?.hotspotId)
   const viewport = screen?.viewport ?? lesson.viewport
+  const showExpected = step?.action === 'input' || step?.action === 'select'
+  const selectOptions = step?.action === 'select' && hotspot ? selectOptionValues(selectHtml, hotspot.selector) : []
+  const unknownSelect = step?.action === 'select' && expectedDraft.trim() !== '' && selectOptions.length > 0
+    && !selectOptions.includes(expectedDraft.trim())
+
+  useEffect(() => {
+    if (!step) return
+    setExpectedDraft(step.expectedValue)
+    setExpectedError('')
+    setInstructionLocked(false)
+  }, [step?.id, step?.expectedValue])
+
+  useEffect(() => {
+    if (!step || step.action !== 'select' || !screen?.html) {
+      setSelectHtml('')
+      return
+    }
+    let cancelled = false
+    void fetch(`/lessons/${lesson.id}/${screen.html}`).then(async (response) => {
+      const html = await response.text()
+      if (!cancelled) setSelectHtml(html)
+    }).catch(() => {
+      if (!cancelled) setSelectHtml('')
+    })
+    return () => { cancelled = true }
+  }, [lesson.id, step?.id, step?.action, screen?.html])
+
+  function applyExpected(next: string) {
+    if (!step) return
+    setExpectedDraft(next)
+    if (!next.trim()) {
+      setExpectedError('Укажите ожидаемый ввод')
+      return
+    }
+    setExpectedError('')
+    const synced = syncInstructionIfDefault(lesson, step, next.trim())
+    setInstructionLocked(synced.instructionLocked)
+    update({ expectedValue: next.trim(), instruction: synced.instruction })
+  }
 
   return (
     <section className="editor-screen">
@@ -165,6 +209,23 @@ export function StepEditor({
                 />
               )}
             </div>
+            {showExpected && (
+              <label className="field">
+                <span>Ожидаемый ввод</span>
+                <input
+                  value={expectedDraft}
+                  onChange={(event) => applyExpected(event.target.value)}
+                />
+                {expectedError && <p className="field-error">{expectedError}</p>}
+                {instructionLocked && (
+                  <p className="hint">Инструкция изменена вручную — обновите текст сами</p>
+                )}
+                {unknownSelect && (
+                  <p className="hint">Значение не совпадает с опциями списка</p>
+                )}
+                <p className="hint">На следующих экранах урока видно значение, введённое при записи.</p>
+              </label>
+            )}
             <label className="field">
               <span>Инструкция</span>
               <textarea value={step.instruction} onChange={(event) => update({ instruction: event.target.value })} />

@@ -41,6 +41,9 @@ let live: Live = { phase: 'idle', percent: 0, loadedBytes: 0, totalBytes: 0, fil
 let running: Promise<void> | null = null
 let modelBytes = 0
 let modelBytesTried = false
+let asrPipeline: Promise<AsrFn> | null = null
+
+type AsrFn = (audio: string, options: { language: string; task: string }) => Promise<{ text?: string } | string>
 
 const MODEL_DIR = '.uitrainer/models'
 
@@ -200,6 +203,7 @@ async function runDownload(): Promise<void> {
       await fetchModel()
     }
     live = { phase: 'idle', percent: 100, loadedBytes: live.loadedBytes, totalBytes: live.totalBytes, file: live.file, error: '' }
+    resetAsrPipeline()
     emit()
   } catch (error) {
     const detail = error instanceof Error ? error.message : String(error)
@@ -251,19 +255,42 @@ async function fetchModel(): Promise<void> {
   await writeFile(markerFile(), new Date().toISOString())
 }
 
+export function resetAsrPipeline(): void {
+  asrPipeline = null
+}
+
+async function getAsrPipeline(): Promise<AsrFn> {
+  if (!asrPipeline) {
+    asrPipeline = (async () => {
+      const transformers = await loadTransformers()
+      transformers.env.cacheDir = modelCache()
+      transformers.env.allowRemoteModels = true
+      return transformers.pipeline('automatic-speech-recognition', MODEL)
+    })()
+  }
+  try {
+    return await asrPipeline
+  } catch (error) {
+    asrPipeline = null
+    throw error
+  }
+}
+
 export async function transcribeWav(wavPath: string): Promise<string> {
   const fake = process.env.UITRAINER_FAKE_TRANSCRIPT
   if (fake !== undefined) return fake
   if (!existsSync(markerFile())) throw new Error(whisperHint())
   const marker = await readFile(markerFile(), 'utf8')
   if (marker.trim() === 'simulate') return 'комментарий к шагу'
-  const transformers = await loadTransformers()
-  transformers.env.cacheDir = modelCache()
-  transformers.env.allowRemoteModels = true
-  const asr = await transformers.pipeline('automatic-speech-recognition', MODEL)
-  const result = await asr(wavPath, { language: 'russian', task: 'transcribe' })
-  const text = typeof result === 'object' && result && 'text' in result ? String(result.text) : String(result)
-  return text.trim()
+  const asr = await getAsrPipeline()
+  try {
+    const result = await asr(wavPath, { language: 'russian', task: 'transcribe' })
+    const text = typeof result === 'object' && result && 'text' in result ? String(result.text) : String(result)
+    return text.trim()
+  } catch (error) {
+    asrPipeline = null
+    throw error
+  }
 }
 
 function wait(ms: number): Promise<void> {

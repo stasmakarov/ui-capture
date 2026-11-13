@@ -48,6 +48,8 @@ export function StudioApp() {
   const [platform, setPlatform] = useState<PlatformState>({ connected: false })
   const [notice, setNotice] = useState<string | null>(null)
   const [publishing, setPublishing] = useState<string | null>(null)
+  const [draft, setDraft] = useState<{ lessonName: string; url: string; mode: CaptureMode }>({ lessonName: '', url: '', mode: 'auto' })
+  const [recordingKey, setRecordingKey] = useState(0)
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [aboutOpen, setAboutOpen] = useState(false)
   const [studioInfo, setStudioInfo] = useState<StudioInfo | null>(null)
@@ -202,27 +204,52 @@ export function StudioApp() {
           <NewLesson
             whisper={whisper}
             courseTitle={platform.connected ? platform.courseTitle : null}
+            initial={draft}
             onCancel={() => setView('catalog')}
             onError={setError}
             onWhisper={setWhisper}
-            onStarted={() => { setError(null); setView('recording') }}
+            onStarted={(next) => {
+              setDraft(next)
+              setError(null)
+              setRecordingKey((value) => value + 1)
+              setView('recording')
+            }}
           />
         )}
         {view === 'recording' && (
           <Recording
+            key={recordingKey}
             bannerHost={bannerHost}
             onError={setError}
-            onStopped={async (id, marks, blob) => {
+            onResetFailed={() => {
+              setView('new')
+            }}
+            onRestart={() => setRecordingKey((value) => value + 1)}
+            onStopped={async (id, marks, blob, progress, steps) => {
               if (blob && marks.length) {
                 try {
                   const clips = await sliceRecording(blob, marks)
-                  const response = await fetch(`/api/lessons/${id}/audio`, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify({ clips: clips.map((wavBase64, index) => ({ stepId: `step-${index + 1}`, wavBase64 })) }),
-                  })
-                  const payload = await response.json() as { warnings?: string[] }
-                  if (payload.warnings?.length) setError(payload.warnings[0] ?? null)
+                  const warnings: string[] = []
+                  const n = Math.min(clips.length, steps.length)
+                  for (let index = 0; index < n; index += 1) {
+                    const clip = clips[index]
+                    const stepId = steps[index]?.id ?? `step-${index + 1}`
+                    progress(`Звук: ${index + 1} из ${n}`)
+                    if (!clip?.size) continue
+                    try {
+                      const response = await fetch(`/api/lessons/${id}/steps/${encodeURIComponent(stepId)}/audio`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'audio/wav' },
+                        body: clip,
+                      })
+                      const payload = await response.json() as { error?: string; warnings?: string[] }
+                      if (!response.ok) warnings.push(payload.error ?? `Клип ${index + 1}`)
+                      else if (payload.warnings?.length) warnings.push(...payload.warnings)
+                    } catch (error) {
+                      warnings.push(error instanceof Error ? error.message : `Клип ${index + 1}`)
+                    }
+                  }
+                  if (warnings.length) setError(warnings.join(' '))
                 } catch {
                   setError('Не удалось разобрать запись микрофона. Шаги сохранены без звука.')
                 }
@@ -428,17 +455,18 @@ function Catalog({ items, selected, whisper, browsers, onWhisper, onError, onBro
   )
 }
 
-function NewLesson({ whisper, courseTitle, onCancel, onError, onWhisper, onStarted }: {
+function NewLesson({ whisper, courseTitle, initial, onCancel, onError, onWhisper, onStarted }: {
   whisper: Whisper | null
   courseTitle: string | null
+  initial: { lessonName: string; url: string; mode: CaptureMode }
   onCancel: () => void
   onError: (message: string) => void
   onWhisper: (value: Whisper) => void
-  onStarted: () => void
+  onStarted: (draft: { lessonName: string; url: string; mode: CaptureMode }) => void
 }) {
-  const [url, setUrl] = useState('')
-  const [lessonName, setLessonName] = useState('')
-  const [mode, setMode] = useState<CaptureMode>('auto')
+  const [url, setUrl] = useState(initial.url)
+  const [lessonName, setLessonName] = useState(initial.lessonName)
+  const [mode, setMode] = useState<CaptureMode>(initial.mode)
   const [browsers, setBrowsers] = useState<BrowserOption[]>([])
   const [chromium, setChromium] = useState<ChromiumStatus | null>(null)
   const [browser, setBrowser] = useState<BrowserChoice>('chromium')
@@ -561,7 +589,7 @@ function NewLesson({ whisper, courseTitle, onCancel, onError, onWhisper, onStart
         setBusy(false)
         if (!response.ok) { onError(payload.error ?? 'Не удалось начать запись'); return }
         if (micId) localStorage.setItem(MIC_KEY, micId)
-        onStarted()
+        onStarted({ lessonName, url, mode })
       }}>
         <label>Название урока
           <input name="lessonName" value={lessonName} onChange={(event) => setLessonName(event.target.value)} placeholder="Например: Поиск документа" />
@@ -653,14 +681,25 @@ function NewLesson({ whisper, courseTitle, onCancel, onError, onWhisper, onStart
   )
 }
 
-function Recording({ bannerHost, onError, onStopped }: {
+function Recording({ bannerHost, onError, onStopped, onResetFailed, onRestart }: {
   bannerHost: HTMLElement | null
   onError: (message: string) => void
-  onStopped: (id: string, marks: StepMark[], blob: Blob | null) => Promise<void>
+  onResetFailed: () => void
+  onRestart: () => void
+  onStopped: (
+    id: string,
+    marks: StepMark[],
+    blob: Blob | null,
+    progress: (message: string) => void,
+    steps: Array<{ id: string }>,
+  ) => Promise<void>
 }) {
   const [steps, setSteps] = useState<LiveStep[]>([])
   const [paused, setPaused] = useState(false)
   const [stopping, setStopping] = useState(false)
+  const [resetting, setResetting] = useState(false)
+  const [confirmReset, setConfirmReset] = useState(false)
+  const [status, setStatus] = useState('')
   const [seconds, setSeconds] = useState(0)
   const [level, setLevel] = useState(0)
   const [micOn, setMicOn] = useState(false)
@@ -669,13 +708,31 @@ function Recording({ bannerHost, onError, onStopped }: {
   const audioOrigin = useRef(performance.now())
   const recorder = useRef<MediaRecorder | null>(null)
   const chunks = useRef<Blob[]>([])
+  const streamRef = useRef<MediaStream | null>(null)
+  const contextRef = useRef<AudioContext | null>(null)
+  const frameRef = useRef(0)
+  const busy = stopping || resetting
+
+  function releaseMic() {
+    cancelAnimationFrame(frameRef.current)
+    frameRef.current = 0
+    streamRef.current?.getTracks().forEach((track) => track.stop())
+    streamRef.current = null
+    if (contextRef.current) {
+      void contextRef.current.close()
+      contextRef.current = null
+    }
+    if (recorder.current && recorder.current.state !== 'inactive') recorder.current.stop()
+    recorder.current = null
+    setMicOn(false)
+  }
 
   useEffect(() => {
     const timer = window.setInterval(() => setSeconds(Math.floor((performance.now() - started.current) / 1000)), 500)
     const source = new EventSource('/api/record/events')
     source.onmessage = (event) => {
       const payload = JSON.parse(event.data) as { type: string; step?: LiveStep; steps?: LiveStep[] }
-      if (payload.type === 'ready' && payload.steps) {
+      if ((payload.type === 'ready' || payload.type === 'reset') && payload.steps) {
         setSteps(payload.steps)
         marks.current = payload.steps.map(() => ({ t: Math.max(0, (performance.now() - audioOrigin.current) / 1000) }))
       }
@@ -683,25 +740,45 @@ function Recording({ bannerHost, onError, onStopped }: {
         marks.current.push({ t: Math.max(0, (performance.now() - audioOrigin.current) / 1000) })
         setSteps((current) => [...current, payload.step!])
       }
+      if (payload.type === 'undo') {
+        setSteps(payload.steps ?? [])
+        marks.current = marks.current.slice(0, -1)
+      }
       if (payload.type === 'paused') setPaused(true)
       if (payload.type === 'resumed') setPaused(false)
     }
+    let cancelled = false
+    let lastLevelAt = 0
     const micId = localStorage.getItem(MIC_KEY) ?? ''
     void navigator.mediaDevices.getUserMedia({ audio: micId ? { deviceId: { exact: micId } } : true }).then(async (stream) => {
+      if (cancelled) {
+        stream.getTracks().forEach((track) => track.stop())
+        return
+      }
+      streamRef.current = stream
       setMicOn(true)
       const context = new AudioContext()
+      contextRef.current = context
       await context.resume()
+      if (cancelled) {
+        stream.getTracks().forEach((track) => track.stop())
+        await context.close()
+        return
+      }
       const node = context.createMediaStreamSource(stream)
       const analyser = context.createAnalyser()
       node.connect(analyser)
       const data = new Uint8Array(analyser.fftSize)
-      let frame = 0
       const tick = () => {
         analyser.getByteTimeDomainData(data)
-        let sum = 0
-        for (const value of data) sum += Math.abs(value - 128)
-        setLevel(Math.min(100, sum / data.length))
-        frame = requestAnimationFrame(tick)
+        const now = performance.now()
+        if (now - lastLevelAt >= 100) {
+          lastLevelAt = now
+          let sum = 0
+          for (const value of data) sum += Math.abs(value - 128)
+          setLevel(Math.min(100, sum / data.length))
+        }
+        frameRef.current = requestAnimationFrame(tick)
       }
       tick()
       const delay = (performance.now() - audioOrigin.current) / 1000
@@ -712,35 +789,84 @@ function Recording({ bannerHost, onError, onStopped }: {
       media.ondataavailable = (event) => { if (event.data.size) chunks.current.push(event.data) }
       media.start(1000)
       recorder.current = media
-      return () => { cancelAnimationFrame(frame); void context.close() }
     }).catch(() => onError('Микрофон недоступен. Запись шагов продолжится без голоса.'))
-    return () => { window.clearInterval(timer); source.close() }
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+      source.close()
+      releaseMic()
+    }
   }, [onError])
 
   const clock = `${String(Math.floor(seconds / 60)).padStart(2, '0')}:${String(seconds % 60).padStart(2, '0')}`
 
   async function stopRecording() {
-    if (stopping) return
+    if (busy) return
     setStopping(true)
+    setStatus('Собираю урок…')
     try {
       const blob = await stopRecorder(recorder.current, chunks.current)
+      releaseMic()
       const response = await fetch('/api/record/stop', { method: 'POST' })
       const payload = await response.json() as { id?: string; steps?: Array<{ id: string }>; error?: string }
       if (!response.ok || !payload.id) {
         onError(payload.error ?? 'Не удалось остановить запись')
         setStopping(false)
+        setStatus('')
         return
       }
-      await onStopped(payload.id, marks.current.slice(0, payload.steps?.length ?? marks.current.length), blob)
+      await onStopped(
+        payload.id,
+        marks.current.slice(0, payload.steps?.length ?? marks.current.length),
+        blob,
+        setStatus,
+        payload.steps ?? [],
+      )
     } catch {
       onError('Не удалось остановить запись')
       setStopping(false)
+      setStatus('')
     }
   }
 
+  async function resetRecording() {
+    if (busy) return
+    setConfirmReset(false)
+    setResetting(true)
+    try {
+      const blobWait = stopRecorder(recorder.current, chunks.current)
+      await blobWait.catch(() => undefined)
+      releaseMic()
+      const response = await fetch('/api/record/reset', { method: 'POST' })
+      const payload = await response.json() as { error?: string }
+      if (!response.ok) {
+        onError(payload.error ?? 'Не удалось начать запись сначала')
+        onResetFailed()
+        return
+      }
+      onRestart()
+    } catch {
+      onError('Не удалось начать запись сначала')
+      onResetFailed()
+    }
+  }
+
+  async function undoLast() {
+    if (busy || steps.length === 0) return
+    const response = await fetch('/api/record/undo', { method: 'POST' })
+    if (!response.ok) {
+      const payload = await response.json() as { error?: string }
+      onError(payload.error ?? 'Не удалось отменить шаг')
+    }
+  }
+
+  const stopLabel = status.startsWith('Звук:') || status.startsWith('Распознаю')
+    ? (status.startsWith('Звук:') ? `Распознаю речь ${status.slice('Звук: '.length)}` : status)
+    : (stopping ? (status || 'Собираю урок…') : 'Стоп')
+
   const stopButton = (
-    <button type="button" className="primary" disabled={stopping} onClick={() => void stopRecording()}>
-      {stopping ? 'Собираю урок…' : 'Стоп'}
+    <button type="button" className="primary" disabled={busy} onClick={() => void stopRecording()}>
+      {busy && stopping ? stopLabel : 'Стоп'}
     </button>
   )
 
@@ -761,13 +887,26 @@ function Recording({ bannerHost, onError, onStopped }: {
       </ol>
       {bannerHost && createPortal(stopButton, bannerHost)}
       <div className="row">
-        <button type="button" className="tertiary" disabled={stopping} onClick={async () => {
+        <button type="button" className="tertiary" disabled={busy} onClick={async () => {
           await fetch(paused ? '/api/record/resume' : '/api/record/pause', { method: 'POST' })
           if (paused) recorder.current?.resume()
           else recorder.current?.pause()
         }}>{paused ? 'Продолжить' : 'Пауза'}</button>
+        <button type="button" className="tertiary" disabled={busy} onClick={() => setConfirmReset(true)}>Сбросить урок</button>
+        <button type="button" className="tertiary" disabled={busy || steps.length === 0} onClick={() => void undoLast()}>Отменить последний шаг</button>
         {!bannerHost && stopButton}
       </div>
+      <p className="hint">Страница в браузере останется как есть</p>
+      {confirmReset && (
+        <ConfirmDialog
+          title="Сбросить урок?"
+          message="Начать запись сначала? Все шаги и звук будут удалены. Изменения на самом сайте (созданные записи, вход) не откатываются."
+          confirmLabel="Сбросить"
+          tone="danger"
+          onConfirm={() => void resetRecording()}
+          onCancel={() => setConfirmReset(false)}
+        />
+      )}
     </section>
   )
 }
