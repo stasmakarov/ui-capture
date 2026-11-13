@@ -1,7 +1,7 @@
 {
   "name": "@uitrainer/desktop",
   "private": true,
-  "version": "0.6.2",
+  "version": "0.6.3",
   "description": "uitrainer Studio для Windows",
   "main": "dist/main.cjs",
   "scripts": {
