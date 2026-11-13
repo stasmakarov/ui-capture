@@ -3,6 +3,7 @@
           title="msg://MainView.title">
     <actions>
         <action id="changePasswordAction" text="msg://changePasswordAction.text"/>
+        <action id="aboutAction" text="msg://aboutAction.text"/>
         <action id="logoutAction" type="logout" text="Выйти"/>
     </actions>
     <appLayout>
@@ -21,6 +22,7 @@
                             <action id="substituteUserAction" type="sec_userMenuSubstituteUser"/>
                         </actionItem>
                         <separator/>
+                        <actionItem id="aboutMenuItem" ref="aboutAction" themeNames="non-checkable"/>
                         <actionItem id="logoutMenuItem" ref="logoutAction" themeNames="non-checkable"/>
                     </items>
                 </userMenu>

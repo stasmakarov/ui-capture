@@ -12,6 +12,7 @@ import io.jmix.flowui.view.ViewController;
 import io.jmix.flowui.view.ViewDescriptor;
 import io.jmix.securityflowui.view.changepassword.ChangePasswordView;
 import io.uitrainer.platform.service.CurrentUserAccess;
+import io.uitrainer.platform.view.about.AboutView;
 import io.uitrainer.platform.view.home.HomeViews;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -43,5 +44,10 @@ public class MainView extends StandardMainView {
         dialog.getView().setUsername(access.authenticatedUsername());
         dialog.getView().setCurrentPasswordRequired(true);
         dialog.open();
+    }
+
+    @Subscribe("aboutAction")
+    public void onAboutAction(ActionPerformedEvent event) {
+        dialogWindows.view(this, AboutView.class).open();
     }
 }

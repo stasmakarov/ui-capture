@@ -21,20 +21,18 @@ import io.jmix.core.DataManager;
 import io.jmix.flowui.ViewNavigators;
 import io.jmix.flowui.view.StandardView;
 import io.jmix.flowui.view.ViewController;
-import io.uitrainer.platform.api.ApiVersion;
 import io.uitrainer.platform.entity.StudioRelease;
 import io.uitrainer.platform.security.PlatformViews;
 import io.uitrainer.platform.service.ConflictException;
 import io.uitrainer.platform.service.CurrentUserAccess;
 import io.uitrainer.platform.service.PackageException;
 import io.uitrainer.platform.service.StudioReleaseService;
+import io.uitrainer.platform.service.StudioUploadState;
 import io.uitrainer.platform.service.UserProvisioning;
 import io.uitrainer.platform.view.main.MainView;
 import io.uitrainer.platform.view.studio.StudioLocalUrl;
 import io.uitrainer.platform.view.studio.StudioPresence;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.boot.info.BuildProperties;
-import org.springframework.lang.Nullable;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -50,6 +48,8 @@ import java.util.concurrent.atomic.AtomicReference;
 @ViewController(id = PlatformViews.ADMIN_HOME)
 public class AdminHomeView extends StandardView implements BeforeEnterObserver {
 
+    private static final DateTimeFormatter UPLOADED_AT = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+
     @Autowired
     private DataManager dataManager;
     @Autowired
@@ -62,9 +62,6 @@ public class AdminHomeView extends StandardView implements BeforeEnterObserver {
     private CurrentUserAccess access;
     @Autowired
     private StudioLocalUrl studioLocalUrl;
-    @Autowired(required = false)
-    @Nullable
-    private BuildProperties buildProperties;
 
     private TabSheet tabs;
     private Tab teachersTab;
@@ -74,6 +71,18 @@ public class AdminHomeView extends StandardView implements BeforeEnterObserver {
     private StudentList students;
     private boolean applyingTab;
     private String pendingTab = "teachers";
+
+    private Span serverTitle;
+    private Span serverMeta;
+    private VerticalLayout presenceHolder;
+    private final AtomicReference<File> exeFile = new AtomicReference<>();
+    private final AtomicReference<String> exeName = new AtomicReference<>();
+    private final AtomicReference<byte[]> ymlBytes = new AtomicReference<>();
+    private Upload exeUpload;
+    private Upload ymlUpload;
+    private Span uploadHint;
+    private Span uploadError;
+    private Button uploadButton;
 
     public AdminHomeView() {
         getContent().setWidthFull();
@@ -158,94 +167,129 @@ public class AdminHomeView extends StandardView implements BeforeEnterObserver {
         VerticalLayout box = new VerticalLayout();
         box.setPadding(false);
         box.setSpacing(true);
-        H3 heading = new H3("Студия для Windows");
-        heading.getStyle().set("margin", "0");
-        String platformVersion = buildProperties == null ? "0.6.0" : buildProperties.getVersion();
-        box.add(heading, new Span("Платформа " + platformVersion + " · API " + ApiVersion.CURRENT));
+        serverTitle = new Span();
+        serverTitle.setId("studioServerTitle");
+        serverMeta = new Span();
+        serverMeta.setId("studioServerMeta");
+        serverMeta.getStyle().set("color", "var(--lumo-secondary-text-color)");
+        H3 localHeading = new H3("Студия на этом компьютере");
+        localHeading.getStyle().set("margin", "0");
+        presenceHolder = new VerticalLayout();
+        presenceHolder.setPadding(false);
+        presenceHolder.setSpacing(false);
+        box.add(serverTitle, serverMeta, uploadForm(), localHeading, presenceHolder);
+        refreshStudioHeader();
+        refreshUploadState();
+        return box;
+    }
+
+    private void refreshStudioHeader() {
         var current = releases.current(StudioReleaseService.WIN);
         if (current.isEmpty()) {
-            Button download = new Button("Скачать студию");
-            download.setId("downloadStudio");
-            download.setEnabled(false);
-            box.add(new Span("Релиз студии ещё не загружен"), download);
+            serverTitle.setText("Релиз студии ещё не загружен");
+            serverMeta.setText("");
+            serverMeta.setVisible(false);
         } else {
             StudioRelease release = current.get();
-            DateTimeFormatter fmt = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+            serverTitle.setText("На сервере: Студия " + release.getVersionName() + " для Windows");
             String size = release.getSize() == null ? "" : String.format("%.1f МБ", release.getSize() / (1024.0 * 1024.0));
-            String uploaded = release.getUploadedAt() == null ? "" : fmt.format(release.getUploadedAt().toLocalDateTime());
-            box.add(new Span("Версия " + release.getVersionName() + " · " + uploaded
-                    + " · " + release.getUploadedBy() + " · " + size));
-            box.add(new StudioPresence(release, studioLocalUrl.resolve()));
+            String uploaded = release.getUploadedAt() == null ? "" : UPLOADED_AT.format(release.getUploadedAt().toLocalDateTime());
+            serverMeta.setText("Загружена " + uploaded + " · " + release.getUploadedBy() + " · " + size);
+            serverMeta.setVisible(true);
         }
-        box.add(uploadForm());
-        return box;
+        presenceHolder.removeAll();
+        presenceHolder.add(new StudioPresence(current.orElse(null), studioLocalUrl.resolve()));
     }
 
     private VerticalLayout uploadForm() {
         VerticalLayout form = new VerticalLayout();
         form.setPadding(false);
         form.setSpacing(true);
-        form.add(new Span("Загрузить релиз"));
-        Span hint = new Span("Артефакт CI uitrainer-studio-windows: файл «uitrainer Studio Setup X.Y.Z.exe» и latest.yml.");
-        hint.getStyle().set("color", "var(--lumo-secondary-text-color)");
-        form.add(hint);
-        Span parsed = new Span();
-        parsed.setId("studioParsedVersion");
-        AtomicReference<File> exeFile = new AtomicReference<>();
-        AtomicReference<String> exeName = new AtomicReference<>();
-        Upload exe = new Upload(UploadHandler.toTempFile((metadata, file) -> {
+        H3 heading = new H3("Загрузить релиз Студии");
+        heading.getStyle().set("margin", "0");
+        exeUpload = new Upload(UploadHandler.toTempFile((metadata, file) -> {
             File previous = exeFile.getAndSet(file);
             if (previous != null) deleteQuietly(previous);
             exeName.set(metadata.fileName());
         }));
-        exe.setAcceptedFileTypes(".exe");
-        exe.setMaxFiles(1);
-        Span exeCaption = new Span("Установщик (.exe)");
-        AtomicReference<byte[]> ymlBytes = new AtomicReference<>();
-        Upload yml = new Upload(UploadHandler.inMemory((metadata, data) -> {
-            ymlBytes.set(data);
-            try {
-                parsed.setText("Будет загружена версия " + StudioReleaseService.parseLatestYml(data).version());
-            } catch (PackageException ex) {
-                parsed.setText(ex.getMessage());
-            }
-        }));
-        yml.setAcceptedFileTypes(".yml", ".yaml");
-        yml.setMaxFiles(1);
-        Span ymlCaption = new Span("Файл обновлений (latest.yml)");
-        Button send = new Button("Загрузить релиз", e -> {
-            File file = exeFile.get();
-            if (file == null) {
-                Notification.show("Нужен файл .exe", 5000, Notification.Position.TOP_CENTER)
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
-                return;
-            }
-            try {
-                try (InputStream exeStream = new FileInputStream(file)) {
-                    releases.uploadWin(null, exeName.get(), exeStream, ymlBytes.get());
-                }
-                exeFile.set(null);
-                deleteQuietly(file);
-                Notification.show("Релиз загружен", 4000, Notification.Position.TOP_CENTER)
-                        .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
-                getUI().ifPresent(ui -> ui.navigate(AdminHomeView.class,
-                        QueryParameters.simple(Map.of("tab", "studio"))));
-            } catch (ConflictException ex) {
-                Notification.show(ex.getMessage(), 5000, Notification.Position.TOP_CENTER)
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
-            } catch (PackageException | java.io.IOException ex) {
-                Notification.show(ex.getMessage() == null ? "Не удалось загрузить" : ex.getMessage(), 5000, Notification.Position.TOP_CENTER)
-                        .addThemeVariants(NotificationVariant.LUMO_ERROR);
-            }
+        exeUpload.setAcceptedFileTypes(".exe");
+        exeUpload.setMaxFiles(1);
+        exeUpload.addSucceededListener(e -> refreshUploadState());
+        exeUpload.addFileRemovedListener(e -> {
+            File left = exeFile.getAndSet(null);
+            if (left != null) deleteQuietly(left);
+            exeName.set(null);
+            refreshUploadState();
         });
-        send.setId("uploadStudioRelease");
-        send.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
-        form.add(exeCaption, exe, ymlCaption, yml, parsed, send);
+        Span exeCaption = new Span("Установщик (.exe)");
+        ymlUpload = new Upload(UploadHandler.inMemory((metadata, data) -> ymlBytes.set(data)));
+        ymlUpload.setAcceptedFileTypes(".yml", ".yaml");
+        ymlUpload.setMaxFiles(1);
+        ymlUpload.addSucceededListener(e -> refreshUploadState());
+        ymlUpload.addFileRemovedListener(e -> {
+            ymlBytes.set(null);
+            refreshUploadState();
+        });
+        Span ymlCaption = new Span("Файл обновлений (latest.yml)");
+        uploadHint = new Span();
+        uploadHint.setId("studioParsedVersion");
+        uploadHint.getStyle().set("color", "var(--lumo-secondary-text-color)");
+        uploadError = new Span();
+        uploadError.setId("studioUploadError");
+        uploadError.getStyle().set("color", "var(--lumo-error-text-color)");
+        uploadButton = new Button("Загрузить релиз", e -> uploadRelease());
+        uploadButton.setId("uploadStudioRelease");
+        uploadButton.addThemeVariants(ButtonVariant.LUMO_PRIMARY);
+        form.add(heading, exeCaption, exeUpload, ymlCaption, ymlUpload, uploadHint, uploadError, uploadButton);
         form.addDetachListener(ev -> {
             File left = exeFile.getAndSet(null);
             if (left != null) deleteQuietly(left);
         });
         return form;
+    }
+
+    private void refreshUploadState() {
+        String server = releases.current(StudioReleaseService.WIN)
+                .map(StudioRelease::getVersionName)
+                .orElse(null);
+        StudioUploadState.Decision decision = StudioUploadState.of(exeFile.get() != null, ymlBytes.get(), server);
+        uploadButton.setEnabled(decision.enabled());
+        uploadHint.setText(decision.reason());
+    }
+
+    private void uploadRelease() {
+        uploadError.setText("");
+        File file = exeFile.get();
+        byte[] yml = ymlBytes.get();
+        String server = releases.current(StudioReleaseService.WIN)
+                .map(StudioRelease::getVersionName)
+                .orElse(null);
+        StudioUploadState.Decision decision = StudioUploadState.of(file != null, yml, server);
+        if (!decision.enabled()) {
+            uploadHint.setText(decision.reason());
+            uploadButton.setEnabled(false);
+            return;
+        }
+        try {
+            try (InputStream exeStream = new FileInputStream(file)) {
+                releases.uploadWin(null, exeName.get(), exeStream, yml);
+            }
+            exeFile.set(null);
+            deleteQuietly(file);
+            ymlBytes.set(null);
+            exeUpload.clearFileList();
+            ymlUpload.clearFileList();
+            uploadError.setText("");
+            Notification.show("Релиз загружен", 4000, Notification.Position.TOP_CENTER)
+                    .addThemeVariants(NotificationVariant.LUMO_SUCCESS);
+            refreshStudioHeader();
+            refreshUploadState();
+        } catch (ConflictException | PackageException | java.io.IOException ex) {
+            String text = ex.getMessage() == null || ex.getMessage().isBlank() ? "Не удалось загрузить" : ex.getMessage();
+            uploadError.setText(text);
+            Notification.show(text, 5000, Notification.Position.TOP_CENTER)
+                    .addThemeVariants(NotificationVariant.LUMO_ERROR);
+        }
     }
 
     private static void deleteQuietly(File file) {

@@ -64,6 +64,66 @@ vaadin {
     optimizeBundle = false
 }
 
+tasks.withType(org.springframework.boot.gradle.tasks.buildinfo.BuildInfo).configureEach {
+    properties {
+        additional.put('jmixVersion', jmix.bomVersion)
+    }
+}
+
+def gitRoot = rootProject.projectDir.parentFile
+def generatedGitDir = layout.buildDirectory.dir('generated/git-properties')
+
+tasks.register('generateGitProperties') {
+    def out = generatedGitDir.map { it.file('git.properties') }
+    outputs.file(out)
+    doLast {
+        def runGit = { String... args ->
+            try {
+                def process = new ProcessBuilder(['git', *args])
+                        .directory(gitRoot)
+                        .redirectError(ProcessBuilder.Redirect.DISCARD)
+                        .start()
+                def text = process.inputStream.getText('UTF-8').trim()
+                process.waitFor()
+                return process.exitValue() == 0 ? text : ''
+            } catch (IOException ignored) {
+                return ''
+            }
+        }
+        def branch = System.getenv('GIT_BRANCH') ?: runGit('rev-parse', '--abbrev-ref', 'HEAD')
+        if (branch == 'HEAD') {
+            branch = System.getenv('GIT_BRANCH') ?: 'detached'
+        }
+        def commit = System.getenv('GIT_COMMIT') ?: runGit('rev-parse', '--short', 'HEAD')
+        def time = System.getenv('GIT_COMMIT_TIME') ?: runGit('log', '-1', '--format=%cI')
+        def lines = []
+        if (branch) {
+            lines << "git.branch=${branch}"
+        }
+        if (commit) {
+            lines << "git.commit.id.abbrev=${commit}"
+        }
+        if (time) {
+            lines << "git.commit.time=${time}"
+        }
+        def file = out.get().asFile
+        file.parentFile.mkdirs()
+        file.write(lines ? lines.join('\n') + '\n' : '', 'UTF-8')
+    }
+}
+
+sourceSets {
+    main {
+        resources {
+            srcDir generatedGitDir
+        }
+    }
+}
+
+tasks.named('processResources') {
+    dependsOn 'generateGitProperties'
+}
+
 test {
     useJUnitPlatform()
     systemProperty 'file.encoding', 'UTF-8'

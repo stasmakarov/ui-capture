@@ -96,6 +96,17 @@ read_version() {
 
 VERSION="$(read_version)"
 EXPECTED_JAR="uitrainer-platform-${VERSION}.jar"
+
+if command -v git >/dev/null 2>&1 && git -C "${ROOT}" rev-parse --is-inside-work-tree >/dev/null 2>&1; then
+  GIT_COMMIT="${GIT_COMMIT:-$(git -C "${ROOT}" rev-parse --short HEAD 2>/dev/null || true)}"
+  branch="$(git -C "${ROOT}" rev-parse --abbrev-ref HEAD 2>/dev/null || true)"
+  if [[ "${branch}" == "HEAD" ]]; then
+    branch="${GIT_BRANCH:-detached}"
+  fi
+  GIT_BRANCH="${GIT_BRANCH:-${branch}}"
+  GIT_COMMIT_TIME="${GIT_COMMIT_TIME:-$(git -C "${ROOT}" log -1 --format=%cI 2>/dev/null || true)}"
+  export GIT_COMMIT GIT_BRANCH GIT_COMMIT_TIME
+fi
 EXPECTED_PATH="${ROOT}/platform-backend/build/libs/${EXPECTED_JAR}"
 GRADLEW="${ROOT}/platform-backend/gradlew"
 

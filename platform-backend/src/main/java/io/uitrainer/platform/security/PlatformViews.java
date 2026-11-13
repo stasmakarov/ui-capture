@@ -25,6 +25,7 @@ public final class PlatformViews {
     public static final String GROUP_MEMBER_DETAIL = "uic_GroupMember.detail";
     public static final String STUDENT_GROUP = "uic_StudentGroup";
     public static final String STUDENT_COURSE = "uic_StudentCourse";
+    public static final String ABOUT = "uic_AboutView";
 
     private PlatformViews() {
     }

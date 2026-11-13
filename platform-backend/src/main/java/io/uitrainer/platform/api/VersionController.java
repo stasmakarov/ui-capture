@@ -1,9 +1,8 @@
 package io.uitrainer.platform.api;
 
 import io.uitrainer.platform.entity.StudioRelease;
+import io.uitrainer.platform.service.AppVersionService;
 import io.uitrainer.platform.service.StudioReleaseService;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.boot.info.BuildProperties;
 import org.springframework.http.ResponseEntity;
 import org.springframework.lang.Nullable;
 import org.springframework.web.bind.annotation.GetMapping;
@@ -18,18 +17,17 @@ import java.util.Map;
 public class VersionController {
 
     private final StudioReleaseService releases;
-    @Nullable
-    private final BuildProperties buildProperties;
+    private final AppVersionService appVersion;
 
-    public VersionController(StudioReleaseService releases, ObjectProvider<BuildProperties> buildProperties) {
+    public VersionController(StudioReleaseService releases, AppVersionService appVersion) {
         this.releases = releases;
-        this.buildProperties = buildProperties.getIfAvailable();
+        this.appVersion = appVersion;
     }
 
     @GetMapping("/version")
     public ResponseEntity<Map<String, Object>> version() {
         Map<String, Object> out = new LinkedHashMap<>();
-        out.put("platformVersion", buildProperties == null ? "0.6.0" : buildProperties.getVersion());
+        out.put("platformVersion", appVersion.platformVersion());
         out.put("apiVersion", ApiVersion.CURRENT);
         out.put("minStudioApi", ApiVersion.CURRENT);
         out.put("studioLatestRelease", studioLatest());

@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<view xmlns="http://jmix.io/schema/flowui/view"
+      title="msg://aboutView.title"
+      messagesGroup="io.uitrainer.platform.view.about">
+    <actions>
+        <action id="closeAction" type="view_close" text="msg://closeButton.text"/>
+    </actions>
+    <layout>
+        <h3 id="productName" text="msg://productName"/>
+        <span id="platformLabel"/>
+        <span id="buildLabel"/>
+        <span id="dateLabel"/>
+        <span id="jmixLabel"/>
+        <span id="apiLabel"/>
+        <span id="studioLabel"/>
+        <button id="closeButton" action="closeAction"/>
+    </layout>
+</view>
